@@ -1,0 +1,45 @@
+# docker-compose.yml — локальная разработка
+# Запуск: docker compose up -d
+# Остановка: docker compose down
+
+version: "3.9"
+
+services:
+  # ── PostgreSQL ──
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: scooter_user
+      POSTGRES_PASSWORD: scooter_pass
+      POSTGRES_DB: scooter_shop
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scooter_user -d scooter_shop"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Приложение ──
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://scooter_user:scooter_pass@postgres/scooter_shop
+      SECRET_KEY: local-dev-secret-key-change-in-production
+      ADMIN_PASSWORD: admin123
+      PORT: "8000"
+    volumes:
+      - ./static/uploads:/app/static/uploads
+      - ./static/images:/app/static/images
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

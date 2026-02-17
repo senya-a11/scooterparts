@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Оплата — ScooterParts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#080A0F;--surface:#161B24;--border:rgba(255,255,255,.06);--text:#F0F2F5;--text-2:#8B92A5;--accent:#00D4FF;--green:#00E5A0;--amber:#FFB020;--radius:10px;--font-d:'Syne',sans-serif;--font-b:'DM Sans',sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2.5rem;max-width:460px;width:100%;text-align:center}
+    .icon{font-size:3rem;margin-bottom:1rem}
+    .title{font-family:var(--font-d);font-size:1.5rem;font-weight:800;margin-bottom:.5rem}
+    .sub{color:var(--text-2);font-size:.9375rem;margin-bottom:2rem;line-height:1.6}
+    .amount{font-family:var(--font-d);font-size:2.5rem;font-weight:800;color:var(--amber);margin:1.25rem 0}
+    .note{background:rgba(255,176,32,.1);border:1px solid rgba(255,176,32,.25);border-radius:var(--radius);padding:1rem;font-size:.8125rem;color:var(--amber);margin-bottom:1.5rem;text-align:left}
+    .btn{display:inline-block;padding:.875rem 2rem;background:var(--accent);color:#080A0F;font-weight:700;border:none;border-radius:var(--radius);cursor:pointer;font-family:var(--font-b);font-size:.9375rem;text-decoration:none;transition:all .2s}
+    .btn:hover{opacity:.9;transform:translateY(-1px)}
+    .btn-ghost{background:transparent;color:var(--text-2);border:1px solid var(--border);margin-top:.75rem;display:block}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">💳</div>
+    <h1 class="title">Страница оплаты</h1>
+    <p class="sub">Заказ #{{ order_id }} · Тестовая заглушка</p>
+    <div class="amount">{{ amount }} ₽</div>
+    <div class="note">
+      ⚠️ <strong>Это заглушка.</strong> Для подключения реального эквайринга отредактируйте <code>backend/main.py</code> → функция <code>create_payment()</code>.<br><br>
+      Поддерживаемые провайдеры: <strong>ЮKassa, Тинькофф, Stripe</strong>.
+    </div>
+    <a href="/" class="btn">← Вернуться в магазин</a>
+    <a href="/" class="btn btn-ghost">Проверить заказы</a>
+  </div>
+</body>
+</html>

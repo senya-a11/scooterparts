@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png">
+  <link rel="icon" href="/static/favicon/favicon.ico" type="image/x-icon">
+  <meta name="theme-color" content="#080A0F">
+  <title>ScooterParts — Премиум запчасти</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#080A0F; --bg-2:#0D1017; --bg-3:#12161E;
+      --surface:#161B24; --surface-2:#1E2533;
+      --border:rgba(255,255,255,0.06); --border-hover:rgba(255,255,255,0.12);
+      --text:#F0F2F5; --text-2:#8B92A5; --text-3:#4E5568;
+      --accent:#00D4FF; --accent-dim:rgba(0,212,255,0.12); --accent-glow:rgba(0,212,255,0.25);
+      --green:#00E5A0; --green-dim:rgba(0,229,160,0.12);
+      --red:#FF4757; --red-dim:rgba(255,71,87,0.12);
+      --amber:#FFB020;
+      --shadow:0 4px 16px rgba(0,0,0,0.5); --shadow-lg:0 12px 40px rgba(0,0,0,0.6);
+      --radius:10px; --radius-lg:16px; --radius-xl:24px;
+      --font-d:'Syne',sans-serif; --font-b:'DM Sans',sans-serif;
+      --ease:cubic-bezier(0.16,1,0.3,1); --ease-f:cubic-bezier(0.4,0,0.2,1);
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{font-family:var(--font-b);background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+    body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:.4}
+    .container{max-width:1280px;margin:0 auto;padding:0 1.5rem}
+    ::-webkit-scrollbar{width:6px} ::-webkit-scrollbar-track{background:var(--bg-2)} ::-webkit-scrollbar-thumb{background:var(--surface-2);border-radius:3px}
+
+    /* Header */
+    .header{position:fixed;top:0;left:0;right:0;background:rgba(8,10,15,0.85);backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid var(--border);z-index:200}
+    .header-inner{display:flex;align-items:center;justify-content:space-between;height:64px;gap:2rem}
+    .logo{display:flex;align-items:center;gap:10px;font-family:var(--font-d);font-size:1.25rem;font-weight:700;color:var(--text);text-decoration:none;letter-spacing:-.02em}
+    .logo-mark{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),#0099CC);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 0 16px var(--accent-glow)}
+    .logo-text span{color:var(--accent)}
+    .nav{display:flex;align-items:center;gap:.25rem}
+    .nav-link{font-size:.875rem;font-weight:500;color:var(--text-2);text-decoration:none;padding:.5rem .875rem;border-radius:6px;transition:all .2s var(--ease-f)}
+    .nav-link:hover{color:var(--text);background:rgba(255,255,255,.05)}
+    .nav-link.active{color:var(--accent);background:var(--accent-dim)}
+    .header-actions{display:flex;align-items:center;gap:.75rem}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.625rem 1.25rem;font-family:var(--font-b);font-size:.875rem;font-weight:600;border-radius:var(--radius);border:none;cursor:pointer;text-decoration:none;transition:all .2s var(--ease-f);white-space:nowrap;position:relative;overflow:hidden}
+    .btn-primary{background:var(--accent);color:#080A0F;font-weight:700;box-shadow:0 0 20px var(--accent-glow)}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 0 30px rgba(0,212,255,.4)}
+    .btn-ghost{background:transparent;color:var(--text-2);border:1px solid var(--border)}
+    .btn-ghost:hover{color:var(--text);border-color:var(--border-hover);background:rgba(255,255,255,.04)}
+    .btn-lg{padding:.875rem 2.25rem;font-size:1rem}
+    .btn-sm{padding:.375rem .875rem;font-size:.8125rem}
+    .cart-btn{position:relative}
+    .cart-count{position:absolute;top:-6px;right:-6px;background:var(--red);color:white;font-size:.6875rem;font-weight:700;min-width:18px;height:18px;border-radius:9px;padding:0 4px;display:none;align-items:center;justify-content:center}
+
+    /* Hero */
+    .hero{padding-top:7rem;padding-bottom:5rem;position:relative;overflow:hidden}
+    .hero-bg{position:absolute;inset:0;pointer-events:none}
+    .hero-glow-1{position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:600px;background:radial-gradient(ellipse,rgba(0,212,255,.08) 0%,transparent 70%)}
+    .hero-glow-2{position:absolute;bottom:-100px;right:-200px;width:500px;height:400px;background:radial-gradient(ellipse,rgba(0,229,160,.05) 0%,transparent 70%)}
+    .hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 40%,transparent 100%)}
+    .hero-content{text-align:center;max-width:800px;margin:0 auto;position:relative;z-index:1}
+    .hero-eyebrow{display:inline-flex;align-items:center;gap:.5rem;font-size:.8125rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:1.5rem;padding:.375rem 1rem;background:var(--accent-dim);border:1px solid rgba(0,212,255,.2);border-radius:100px;animation:fadeUp .6s var(--ease) both}
+    .hero-title{font-family:var(--font-d);font-size:clamp(2.5rem,6vw,4.5rem);font-weight:800;letter-spacing:-.04em;line-height:1.05;margin-bottom:1.5rem;animation:fadeUp .6s .1s var(--ease) both}
+    .hero-title .accent{color:var(--accent)}
+    .hero-desc{font-size:1.125rem;color:var(--text-2);max-width:560px;margin:0 auto 2.5rem;line-height:1.7;animation:fadeUp .6s .2s var(--ease) both}
+    .hero-actions{display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;animation:fadeUp .6s .3s var(--ease) both}
+    .hero-stats{display:flex;align-items:center;justify-content:center;gap:3rem;margin-top:4rem;padding-top:3rem;border-top:1px solid var(--border);animation:fadeUp .6s .4s var(--ease) both;flex-wrap:wrap}
+    .hero-stat-val{font-family:var(--font-d);font-size:2rem;font-weight:800;color:var(--text);display:block;letter-spacing:-.03em}
+    .hero-stat-label{font-size:.8125rem;color:var(--text-2);margin-top:.125rem}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+    /* Products section */
+    .section{padding:5rem 0}
+    .section-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:2.5rem;gap:1rem;flex-wrap:wrap}
+    .section-tag{font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:.5rem}
+    .section-title{font-family:var(--font-d);font-size:2rem;font-weight:800;letter-spacing:-.03em}
+    .products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:1.25rem}
+    .product-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:all .3s var(--ease);display:flex;flex-direction:column}
+    .product-card:hover{border-color:rgba(0,212,255,.2);transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.5)}
+    .product-img{width:100%;height:210px;background:var(--bg-3);display:flex;align-items:center;justify-content:center;font-size:3.5rem;overflow:hidden;border-bottom:1px solid var(--border)}
+    .product-img img{width:100%;height:100%;object-fit:cover}
+    .product-body{padding:1.25rem;flex:1;display:flex;flex-direction:column}
+    .product-cat{font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:.375rem}
+    .product-name{font-family:var(--font-d);font-size:1rem;font-weight:700;margin-bottom:.5rem;line-height:1.3}
+    .product-desc{font-size:.8125rem;color:var(--text-2);line-height:1.5;flex:1;margin-bottom:1rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .product-footer{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:auto}
+    .product-price{font-family:var(--font-d);font-size:1.25rem;font-weight:800}
+    .add-btn{padding:.5rem 1rem;background:var(--accent);color:#080A0F;border:none;border-radius:var(--radius);cursor:pointer;font-family:var(--font-b);font-size:.8125rem;font-weight:700;transition:all .2s}
+    .add-btn:hover{box-shadow:0 0 16px var(--accent-glow);transform:scale(1.03)}
+    .add-btn:disabled{background:var(--surface-2);color:var(--text-3);cursor:not-allowed;transform:none}
+
+    /* Footer */
+    .footer{background:var(--bg-2);border-top:1px solid var(--border);padding:3rem 0 0}
+    .footer-grid{display:grid;grid-template-columns:1.5fr repeat(3,1fr);gap:3rem;padding-bottom:3rem}
+    .footer-brand-desc{font-size:.875rem;color:var(--text-2);line-height:1.7;margin-top:1rem;max-width:280px}
+    .footer-col-title{font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:1rem}
+    .footer-links{list-style:none;display:flex;flex-direction:column;gap:.5rem}
+    .footer-links a{font-size:.875rem;color:var(--text-2);text-decoration:none;transition:color .2s}
+    .footer-links a:hover{color:var(--accent)}
+    .footer-contact-item{display:flex;align-items:center;gap:.625rem;font-size:.875rem;color:var(--text-2);margin-bottom:.625rem}
+    .footer-contact-item a{color:var(--text-2);text-decoration:none;transition:color .2s}
+    .footer-contact-item a:hover{color:var(--accent)}
+    .footer-bottom{border-top:1px solid var(--border);padding:1.25rem 0;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+    .footer-bottom span,.footer-bottom a{font-size:.8125rem;color:var(--text-3);text-decoration:none;transition:color .2s}
+    .footer-bottom a:hover{color:var(--accent)}
+    .footer-legal-links{display:flex;gap:1.5rem;flex-wrap:wrap}
+
+    /* Auth modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem}
+    .modal-overlay.active{display:flex}
+    .modal-box{background:var(--bg-3);border:1px solid var(--border-hover);border-radius:var(--radius-xl);padding:2rem;width:100%;max-width:440px;box-shadow:var(--shadow-lg);animation:fadeUp .3s var(--ease)}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+    .modal-title{font-family:var(--font-d);font-size:1.25rem;font-weight:700}
+    .modal-close{background:none;border:none;color:var(--text-3);font-size:1.25rem;cursor:pointer;line-height:1;padding:.25rem;transition:color .2s}
+    .modal-close:hover{color:var(--text)}
+    .auth-tabs{display:flex;gap:.25rem;margin-bottom:1.5rem;background:var(--surface);padding:.25rem;border-radius:var(--radius)}
+    .auth-tab{flex:1;padding:.5rem;background:none;border:none;color:var(--text-2);cursor:pointer;font-family:var(--font-b);font-size:.875rem;font-weight:600;border-radius:7px;transition:all .2s}
+    .auth-tab.active{background:var(--accent);color:#080A0F}
+    .form-group{margin-bottom:1rem}
+    .form-label{display:block;font-size:.8125rem;font-weight:600;color:var(--text-2);margin-bottom:.375rem;letter-spacing:.03em;text-transform:uppercase}
+    .form-input{width:100%;padding:.75rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-b);font-size:.9375rem;outline:none;transition:all .2s}
+    .form-input::placeholder{color:var(--text-3)}
+    .form-input:focus{border-color:var(--accent);background:var(--bg);box-shadow:0 0 0 3px var(--accent-dim)}
+    .auth-messages{margin-bottom:.75rem}
+    .msg{padding:.75rem 1rem;border-radius:var(--radius);font-size:.875rem;font-weight:500;border:1px solid transparent;margin-bottom:.5rem}
+    .msg-error{background:var(--red-dim);color:var(--red);border-color:rgba(255,71,87,.2)}
+    .msg-success{background:var(--green-dim);color:var(--green);border-color:rgba(0,229,160,.2)}
+
+    /* Privacy checkbox */
+    .privacy-check-row{display:flex;align-items:flex-start;gap:.75rem;margin:.75rem 0 1rem;padding:.875rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer}
+    .privacy-check-row input[type=checkbox]{width:18px;height:18px;margin-top:2px;accent-color:var(--accent);flex-shrink:0;cursor:pointer}
+    .privacy-check-text{font-size:.8125rem;color:var(--text-2);line-height:1.5}
+    .privacy-check-text a{color:var(--accent);text-decoration:none}
+    .privacy-check-text a:hover{text-decoration:underline}
+
+    /* Cart */
+    .cart-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;opacity:0;pointer-events:none;transition:opacity .3s}
+    .cart-overlay.active{opacity:1;pointer-events:all}
+    .cart-drawer{position:fixed;right:0;top:0;bottom:0;width:400px;max-width:100vw;background:var(--bg-3);border-left:1px solid var(--border);z-index:400;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s var(--ease)}
+    .cart-drawer.active{transform:translateX(0)}
+    .cart-dh{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border)}
+    .cart-dh-title{font-family:var(--font-d);font-size:1.125rem;font-weight:700}
+    .cart-db{flex:1;overflow-y:auto;padding:1rem 1.5rem}
+    .cart-df{padding:1.25rem 1.5rem;border-top:1px solid var(--border)}
+    .cart-empty{display:flex;flex-direction:column;align-items:center;gap:.75rem;padding:3rem 0;color:var(--text-3)}
+    .cart-empty-icon{font-size:3rem;opacity:.4}
+    .cart-item{display:flex;gap:1rem;padding:.875rem 0;border-bottom:1px solid var(--border);align-items:center}
+    .cart-item-img{width:56px;height:56px;background:var(--surface);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;overflow:hidden}
+    .cart-item-img img{width:100%;height:100%;object-fit:cover}
+    .cart-item-info{flex:1;min-width:0}
+    .cart-item-name{font-size:.875rem;font-weight:600;margin-bottom:.25rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .cart-item-price{font-size:.8125rem;color:var(--text-2)}
+    .cart-item-remove{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:1rem;padding:.25rem;transition:color .2s}
+    .cart-item-remove:hover{color:var(--red)}
+    .cart-total-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+    .cart-total-label{font-size:.875rem;color:var(--text-2)}
+    .cart-total-amount{font-family:var(--font-d);font-size:1.25rem;font-weight:800}
+
+    /* User menu */
+    .user-btn{display:flex;align-items:center;gap:.5rem;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:.375rem .875rem .375rem .5rem;border-radius:var(--radius);cursor:pointer;font-family:var(--font-b);font-size:.875rem;transition:all .2s}
+    .user-btn:hover{border-color:var(--border-hover)}
+    .user-avatar{width:28px;height:28px;background:linear-gradient(135deg,var(--accent),#0099CC);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.8125rem;font-weight:700;color:#080A0F}
+    .user-dropdown-wrap{position:relative}
+    .user-dropdown{position:absolute;right:0;top:calc(100% + .5rem);background:var(--bg-3);border:1px solid var(--border-hover);border-radius:var(--radius-lg);padding:.5rem;min-width:200px;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transform:translateY(-6px);transition:all .2s var(--ease);z-index:50}
+    .user-dropdown.active{opacity:1;pointer-events:all;transform:translateY(0)}
+    .user-info-box{padding:.5rem .75rem .75rem;border-bottom:1px solid var(--border);margin-bottom:.375rem}
+    .user-info-name{font-weight:700;font-size:.9375rem}
+    .user-info-email{font-size:.8125rem;color:var(--text-2)}
+    .drop-item{display:flex;align-items:center;gap:.5rem;width:100%;padding:.5rem .75rem;background:none;border:none;border-radius:7px;color:var(--text-2);cursor:pointer;font-family:var(--font-b);font-size:.875rem;text-decoration:none;transition:all .2s}
+    .drop-item:hover{background:rgba(255,255,255,.06);color:var(--text)}
+    .drop-item.danger{color:var(--red)}
+    .drop-item.danger:hover{background:var(--red-dim)}
+
+    /* Toast */
+    .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(1rem);background:var(--surface-2);color:var(--text);padding:.75rem 1.5rem;border-radius:100px;font-size:.875rem;font-weight:500;opacity:0;pointer-events:none;transition:all .3s var(--ease);z-index:9000;white-space:nowrap;border:1px solid var(--border-hover)}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .toast-success{background:var(--green-dim);color:var(--green);border-color:rgba(0,229,160,.25)}
+    .toast-error{background:var(--red-dim);color:var(--red);border-color:rgba(255,71,87,.25)}
+
+    /* Cookie banner */
+    .cookie-banner{position:fixed;bottom:0;left:0;right:0;background:var(--bg-3);border-top:1px solid var(--border-hover);padding:1rem 0;z-index:8000;transform:translateY(100%);transition:transform .4s var(--ease)}
+    .cookie-banner.show{transform:translateY(0)}
+    .cookie-inner{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;flex-wrap:wrap}
+    .cookie-icon{font-size:1.5rem;flex-shrink:0}
+    .cookie-text{flex:1;min-width:240px}
+    .cookie-text strong{font-size:.9375rem;font-weight:700;display:block;margin-bottom:.25rem}
+    .cookie-text p{font-size:.8125rem;color:var(--text-2);line-height:1.5}
+    .cookie-text a{color:var(--accent);text-decoration:none}
+    .cookie-text a:hover{text-decoration:underline}
+    .cookie-actions{display:flex;gap:.625rem;flex-shrink:0;flex-wrap:wrap}
+    .btn-cookie-accept{background:var(--accent);color:#080A0F;border:none;padding:.5rem 1.25rem;border-radius:var(--radius);cursor:pointer;font-family:var(--font-b);font-size:.875rem;font-weight:700;transition:all .2s}
+    .btn-cookie-accept:hover{opacity:.9}
+    .btn-cookie-decline{background:transparent;color:var(--text-2);border:1px solid var(--border);padding:.5rem 1.25rem;border-radius:var(--radius);cursor:pointer;font-family:var(--font-b);font-size:.875rem;font-weight:600;transition:all .2s}
+    .btn-cookie-decline:hover{border-color:var(--border-hover);color:var(--text)}
+
+    @media(max-width:768px){
+      .nav{display:none}
+      .footer-grid{grid-template-columns:1fr 1fr;gap:2rem}
+      .hero-stats{gap:1.5rem}
+      .cookie-inner{flex-direction:column;align-items:flex-start}
+    }
+    @media(max-width:480px){
+      .footer-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── COOKIE BANNER ── -->
+<div class="cookie-banner" id="cookieBanner">
+  <div class="container">
+    <div class="cookie-inner">
+      <div class="cookie-icon">🍪</div>
+      <div class="cookie-text">
+        <strong>Мы используем Cookie</strong>
+        <p>
+          Cookie — небольшие файлы, которые сохраняются в вашем браузере. Мы используем их для авторизации (хранение токена сессии), запоминания корзины и анализа посещаемости. Без cookie сайт не будет работать корректно. Подробнее в нашей
+          <a href="/privacy-policy" target="_blank">Политике конфиденциальности</a>.
+        </p>
+      </div>
+      <div class="cookie-actions">
+        <button class="btn-cookie-accept" id="cookieAccept">Принять все</button>
+        <button class="btn-cookie-decline" id="cookieDecline">Только необходимые</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── HEADER ── -->
+<header class="header">
+  <div class="container">
+    <div class="header-inner">
+      <a href="/" class="logo">
+        <div class="logo-mark">🛴</div>
+        <span class="logo-text">Scooter<span>Parts</span></span>
+      </a>
+      <nav class="nav">
+        <a href="/" class="nav-link active">Главная</a>
+        <a href="/products" class="nav-link">Каталог</a>
+      </nav>
+      <div class="header-actions">
+        <button class="btn btn-ghost btn-sm cart-btn" id="cartBtn">
+          🛒 Корзина
+          <span class="cart-count" id="cartCount">0</span>
+        </button>
+        <div class="user-dropdown-wrap" id="userMenu"></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-bg">
+    <div class="hero-glow-1"></div>
+    <div class="hero-glow-2"></div>
+    <div class="hero-grid"></div>
+  </div>
+  <div class="container">
+    <div class="hero-content">
+      <div class="hero-eyebrow">⚡ Оригинальные запчасти для электросамокатов</div>
+      <h1 class="hero-title">
+        Запчасти нового<br>поколения для<br><span class="accent">вашего самоката</span>
+      </h1>
+      <p class="hero-desc">Аккумуляторы, моторы, электроника и аксессуары — всё для максимальной производительности вашего самоката.</p>
+      <div class="hero-actions">
+        <a href="/products" class="btn btn-primary btn-lg">Смотреть каталог →</a>
+        <button class="btn btn-ghost btn-lg" onclick="document.getElementById('authBtn')?.click() || showAuthModal()">Создать аккаунт</button>
+      </div>
+      <div class="hero-stats">
+        <div>
+          <span class="hero-stat-val" id="statProducts">—</span>
+          <div class="hero-stat-label">Товаров в наличии</div>
+        </div>
+        <div>
+          <span class="hero-stat-val" id="statCategories">—</span>
+          <div class="hero-stat-label">Категорий</div>
+        </div>
+        <div>
+          <span class="hero-stat-val" id="statOrders">—</span>
+          <div class="hero-stat-label">Выполненных заказов</div>
+        </div>
+        <div>
+          <span class="hero-stat-val">24/7</span>
+          <div class="hero-stat-label">Поддержка</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PRODUCTS ── -->
+<section class="section" style="background:var(--bg-2);border-top:1px solid var(--border)">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <div class="section-tag">Новинки</div>
+        <h2 class="section-title">Популярные товары</h2>
+      </div>
+      <a href="/products" class="btn btn-ghost btn-sm">Все товары →</a>
+    </div>
+    <div class="products-grid" id="productsGrid">
+      <div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--text-3)">Загрузка…</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a href="/" class="logo" style="font-size:1.125rem">
+          <div class="logo-mark" style="width:28px;height:28px;font-size:14px">🛴</div>
+          <span class="logo-text">Scooter<span>Parts</span></span>
+        </a>
+        <p class="footer-brand-desc">Премиум запчасти для электросамокатов. Оригинальные комплектующие с гарантией качества.</p>
+      </div>
+      <div>
+        <div class="footer-col-title">Каталог</div>
+        <ul class="footer-links">
+          <li><a href="/products">Все товары</a></li>
+          <li><a href="/products?category=batteries">Аккумуляторы</a></li>
+          <li><a href="/products?category=motors">Моторы</a></li>
+          <li><a href="/products?category=electronics">Электроника</a></li>
+          <li><a href="/products?category=brakes">Тормоза</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Документы</div>
+        <ul class="footer-links">
+          <li><a href="/terms">Пользовательское соглашение</a></li>
+          <li><a href="/privacy-policy">Политика конфиденциальности</a></li>
+          <li><a href="/offer">Договор оферты / Условия продажи</a></li>
+          <li><a href="/returns">Политика возврата и обмена</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Контакты</div>
+        <div class="footer-contact-item">📍 <span>Москва, ул. Примерная, 123</span></div>
+        <div class="footer-contact-item">📞 <a href="tel:+78001234567">8 (800) 123-45-67</a></div>
+        <div class="footer-contact-item">✉️ <a href="mailto:info@scooterparts.ru">info@scooterparts.ru</a></div>
+        <div class="footer-contact-item">🕐 <span>Ежедневно 9:00–21:00</span></div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 ScooterParts. Все права защищены.</span>
+      <div class="footer-legal-links">
+        <a href="/terms">Соглашение</a>
+        <a href="/privacy-policy">Конфиденциальность</a>
+        <a href="/offer">Оферта</a>
+        <a href="/returns">Возврат</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ── AUTH MODAL ── -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">Аккаунт</span>
+      <button class="modal-close" id="closeAuthModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Войти</button>
+        <button class="auth-tab" data-tab="register">Регистрация</button>
+      </div>
+      <div id="authMessages" class="auth-messages"></div>
+
+      <!-- Login -->
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label">Имя пользователя</label>
+          <input type="text" name="username" class="form-input" placeholder="username" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Пароль</label>
+          <input type="password" name="password" class="form-input" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.5rem">Войти →</button>
+      </form>
+
+      <!-- Register -->
+      <form id="registerForm" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Имя пользователя</label>
+          <input type="text" name="username" class="form-input" placeholder="username" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="form-input" placeholder="you@example.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Полное имя</label>
+          <input type="text" name="full_name" class="form-input" placeholder="Иван Иванов" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Пароль</label>
+          <input type="password" name="password" class="form-input" placeholder="Минимум 6 символов" required>
+        </div>
+
+        <!-- Privacy checkbox -->
+        <label class="privacy-check-row">
+          <input type="checkbox" id="privacyCheckbox" required>
+          <span class="privacy-check-text">
+            Я прочитал(а) и принимаю
+            <a href="/privacy-policy" target="_blank">Политику конфиденциальности</a>,
+            <a href="/terms" target="_blank">Пользовательское соглашение</a>
+            и согласен(на) на обработку персональных данных.
+          </span>
+        </label>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.5rem" id="registerSubmitBtn">Создать аккаунт →</button>
+        <p style="text-align:center;margin-top:.75rem;font-size:.8125rem;color:var(--text-3)">
+          Уже есть аккаунт? <a href="#" style="color:var(--accent);text-decoration:none" id="switchToLogin">Войти</a>
+        </p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ── CART DRAWER ── -->
+<div class="cart-overlay" id="cartOverlay"></div>
+<div class="cart-drawer" id="cartDrawer">
+  <div class="cart-dh">
+    <div class="cart-dh-title">🛒 Корзина</div>
+    <button class="modal-close" id="closeCartDrawer">✕</button>
+  </div>
+  <div class="cart-db" id="cartBody">
+    <div class="cart-empty"><div class="cart-empty-icon">🛒</div><p>Корзина пуста</p></div>
+  </div>
+  <div class="cart-df">
+    <div class="cart-total-row">
+      <span class="cart-total-label">Итого</span>
+      <span class="cart-total-amount" id="cartTotal">0 ₽</span>
+    </div>
+    <button class="btn btn-primary" style="width:100%" id="checkoutBtn" disabled>Оформить заказ →</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── State ──
+  let currentUser = null;
+  let cart = [];
+
+  // ── DOM ──
+  const authModal      = document.getElementById('authModal');
+  const closeAuthModal = document.getElementById('closeAuthModal');
+  const cartDrawer     = document.getElementById('cartDrawer');
+  const cartOverlay    = document.getElementById('cartOverlay');
+  const cartBtn        = document.getElementById('cartBtn');
+  const cartCount      = document.getElementById('cartCount');
+  const cartBody       = document.getElementById('cartBody');
+  const cartTotal      = document.getElementById('cartTotal');
+  const checkoutBtn    = document.getElementById('checkoutBtn');
+  const userMenu       = document.getElementById('userMenu');
+  const authMessages   = document.getElementById('authMessages');
+  const loginForm      = document.getElementById('loginForm');
+  const registerForm   = document.getElementById('registerForm');
+  const authTabs       = document.querySelectorAll('.auth-tab');
+  const toast          = document.getElementById('toast');
+  const cookieBanner   = document.getElementById('cookieBanner');
+
+  // ── Toast ──
+  function showToast(type, text) {
+    toast.textContent = text;
+    toast.className = `toast toast-${type} show`;
+    setTimeout(() => toast.classList.remove('show'), 3200);
+  }
+
+  function fmt(n) { return new Intl.NumberFormat('ru-RU').format(n); }
+
+  function catName(id) {
+    const map = { batteries:'Аккумулятор', motors:'Мотор', electronics:'Электроника',
+                  brakes:'Тормоза', tires:'Колёса', accessories:'Аксессуар' };
+    return map[id] || id;
+  }
+
+  function catIcon(id) {
+    const map = { batteries:'🔋', motors:'⚙️', electronics:'📱',
+                  brakes:'🛑', tires:'🛞', accessories:'🔧' };
+    return map[id] || '📦';
+  }
+
+  // ── Cookie Banner ──
+  function initCookieBanner() {
+    const consent = localStorage.getItem('cookie_consent');
+    if (!consent) {
+      setTimeout(() => cookieBanner.classList.add('show'), 800);
+    }
+  }
+
+  document.getElementById('cookieAccept').addEventListener('click', () => {
+    localStorage.setItem('cookie_consent', 'all');
+    localStorage.setItem('cookie_consent_date', new Date().toISOString());
+    cookieBanner.classList.remove('show');
+    showToast('success', '🍪 Cookie приняты. Спасибо!');
+  });
+
+  document.getElementById('cookieDecline').addEventListener('click', () => {
+    localStorage.setItem('cookie_consent', 'necessary');
+    localStorage.setItem('cookie_consent_date', new Date().toISOString());
+    cookieBanner.classList.remove('show');
+  });
+
+  // ── Auth ──
+  async function checkAuth(token) {
+    try {
+      const r = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } });
+      if (r.ok) { currentUser = await r.json(); updateAuthUI(); loadCart(); }
+      else       { localStorage.removeItem('token'); }
+    } catch {}
+  }
+
+  function updateAuthUI() {
+    userMenu.innerHTML = '';
+    if (currentUser) {
+      const initial = (currentUser.username || '?')[0].toUpperCase();
+      userMenu.innerHTML = `
+        <div class="user-dropdown-wrap" id="udw">
+          <button class="user-btn" id="userMenuBtn">
+            <div class="user-avatar">${initial}</div>
+            <span>${currentUser.username}</span><span>▾</span>
+          </button>
+          <div class="user-dropdown" id="userDropdown">
+            <div class="user-info-box">
+              <div class="user-info-name">${currentUser.username}</div>
+              <div class="user-info-email">${currentUser.email}</div>
+            </div>
+            ${currentUser.is_admin ? '<a href="/admin" class="drop-item">⚙️ Панель admin</a>' : ''}
+            <button class="drop-item danger" onclick="logout()">← Выйти</button>
+          </div>
+        </div>`;
+      document.getElementById('userMenuBtn').addEventListener('click', e => {
+        e.stopPropagation();
+        document.getElementById('userDropdown').classList.toggle('active');
+      });
+    } else {
+      userMenu.innerHTML = `<button class="btn btn-primary btn-sm" id="authBtn">Войти</button>`;
+      document.getElementById('authBtn').addEventListener('click', showAuthModal);
+    }
+  }
+
+  document.addEventListener('click', () => {
+    document.getElementById('userDropdown')?.classList.remove('active');
+  });
+
+  function logout() {
+    localStorage.removeItem('token');
+    currentUser = null; cart = [];
+    updateAuthUI(); updateCartUI();
+    showToast('success', 'Вы вышли из аккаунта');
+  }
+
+  // ── Auth Modal ──
+  function showAuthModal() { authModal.classList.add('active'); }
+  closeAuthModal.addEventListener('click', () => authModal.classList.remove('active'));
+  authModal.addEventListener('click', e => { if (e.target === authModal) authModal.classList.remove('active'); });
+
+  authTabs.forEach(tab => tab.addEventListener('click', () => {
+    authTabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const which = tab.dataset.tab;
+    loginForm.style.display = which === 'login' ? '' : 'none';
+    registerForm.style.display = which === 'register' ? '' : 'none';
+    authMessages.innerHTML = '';
+  }));
+
+  document.getElementById('switchToLogin')?.addEventListener('click', e => {
+    e.preventDefault();
+    authTabs[0].click();
+  });
+
+  function showAuthMsg(type, text) {
+    authMessages.innerHTML = `<div class="msg msg-${type}">${text}</div>`;
+  }
+
+  loginForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    try {
+      const r = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: fd.get('username'), password: fd.get('password') })
+      });
+      const data = await r.json();
+      if (r.ok) {
+        localStorage.setItem('token', data.access_token);
+        currentUser = data.user;
+        authModal.classList.remove('active');
+        updateAuthUI(); loadCart();
+        showToast('success', `Добро пожаловать, ${data.user.username}!`);
+      } else {
+        showAuthMsg('error', data.detail || 'Ошибка входа');
+      }
+    } catch { showAuthMsg('error', 'Ошибка соединения'); }
+  });
+
+  registerForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const checkbox = document.getElementById('privacyCheckbox');
+    if (!checkbox.checked) {
+      showAuthMsg('error', 'Необходимо принять Политику конфиденциальности');
+      return;
+    }
+    const fd = new FormData(e.target);
+    try {
+      const r = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: fd.get('username'),
+          email: fd.get('email'),
+          full_name: fd.get('full_name'),
+          password: fd.get('password'),
+          privacy_accepted: true
+        })
+      });
+      const data = await r.json();
+      if (r.ok) {
+        showAuthMsg('success', 'Аккаунт создан! Теперь войдите.');
+        registerForm.reset();
+        setTimeout(() => authTabs[0].click(), 1500);
+      } else {
+        showAuthMsg('error', data.detail || 'Ошибка регистрации');
+      }
+    } catch { showAuthMsg('error', 'Ошибка соединения'); }
+  });
+
+  // ── Cart ──
+  cartBtn.addEventListener('click', () => {
+    cartDrawer.classList.add('active');
+    cartOverlay.classList.add('active');
+    if (currentUser) loadCart();
+  });
+  cartOverlay.addEventListener('click', closeCartDrawer);
+  document.getElementById('closeCartDrawer').addEventListener('click', closeCartDrawer);
+  function closeCartDrawer() {
+    cartDrawer.classList.remove('active');
+    cartOverlay.classList.remove('active');
+  }
+
+  async function loadCart() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const r = await fetch('/api/cart', { headers: { Authorization: `Bearer ${token}` } });
+      if (r.ok) { const data = await r.json(); cart = data.items || []; updateCartUI(); }
+    } catch {}
+  }
+
+  function updateCartUI() {
+    const count = cart.reduce((s, i) => s + i.quantity, 0);
+    cartCount.textContent = count;
+    cartCount.style.display = count > 0 ? 'flex' : 'none';
+
+    if (!cart.length) {
+      cartBody.innerHTML = '<div class="cart-empty"><div class="cart-empty-icon">🛒</div><p>Корзина пуста</p></div>';
+      cartTotal.textContent = '0 ₽';
+      checkoutBtn.disabled = true;
+      return;
+    }
+
+    const total = cart.reduce((s, i) => s + i.item_total, 0);
+    cartTotal.textContent = fmt(total) + ' ₽';
+    checkoutBtn.disabled = false;
+
+    cartBody.innerHTML = cart.map(item => {
+      const p = item.product;
+      const isEmoji = !p.image_url || p.image_url.startsWith('/static/images/') && !p.image_url.endsWith('.jpg');
+      const imgHtml = `<div class="cart-item-img">${
+        p.image_url && !p.image_url.includes('product_default') && !catIcon(p.category).test?.(p.image_url)
+          ? `<img src="${p.image_url}" alt="${p.name}">`
+          : catIcon(p.category)
+      }</div>`;
+      return `
+      <div class="cart-item">
+        ${imgHtml}
+        <div class="cart-item-info">
+          <div class="cart-item-name">${p.name}</div>
+          <div class="cart-item-price">${item.quantity} × ${fmt(p.price)} ₽</div>
+        </div>
+        <button class="cart-item-remove" onclick="removeFromCart(${p.id})">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  async function addToCart(productId, stock) {
+    const token = localStorage.getItem('token');
+    if (!token) { showAuthModal(); return; }
+    if (stock <= 0) { showToast('error', 'Товар не в наличии'); return; }
+    try {
+      const r = await fetch('/api/cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ product_id: productId, quantity: 1 })
+      });
+      if (r.ok) { await loadCart(); showToast('success', '✓ Товар добавлен в корзину'); }
+      else { const d = await r.json(); showToast('error', d.detail || 'Ошибка'); }
+    } catch { showToast('error', 'Ошибка соединения'); }
+  }
+
+  async function removeFromCart(productId) {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const r = await fetch(`/api/cart/${productId}`, {
+        method: 'DELETE', headers: { Authorization: `Bearer ${token}` }
+      });
+      if (r.ok) { await loadCart(); showToast('success', 'Товар удалён из корзины'); }
+    } catch {}
+  }
+
+  checkoutBtn.addEventListener('click', async () => {
+    const token = localStorage.getItem('token');
+    if (!token) { showAuthModal(); return; }
+    try {
+      const r = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ delivery_address: '', comment: '' })
+      });
+      const data = await r.json();
+      if (r.ok) {
+        cart = []; updateCartUI(); closeCartDrawer();
+        showToast('success', `✓ Заказ #${data.order_id} оформлен!`);
+      } else { showToast('error', data.detail || 'Ошибка оформления'); }
+    } catch { showToast('error', 'Ошибка соединения'); }
+  });
+
+  // ── Products ──
+  async function loadProducts() {
+    try {
+      const r = await fetch('/api/products?limit=8');
+      if (!r.ok) return;
+      const data = await r.json();
+      renderProducts(data);
+    } catch {}
+  }
+
+  function renderProducts(products) {
+    const grid = document.getElementById('productsGrid');
+    if (!products.length) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-3);padding:3rem">Товары не найдены</div>';
+      return;
+    }
+    grid.innerHTML = products.map(p => {
+      const icon = catIcon(p.category);
+      const imgHtml = (p.image_url && !p.image_url.includes('product_default'))
+        ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy">`
+        : icon;
+      return `
+      <div class="product-card">
+        <div class="product-img">${imgHtml}</div>
+        <div class="product-body">
+          <div class="product-cat">${catName(p.category)}</div>
+          <div class="product-name">${p.name}</div>
+          <div class="product-desc">${p.description}</div>
+          <div class="product-footer">
+            <span class="product-price">${fmt(p.price)} ₽</span>
+            <button class="add-btn" onclick="addToCart(${p.id},${p.stock})" ${p.stock<=0?'disabled':''}>
+              ${p.stock>0 ? 'В корзину' : 'Нет в наличии'}
+            </button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Stats ──
+  async function loadStats() {
+    try {
+      const r = await fetch('/api/stats');
+      if (!r.ok) return;
+      const d = await r.json();
+      document.getElementById('statProducts').textContent = fmt(d.total_stock || 0);
+      document.getElementById('statCategories').textContent = d.categories || 0;
+      document.getElementById('statOrders').textContent = fmt(d.total_orders || 0);
+    } catch {}
+  }
+
+  // ── Init ──
+  (async () => {
+    initCookieBanner();
+    updateAuthUI();
+    await loadStats();
+    await loadProducts();
+    const token = localStorage.getItem('token');
+    if (token) await checkAuth(token);
+  })();
+</script>
+</body>
+</html>

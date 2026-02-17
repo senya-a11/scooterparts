@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/static/favicon/favicon.ico" type="image/x-icon">
+  <title>Admin — ScooterParts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#080A0F; --bg-2:#0D1017; --bg-3:#12161E;
+      --surface:#161B24; --surface-2:#1E2533;
+      --border:rgba(255,255,255,0.06); --border-hover:rgba(255,255,255,0.12);
+      --text:#F0F2F5; --text-2:#8B92A5; --text-3:#4E5568;
+      --accent:#00D4FF; --accent-dim:rgba(0,212,255,0.12); --accent-glow:rgba(0,212,255,0.25);
+      --green:#00E5A0; --green-dim:rgba(0,229,160,0.12);
+      --red:#FF4757; --red-dim:rgba(255,71,87,0.12);
+      --amber:#FFB020; --amber-dim:rgba(255,176,32,0.12);
+      --radius:10px; --radius-lg:16px; --radius-xl:24px;
+      --font-d:'Syne',sans-serif; --font-b:'DM Sans',sans-serif;
+      --ease:cubic-bezier(0.16,1,0.3,1);
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--font-b);background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased}
+    body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:.4}
+    ::-webkit-scrollbar{width:6px} ::-webkit-scrollbar-track{background:var(--bg-2)} ::-webkit-scrollbar-thumb{background:var(--surface-2);border-radius:3px}
+
+    /* Login */
+    .login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:var(--bg);position:relative;overflow:hidden}
+    .login-bg-glow{position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:700px;height:500px;background:radial-gradient(ellipse,rgba(0,212,255,.06) 0%,transparent 70%);pointer-events:none}
+    .login-card{background:var(--bg-3);border:1px solid var(--border-hover);border-radius:var(--radius-xl);padding:2.5rem;width:100%;max-width:400px;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:fadeUp .4s var(--ease)}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .login-logo{display:flex;align-items:center;justify-content:center;gap:.625rem;font-family:var(--font-d);font-size:1.375rem;font-weight:700;margin-bottom:.5rem}
+    .login-mark{width:40px;height:40px;background:linear-gradient(135deg,var(--accent),#0099CC);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 20px var(--accent-glow)}
+    .login-logo span{color:var(--accent)}
+    .login-sub{text-align:center;font-size:.8125rem;color:var(--text-3);margin-bottom:2rem}
+    .badge-admin{display:inline-flex;align-items:center;gap:.375rem;padding:.25rem .75rem;background:var(--amber-dim);color:var(--amber);border:1px solid rgba(255,176,32,.25);border-radius:100px;font-size:.75rem;font-weight:600;margin:0 auto .5rem;width:fit-content}
+
+    .form-group{margin-bottom:1.125rem}
+    .form-label{display:block;font-size:.8125rem;font-weight:600;color:var(--text-2);margin-bottom:.5rem;letter-spacing:.04em;text-transform:uppercase}
+    .form-input,.form-select,.form-textarea{width:100%;padding:.75rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-b);font-size:.9375rem;outline:none;transition:all .2s}
+    .form-input::placeholder,.form-textarea::placeholder{color:var(--text-3)}
+    .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);background:var(--bg-3);box-shadow:0 0 0 3px var(--accent-dim)}
+    .form-select{-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238B92A5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .625rem center;background-size:14px;padding-right:2rem;cursor:pointer}
+    .form-textarea{resize:vertical;min-height:90px;line-height:1.6}
+    .form-hint{font-size:.75rem;color:var(--text-3);margin-top:.375rem}
+
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.625rem 1.25rem;font-family:var(--font-b);font-size:.875rem;font-weight:600;border-radius:var(--radius);border:none;cursor:pointer;text-decoration:none;transition:all .2s;white-space:nowrap}
+    .btn-primary{background:var(--accent);color:#080A0F;font-weight:700;box-shadow:0 0 20px var(--accent-glow)}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 0 30px rgba(0,212,255,.4)}
+    .btn-secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--border-hover)}
+    .btn-secondary:hover{background:rgba(255,255,255,.08)}
+    .btn-ghost{background:transparent;color:var(--text-2);border:1px solid var(--border)}
+    .btn-ghost:hover{color:var(--text);border-color:var(--border-hover)}
+    .btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,71,87,.25)}
+    .btn-danger:hover{background:rgba(255,71,87,.2)}
+    .btn-amber{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(255,176,32,.25)}
+    .btn-success{background:var(--green-dim);color:var(--green);border:1px solid rgba(0,229,160,.25)}
+    .btn-sm{padding:.375rem .875rem;font-size:.8125rem}
+    .btn-xs{padding:.25rem .625rem;font-size:.75rem;border-radius:6px}
+
+    .msg{padding:.875rem 1.125rem;border-radius:var(--radius);font-size:.875rem;font-weight:500;margin-bottom:.75rem;border:1px solid transparent}
+    .msg-error{background:var(--red-dim);color:var(--red);border-color:rgba(255,71,87,.2)}
+    .msg-success{background:var(--green-dim);color:var(--green);border-color:rgba(0,229,160,.2)}
+    .msg-info{background:var(--accent-dim);color:var(--accent);border-color:rgba(0,212,255,.2)}
+
+    /* Admin layout */
+    .admin-panel{display:none;flex-direction:column;min-height:100vh}
+    .admin-header{background:rgba(8,10,15,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+    .admin-header-inner{max-width:1400px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:62px;gap:1.5rem}
+    .admin-logo{display:flex;align-items:center;gap:.625rem;font-family:var(--font-d);font-size:1.125rem;font-weight:700}
+    .admin-logo-mark{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),#0099CC);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
+    .admin-logo span{color:var(--accent)}
+    .admin-badge{font-size:.6875rem;font-weight:700;padding:.2rem .5rem;background:var(--amber-dim);color:var(--amber);border-radius:4px}
+    .admin-nav{display:flex;gap:.25rem;overflow-x:auto}
+    .admin-nav-btn{display:flex;align-items:center;gap:.5rem;padding:.5rem 1rem;background:transparent;border:none;border-radius:var(--radius);color:var(--text-2);cursor:pointer;font-family:var(--font-b);font-size:.8125rem;font-weight:600;transition:all .2s;white-space:nowrap}
+    .admin-nav-btn:hover{background:rgba(255,255,255,.06);color:var(--text)}
+    .admin-nav-btn.active{background:var(--accent-dim);color:var(--accent)}
+    .admin-actions{display:flex;align-items:center;gap:.75rem}
+
+    .admin-body{max-width:1400px;margin:0 auto;padding:2rem 1.5rem;flex:1}
+
+    /* Sections */
+    .admin-section{display:none}
+    .admin-section.active{display:block}
+    .section-title{font-family:var(--font-d);font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin-bottom:1.5rem}
+
+    /* Stats grid */
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem}
+    .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem}
+    .stat-label{font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:.5rem}
+    .stat-val{font-family:var(--font-d);font-size:2rem;font-weight:800;letter-spacing:-.03em}
+    .stat-val.green{color:var(--green)} .stat-val.accent{color:var(--accent)} .stat-val.amber{color:var(--amber)} .stat-val.red{color:var(--red)}
+
+    /* Tables */
+    .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    table{width:100%;border-collapse:collapse}
+    th{padding:.875rem 1rem;background:var(--bg-3);font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);text-align:left;border-bottom:1px solid var(--border)}
+    td{padding:.875rem 1rem;font-size:.875rem;border-bottom:1px solid var(--border);vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:rgba(255,255,255,.02)}
+    .product-img-cell{width:48px;height:48px;background:var(--bg-3);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;overflow:hidden;flex-shrink:0}
+    .product-img-cell img{width:100%;height:100%;object-fit:cover}
+
+    /* Category management */
+    .cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-bottom:2rem}
+    .cat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;display:flex;align-items:center;gap:1rem;transition:border-color .2s}
+    .cat-card:hover{border-color:var(--border-hover)}
+    .cat-emoji-box{width:52px;height:52px;background:var(--bg-3);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.75rem;flex-shrink:0}
+    .cat-info{flex:1;min-width:0}
+    .cat-name{font-weight:700;font-size:.9375rem}
+    .cat-meta{font-size:.75rem;color:var(--text-3);margin-top:.125rem}
+    .cat-actions{display:flex;gap:.375rem}
+    .add-cat-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1.5rem}
+    .add-cat-title{font-family:var(--font-d);font-size:1rem;font-weight:700;margin-bottom:1.25rem}
+    .cat-form-row{display:grid;grid-template-columns:80px 1fr 1fr auto;gap:.75rem;align-items:end}
+    .emoji-picker{display:flex;gap:.375rem;flex-wrap:wrap;margin-top:.5rem}
+    .emoji-opt{width:36px;height:36px;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.125rem;cursor:pointer;transition:all .2s}
+    .emoji-opt:hover,.emoji-opt.selected{border-color:var(--accent);background:var(--accent-dim)}
+
+    /* Image upload */
+    .img-upload-area{border:2px dashed var(--border);border-radius:var(--radius-lg);padding:2rem;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+    .img-upload-area:hover{border-color:var(--accent);background:var(--accent-dim)}
+    .img-upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+    .img-preview{margin-top:1rem;display:none}
+    .img-preview img{max-width:160px;max-height:120px;border-radius:var(--radius);object-fit:cover;border:1px solid var(--border)}
+
+    /* Orders */
+    .order-status{display:inline-flex;align-items:center;gap:.375rem;padding:.25rem .625rem;border-radius:100px;font-size:.75rem;font-weight:700}
+    .status-pending{background:var(--amber-dim);color:var(--amber)}
+    .status-confirmed,.status-processing{background:var(--accent-dim);color:var(--accent)}
+    .status-shipped{background:rgba(147,112,219,.15);color:#9B59B6}
+    .status-delivered{background:var(--green-dim);color:var(--green)}
+    .status-cancelled{background:var(--red-dim);color:var(--red)}
+
+    /* Modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem}
+    .modal-overlay.active{display:flex}
+    .modal-box{background:var(--bg-3);border:1px solid var(--border-hover);border-radius:var(--radius-xl);padding:2rem;width:100%;max-width:500px;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:fadeUp .3s var(--ease);max-height:90vh;overflow-y:auto}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+    .modal-title{font-family:var(--font-d);font-size:1.125rem;font-weight:700}
+    .modal-close{background:none;border:none;color:var(--text-3);font-size:1.25rem;cursor:pointer;padding:.25rem;transition:color .2s;line-height:1}
+    .modal-close:hover{color:var(--text)}
+
+    /* Toast */
+    .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(1rem);background:var(--surface-2);color:var(--text);padding:.75rem 1.5rem;border-radius:100px;font-size:.875rem;opacity:0;pointer-events:none;transition:all .3s;z-index:9000;white-space:nowrap;border:1px solid var(--border-hover)}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .toast-success{background:var(--green-dim);color:var(--green);border-color:rgba(0,229,160,.25)}
+    .toast-error{background:var(--red-dim);color:var(--red);border-color:rgba(255,71,87,.25)}
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-bg-glow"></div>
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-mark">🛴</div>
+      <span>Scooter<span>Parts</span></span>
+    </div>
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div class="badge-admin">⚙️ Панель администратора</div>
+    </div>
+    <div id="loginMsg"></div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label">Логин</label>
+        <input type="text" class="form-input" id="loginUser" value="admin" placeholder="admin" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Пароль</label>
+        <input type="password" class="form-input" id="loginPass" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.25rem">Войти в панель →</button>
+    </form>
+    <p style="text-align:center;margin-top:1rem"><a href="/" style="font-size:.8125rem;color:var(--text-3);text-decoration:none">← На сайт</a></p>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div class="admin-panel" id="adminPanel">
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <div style="display:flex;align-items:center;gap:1rem">
+        <div class="admin-logo">
+          <div class="admin-logo-mark">🛴</div>
+          <span>Scooter<span>Parts</span></span>
+          <span class="admin-badge">ADMIN</span>
+        </div>
+      </div>
+      <nav class="admin-nav">
+        <button class="admin-nav-btn active" data-sec="dashboard">📊 Дашборд</button>
+        <button class="admin-nav-btn" data-sec="products">📦 Товары</button>
+        <button class="admin-nav-btn" data-sec="categories">🏷️ Категории</button>
+        <button class="admin-nav-btn" data-sec="orders">🛒 Заказы</button>
+        <button class="admin-nav-btn" data-sec="add-product">➕ Добавить товар</button>
+      </nav>
+      <div class="admin-actions">
+        <a href="/" class="btn btn-ghost btn-sm">На сайт ↗</a>
+        <button class="btn btn-ghost btn-sm" id="logoutBtn">Выйти</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="admin-body">
+
+    <!-- ─── DASHBOARD ─── -->
+    <div class="admin-section active" id="sec-dashboard">
+      <h2 class="section-title">📊 Дашборд</h2>
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><div class="stat-label">Загрузка…</div></div>
+      </div>
+      <div class="msg msg-info" style="margin-bottom:1.5rem">
+        💳 <strong>Эквайринг:</strong> Заглушка активна. Для подключения реального платёжного провайдера см. комментарии в <code>backend/main.py → /api/payment/create</code>. Поддерживаются ЮKassa, Тинькофф, Stripe.
+      </div>
+    </div>
+
+    <!-- ─── PRODUCTS ─── -->
+    <div class="admin-section" id="sec-products">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+        <h2 class="section-title" style="margin-bottom:0">📦 Товары</h2>
+        <button class="btn btn-primary" onclick="switchSection('add-product')">➕ Добавить товар</button>
+      </div>
+      <div id="productsMsg"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Фото</th><th>Название</th><th>Категория</th><th>Цена</th><th>Склад</th><th>Хит</th><th>Действия</th></tr></thead>
+          <tbody id="productsTableBody"><tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ─── CATEGORIES ─── -->
+    <div class="admin-section" id="sec-categories">
+      <h2 class="section-title">🏷️ Управление категориями</h2>
+      <div id="catMsg"></div>
+
+      <!-- Add category form -->
+      <div class="add-cat-form">
+        <div class="add-cat-title">➕ Добавить новую категорию</div>
+        <div class="cat-form-row">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Emoji</label>
+            <input type="text" class="form-input" id="newCatEmoji" value="📦" maxlength="4" style="text-align:center;font-size:1.375rem">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Slug (латиницей)</label>
+            <input type="text" class="form-input" id="newCatSlug" placeholder="new_category">
+            <div class="form-hint">Только латиница, цифры, _</div>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Название (рус.)</label>
+            <input type="text" class="form-input" id="newCatName" placeholder="Новая категория">
+          </div>
+          <button class="btn btn-primary" onclick="createCategory()">Создать</button>
+        </div>
+        <div style="margin-top:1rem">
+          <label class="form-label">Быстрый выбор Emoji</label>
+          <div class="emoji-picker" id="emojiPicker">
+            <div class="emoji-opt" onclick="pickEmoji('📦')">📦</div>
+            <div class="emoji-opt" onclick="pickEmoji('🔋')">🔋</div>
+            <div class="emoji-opt" onclick="pickEmoji('⚙️')">⚙️</div>
+            <div class="emoji-opt" onclick="pickEmoji('📱')">📱</div>
+            <div class="emoji-opt" onclick="pickEmoji('🛑')">🛑</div>
+            <div class="emoji-opt" onclick="pickEmoji('🛞')">🛞</div>
+            <div class="emoji-opt" onclick="pickEmoji('🔧')">🔧</div>
+            <div class="emoji-opt" onclick="pickEmoji('💡')">💡</div>
+            <div class="emoji-opt" onclick="pickEmoji('🎛️')">🎛️</div>
+            <div class="emoji-opt" onclick="pickEmoji('🔌')">🔌</div>
+            <div class="emoji-opt" onclick="pickEmoji('🪛')">🪛</div>
+            <div class="emoji-opt" onclick="pickEmoji('⚡')">⚡</div>
+            <div class="emoji-opt" onclick="pickEmoji('🏍️')">🏍️</div>
+            <div class="emoji-opt" onclick="pickEmoji('🛹')">🛹</div>
+            <div class="emoji-opt" onclick="pickEmoji('🪜')">🪜</div>
+            <div class="emoji-opt" onclick="pickEmoji('🔩')">🔩</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cat-grid" id="catGrid">
+        <div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--text-3)">Загрузка…</div>
+      </div>
+    </div>
+
+    <!-- ─── ORDERS ─── -->
+    <div class="admin-section" id="sec-orders">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+        <h2 class="section-title" style="margin-bottom:0">🛒 Заказы</h2>
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <select class="form-select" id="orderStatusFilter" style="width:auto" onchange="loadOrders()">
+            <option value="">Все заказы</option>
+            <option value="pending">Ожидание</option>
+            <option value="confirmed">Подтверждён</option>
+            <option value="processing">В обработке</option>
+            <option value="shipped">Отправлен</option>
+            <option value="delivered">Доставлен</option>
+            <option value="cancelled">Отменён</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="loadOrders()">🔄 Обновить</button>
+        </div>
+      </div>
+      <div id="ordersMsg"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Клиент</th><th>Сумма</th><th>Статус</th><th>Оплата</th><th>Дата</th><th>Действия</th></tr></thead>
+          <tbody id="ordersTableBody"><tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ─── ADD PRODUCT ─── -->
+    <div class="admin-section" id="sec-add-product">
+      <h2 class="section-title">➕ Добавить товар</h2>
+      <div id="addProductMsg"></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.75rem;max-width:680px">
+        <form id="addProductForm">
+          <div class="form-group">
+            <label class="form-label">Название товара *</label>
+            <input type="text" name="name" class="form-input" placeholder="Аккумулятор 36V 15Ah" required>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <div class="form-group">
+              <label class="form-label">Категория *</label>
+              <select name="category" class="form-select" id="productCategorySelect" required>
+                <option value="">— выберите —</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Цена (₽) *</label>
+              <input type="number" name="price" class="form-input" placeholder="1990" min="1" step="0.01" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Описание *</label>
+            <textarea name="description" class="form-textarea" placeholder="Подробное описание товара…" required rows="4"></textarea>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <div class="form-group">
+              <label class="form-label">Количество на складе</label>
+              <input type="number" name="stock" class="form-input" value="0" min="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Отметить как хит</label>
+              <select name="featured" class="form-select">
+                <option value="false">Нет</option>
+                <option value="true">⭐ Да — хит продаж</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Image section -->
+          <div class="form-group">
+            <label class="form-label">Изображение товара</label>
+            <div class="img-upload-area" id="uploadArea">
+              <input type="file" name="image_file" id="imageFile" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewImage(event)">
+              <div id="uploadPlaceholder">
+                <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
+                <div style="font-size:.875rem;color:var(--text-2)">Нажмите или перетащите файл</div>
+                <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
+              </div>
+              <div class="img-preview" id="imgPreview">
+                <img id="previewImg" src="" alt="Preview">
+                <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" id="previewFileName"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">— или вставьте URL изображения</label>
+            <input type="url" name="image_url" class="form-input" placeholder="https://example.com/image.jpg">
+            <div class="form-hint">Если выбран файл, URL игнорируется</div>
+          </div>
+
+          <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+            <button type="submit" class="btn btn-primary">💾 Сохранить товар</button>
+            <button type="reset" class="btn btn-ghost" onclick="clearPreview()">Очистить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div><!-- /admin-body -->
+</div><!-- /admin-panel -->
+
+<!-- Edit Category Modal -->
+<div class="modal-overlay" id="editCatModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">✏️ Редактировать категорию</span>
+      <button class="modal-close" onclick="closeModal('editCatModal')">✕</button>
+    </div>
+    <div id="editCatMsg"></div>
+    <div class="form-group">
+      <label class="form-label">Emoji</label>
+      <input type="text" class="form-input" id="editCatEmoji" maxlength="4" style="text-align:center;font-size:1.375rem">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Название</label>
+      <input type="text" class="form-input" id="editCatName">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Описание</label>
+      <input type="text" class="form-input" id="editCatDesc">
+    </div>
+    <input type="hidden" id="editCatSlug">
+    <div style="display:flex;gap:.75rem;margin-top:1rem">
+      <button class="btn btn-primary" style="flex:1" onclick="saveCategory()">Сохранить</button>
+      <button class="btn btn-ghost" onclick="closeModal('editCatModal')">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Product Modal -->
+<div class="modal-overlay" id="editProductModal">
+  <div class="modal-box" style="max-width:600px">
+    <div class="modal-header">
+      <span class="modal-title">✏️ Редактировать товар</span>
+      <button class="modal-close" onclick="closeModal('editProductModal')">✕</button>
+    </div>
+    <div id="editProductMsg"></div>
+    <form id="editProductForm">
+      <input type="hidden" name="product_id" id="editProductId">
+      <div class="form-group"><label class="form-label">Название</label><input type="text" name="name" class="form-input" id="editProductName" required></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="form-group">
+          <label class="form-label">Категория</label>
+          <select name="category" class="form-select" id="editProductCategory"></select>
+        </div>
+        <div class="form-group"><label class="form-label">Цена</label><input type="number" name="price" class="form-input" id="editProductPrice" min="0.01" step="0.01" required></div>
+      </div>
+      <div class="form-group"><label class="form-label">Описание</label><textarea name="description" class="form-textarea" id="editProductDesc" rows="3" required></textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="form-group"><label class="form-label">Склад</label><input type="number" name="stock" class="form-input" id="editProductStock" min="0"></div>
+        <div class="form-group"><label class="form-label">Хит</label>
+          <select name="featured" class="form-select" id="editProductFeatured">
+            <option value="false">Нет</option><option value="true">⭐ Да</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Новое изображение (файл)</label>
+        <input type="file" name="image_file" class="form-input" accept=".jpg,.jpeg,.png,.gif,.webp">
+      </div>
+      <div class="form-group"><label class="form-label">— или URL</label><input type="url" name="image_url" class="form-input" id="editProductImgUrl" placeholder="https://…"></div>
+      <div style="display:flex;gap:.75rem;margin-top:1rem">
+        <button type="submit" class="btn btn-primary" style="flex:1">Сохранить</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('editProductModal')">Отмена</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let adminToken = null;
+  let categories = [];
+
+  const toast = document.getElementById('toast');
+  function showToast(type, text) {
+    toast.textContent = text;
+    toast.className = `toast toast-${type} show`;
+    setTimeout(() => toast.classList.remove('show'), 3500);
+  }
+  function fmt(n) { return new Intl.NumberFormat('ru-RU').format(n); }
+
+  function showMsg(id, type, text) {
+    document.getElementById(id).innerHTML = `<div class="msg msg-${type}">${text}</div>`;
+    setTimeout(() => { document.getElementById(id).innerHTML = ''; }, 5000);
+  }
+
+  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+  // ── Login ──
+  document.getElementById('loginForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const username = document.getElementById('loginUser').value;
+    const password = document.getElementById('loginPass').value;
+    try {
+      const r = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await r.json();
+      if (r.ok) {
+        adminToken = data.access_token;
+        sessionStorage.setItem('adminToken', adminToken);
+        showAdminPanel();
+      } else {
+        document.getElementById('loginMsg').innerHTML = `<div class="msg msg-error">${data.detail}</div>`;
+      }
+    } catch {
+      document.getElementById('loginMsg').innerHTML = `<div class="msg msg-error">Ошибка соединения</div>`;
+    }
+  });
+
+  function showAdminPanel() {
+    document.getElementById('loginScreen').style.display = 'none';
+    const panel = document.getElementById('adminPanel');
+    panel.style.display = 'flex';
+    loadDashboard();
+    loadCategories();
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    adminToken = null; sessionStorage.removeItem('adminToken');
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('adminPanel').style.display = 'none';
+  });
+
+  // Auto-restore session
+  const saved = sessionStorage.getItem('adminToken');
+  if (saved) { adminToken = saved; showAdminPanel(); }
+
+  // ── Navigation ──
+  function switchSection(name) {
+    document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.admin-nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`sec-${name}`)?.classList.add('active');
+    document.querySelector(`[data-sec="${name}"]`)?.classList.add('active');
+    if (name === 'products') loadProducts();
+    if (name === 'categories') loadCategories();
+    if (name === 'orders') loadOrders();
+    if (name === 'dashboard') loadDashboard();
+    if (name === 'add-product') loadCategoriesForSelect();
+  }
+
+  document.querySelectorAll('.admin-nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchSection(btn.dataset.sec));
+  });
+
+  // ── Dashboard ──
+  async function loadDashboard() {
+    try {
+      const r = await fetch('/api/admin/stats', { headers: { Authorization: `Bearer ${adminToken}` } });
+      if (!r.ok) return;
+      const d = await r.json();
+      document.getElementById('statsGrid').innerHTML = `
+        <div class="stat-card"><div class="stat-label">👥 Пользователи</div><div class="stat-val accent">${d.users.total}</div></div>
+        <div class="stat-card"><div class="stat-label">📦 Товаров</div><div class="stat-val">${d.products.total}</div></div>
+        <div class="stat-card"><div class="stat-label">✅ В наличии</div><div class="stat-val green">${d.products.in_stock}</div></div>
+        <div class="stat-card"><div class="stat-label">❌ Нет в наличии</div><div class="stat-val red">${d.products.out_of_stock}</div></div>
+        <div class="stat-card"><div class="stat-label">🏷️ Категорий</div><div class="stat-val accent">${d.categories.total}</div></div>
+        <div class="stat-card"><div class="stat-label">🛒 Всего заказов</div><div class="stat-val">${d.orders.total}</div></div>
+        <div class="stat-card"><div class="stat-label">⏳ Активных заказов</div><div class="stat-val amber">${d.orders.active}</div></div>
+        <div class="stat-card"><div class="stat-label">💰 Выручка (оплачено)</div><div class="stat-val green">${fmt(d.orders.revenue)} ₽</div></div>
+      `;
+    } catch {}
+  }
+
+  // ── Categories ──
+  async function loadCategories() {
+    try {
+      const r = await fetch('/api/categories');
+      if (!r.ok) return;
+      const { categories: cats } = await r.json();
+      categories = cats;
+      renderCatGrid(cats);
+      loadCategoriesForSelect();
+    } catch {}
+  }
+
+  function renderCatGrid(cats) {
+    const grid = document.getElementById('catGrid');
+    if (!cats.length) { grid.innerHTML = '<div style="text-align:center;color:var(--text-3);padding:2rem">Категорий нет</div>'; return; }
+    grid.innerHTML = cats.map(c => `
+      <div class="cat-card">
+        <div class="cat-emoji-box">${c.emoji}</div>
+        <div class="cat-info">
+          <div class="cat-name">${c.name}</div>
+          <div class="cat-meta">slug: ${c.slug} · ${c.count} товар(ов)</div>
+        </div>
+        <div class="cat-actions">
+          <button class="btn btn-xs btn-secondary" onclick="openEditCat('${c.slug}','${c.name}','${c.emoji}','${(c.description||'').replace(/'/g,"\\'")}')">✏️</button>
+          <button class="btn btn-xs btn-danger" onclick="deleteCategory('${c.slug}','${c.count}')">🗑</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function pickEmoji(emoji) {
+    document.getElementById('newCatEmoji').value = emoji;
+    document.querySelectorAll('.emoji-opt').forEach(el => el.classList.toggle('selected', el.textContent === emoji));
+  }
+
+  async function createCategory() {
+    const slug  = document.getElementById('newCatSlug').value.trim();
+    const name  = document.getElementById('newCatName').value.trim();
+    const emoji = document.getElementById('newCatEmoji').value.trim() || '📦';
+    if (!slug || !name) { showMsg('catMsg','error','Заполните slug и название'); return; }
+    if (!/^[a-z0-9_]+$/.test(slug)) { showMsg('catMsg','error','Slug: только латиница, цифры и _'); return; }
+    try {
+      const r = await fetch('/api/admin/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+        body: JSON.stringify({ slug, name, emoji })
+      });
+      const d = await r.json();
+      if (r.ok) { showMsg('catMsg','success','✅ Категория создана!'); loadCategories(); document.getElementById('newCatSlug').value=''; document.getElementById('newCatName').value=''; }
+      else showMsg('catMsg','error', d.detail||'Ошибка');
+    } catch { showMsg('catMsg','error','Ошибка соединения'); }
+  }
+
+  function openEditCat(slug, name, emoji, desc) {
+    document.getElementById('editCatSlug').value = slug;
+    document.getElementById('editCatName').value = name;
+    document.getElementById('editCatEmoji').value = emoji;
+    document.getElementById('editCatDesc').value = desc;
+    document.getElementById('editCatModal').classList.add('active');
+  }
+
+  async function saveCategory() {
+    const slug = document.getElementById('editCatSlug').value;
+    const name = document.getElementById('editCatName').value.trim();
+    const emoji = document.getElementById('editCatEmoji').value.trim();
+    const description = document.getElementById('editCatDesc').value.trim();
+    try {
+      const r = await fetch(`/api/admin/categories/${slug}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+        body: JSON.stringify({ name, emoji, description })
+      });
+      const d = await r.json();
+      if (r.ok) { closeModal('editCatModal'); showToast('success','✅ Категория обновлена'); loadCategories(); }
+      else showMsg('editCatMsg','error', d.detail||'Ошибка');
+    } catch { showMsg('editCatMsg','error','Ошибка соединения'); }
+  }
+
+  async function deleteCategory(slug, count) {
+    if (count > 0) { alert(`Нельзя удалить: в категории ${count} товар(ов). Сначала переместите их.`); return; }
+    if (!confirm(`Удалить категорию "${slug}"?`)) return;
+    try {
+      const r = await fetch(`/api/admin/categories/${slug}`, { method:'DELETE', headers:{Authorization:`Bearer ${adminToken}`} });
+      const d = await r.json();
+      if (r.ok) { showToast('success','Категория удалена'); loadCategories(); }
+      else showToast('error', d.detail||'Ошибка');
+    } catch { showToast('error','Ошибка соединения'); }
+  }
+
+  function loadCategoriesForSelect() {
+    const sel = document.getElementById('productCategorySelect');
+    const editSel = document.getElementById('editProductCategory');
+    const options = categories.map(c => `<option value="${c.slug}">${c.emoji} ${c.name}</option>`).join('');
+    if (sel) sel.innerHTML = '<option value="">— выберите —</option>' + options;
+    if (editSel) editSel.innerHTML = options;
+  }
+
+  // ── Products ──
+  async function loadProducts() {
+    try {
+      const r = await fetch('/api/products', { headers: { Authorization: `Bearer ${adminToken}` } });
+      if (!r.ok) return;
+      const products = await r.json();
+      const catMap = Object.fromEntries(categories.map(c => [c.slug, `${c.emoji} ${c.name}`]));
+      const tbody = document.getElementById('productsTableBody');
+      if (!products.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-3)">Товаров нет</td></tr>'; return; }
+      tbody.innerHTML = products.map(p => {
+        const imgCell = p.image_url && p.image_url.startsWith('/static/uploads')
+          ? `<div class="product-img-cell"><img src="${p.image_url}" alt="${p.name}"></div>`
+          : `<div class="product-img-cell">${getCatIcon(p.category)}</div>`;
+        return `<tr>
+          <td>${imgCell}</td>
+          <td style="max-width:200px"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div></td>
+          <td>${catMap[p.category] || p.category}</td>
+          <td>${fmt(p.price)} ₽</td>
+          <td><span style="color:${p.stock>0?'var(--green)':'var(--red)'}">${p.stock}</span></td>
+          <td>${p.featured ? '⭐' : '—'}</td>
+          <td><div style="display:flex;gap:.375rem">
+            <button class="btn btn-xs btn-secondary" onclick="openEditProduct(${JSON.stringify(p).replace(/"/g,'&quot;')})">✏️</button>
+            <button class="btn btn-xs btn-danger" onclick="deleteProduct(${p.id},'${p.name.replace(/'/g,"\\'")}')">🗑</button>
+          </div></td>
+        </tr>`;
+      }).join('');
+    } catch { console.error('Load products error'); }
+  }
+
+  function getCatIcon(cat) {
+    const icons = { batteries:'🔋', motors:'⚙️', electronics:'📱', brakes:'🛑', tires:'🛞', accessories:'🔧' };
+    return (categories.find(c => c.slug === cat)?.emoji) || icons[cat] || '📦';
+  }
+
+  function previewImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('uploadPlaceholder').style.display = 'none';
+      document.getElementById('imgPreview').style.display = 'block';
+      document.getElementById('previewImg').src = e.target.result;
+      document.getElementById('previewFileName').textContent = file.name;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearPreview() {
+    document.getElementById('uploadPlaceholder').style.display = '';
+    document.getElementById('imgPreview').style.display = 'none';
+    document.getElementById('previewImg').src = '';
+    document.getElementById('imageFile').value = '';
+  }
+
+  // Add product form
+  document.getElementById('addProductForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const msgEl = document.getElementById('addProductMsg');
+    try {
+      const r = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${adminToken}` },
+        body: formData
+      });
+      const d = await r.json();
+      if (r.ok) {
+        showMsg('addProductMsg','success','✅ Товар успешно добавлен!');
+        e.target.reset(); clearPreview();
+      } else showMsg('addProductMsg','error', d.detail||'Ошибка');
+    } catch { showMsg('addProductMsg','error','Ошибка соединения'); }
+  });
+
+  function openEditProduct(product) {
+    document.getElementById('editProductId').value = product.id;
+    document.getElementById('editProductName').value = product.name;
+    document.getElementById('editProductPrice').value = product.price;
+    document.getElementById('editProductDesc').value = product.description;
+    document.getElementById('editProductStock').value = product.stock;
+    document.getElementById('editProductFeatured').value = product.featured ? 'true' : 'false';
+    document.getElementById('editProductImgUrl').value = product.image_url || '';
+    // Populate category select
+    const sel = document.getElementById('editProductCategory');
+    sel.innerHTML = categories.map(c => `<option value="${c.slug}" ${c.slug===product.category?'selected':''}>${c.emoji} ${c.name}</option>`).join('');
+    document.getElementById('editProductModal').classList.add('active');
+  }
+
+  document.getElementById('editProductForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const productId = document.getElementById('editProductId').value;
+    const formData = new FormData(e.target);
+    formData.delete('product_id');
+    try {
+      const r = await fetch(`/api/admin/products/${productId}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${adminToken}` },
+        body: formData
+      });
+      const d = await r.json();
+      if (r.ok) { closeModal('editProductModal'); showToast('success','✅ Товар обновлён'); loadProducts(); }
+      else showMsg('editProductMsg','error', d.detail||'Ошибка');
+    } catch { showMsg('editProductMsg','error','Ошибка соединения'); }
+  });
+
+  async function deleteProduct(id, name) {
+    if (!confirm(`Удалить товар "${name}"?`)) return;
+    try {
+      const r = await fetch(`/api/admin/products/${id}`, { method:'DELETE', headers:{Authorization:`Bearer ${adminToken}`} });
+      const d = await r.json();
+      if (r.ok) { showToast('success','Товар удалён'); loadProducts(); }
+      else showToast('error', d.detail||'Ошибка');
+    } catch { showToast('error','Ошибка соединения'); }
+  }
+
+  // ── Orders ──
+  async function loadOrders() {
+    const statusFilter = document.getElementById('orderStatusFilter').value;
+    let url = '/api/admin/orders?limit=100';
+    if (statusFilter) url += `&status=${statusFilter}`;
+    try {
+      const r = await fetch(url, { headers: { Authorization: `Bearer ${adminToken}` } });
+      if (!r.ok) return;
+      const orders = await r.json();
+      const tbody = document.getElementById('ordersTableBody');
+      if (!orders.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-3)">Заказов нет</td></tr>'; return; }
+      const statusLabels = { pending:'⏳ Ожидание', confirmed:'✅ Подтверждён', processing:'⚙️ В обработке', shipped:'📦 Отправлен', delivered:'🎉 Доставлен', cancelled:'❌ Отменён' };
+      const statusClass = { pending:'status-pending', confirmed:'status-confirmed', processing:'status-processing', shipped:'status-shipped', delivered:'status-delivered', cancelled:'status-cancelled' };
+      tbody.innerHTML = orders.map(o => `<tr>
+        <td style="font-weight:700">#${o.id}</td>
+        <td><div>${o.username||'—'}</div><div style="font-size:.75rem;color:var(--text-3)">${o.email||''}</div></td>
+        <td style="font-weight:700">${fmt(o.total_amount)} ₽</td>
+        <td><span class="order-status ${statusClass[o.status]||''}">${statusLabels[o.status]||o.status}</span></td>
+        <td><span style="font-size:.8125rem;color:${o.payment_status==='paid'?'var(--green)':'var(--text-3)'}">${o.payment_status==='paid'?'💚 Оплачен':o.payment_status==='waiting'?'⏳ Ожидает':'💔 Не оплачен'}</span></td>
+        <td style="font-size:.8125rem;color:var(--text-3)">${o.created_at?.split('T')[0]||'—'}</td>
+        <td>
+          <select class="form-select" style="font-size:.75rem;padding:.25rem .5rem;background:var(--bg-3)" onchange="updateOrderStatus(${o.id},this.value)">
+            <option value="">Изменить…</option>
+            <option value="confirmed">Подтвердить</option>
+            <option value="processing">В обработку</option>
+            <option value="shipped">Отправить</option>
+            <option value="delivered">Доставлен</option>
+            <option value="cancelled">Отменить</option>
+          </select>
+        </td>
+      </tr>`).join('');
+    } catch {}
+  }
+
+  async function updateOrderStatus(orderId, newStatus) {
+    if (!newStatus) return;
+    try {
+      const r = await fetch(`/api/admin/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const d = await r.json();
+      if (r.ok) { showToast('success', `Заказ #${orderId}: статус обновлён`); loadOrders(); }
+      else showToast('error', d.detail||'Ошибка');
+    } catch { showToast('error','Ошибка соединения'); }
+  }
+
+  // Close modals on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('active'); });
+  });
+</script>
+</body>
+</html>

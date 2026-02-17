@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/static/favicon/favicon.ico" type="image/x-icon">
+  <title>Добавить товар — ScooterParts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#080A0F;--bg-3:#12161E;--surface:#161B24;--border:rgba(255,255,255,.06);--border-hover:rgba(255,255,255,.12);--text:#F0F2F5;--text-2:#8B92A5;--text-3:#4E5568;--accent:#00D4FF;--accent-dim:rgba(0,212,255,.12);--green:#00E5A0;--green-dim:rgba(0,229,160,.12);--red:#FF4757;--red-dim:rgba(255,71,87,.12);--radius:10px;--radius-xl:24px;--font-d:'Syne',sans-serif;--font-b:'DM Sans',sans-serif;--ease:cubic-bezier(.16,1,.3,1)}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+    .wrap{max-width:680px;margin:0 auto;padding:3rem 1.5rem}
+    .back{display:inline-flex;align-items:center;gap:.5rem;font-size:.875rem;color:var(--text-2);text-decoration:none;margin-bottom:2rem;padding:.5rem .875rem;border:1px solid var(--border);border-radius:var(--radius);transition:all .2s}
+    .back:hover{color:var(--text);border-color:var(--border-hover)}
+    h1{font-family:var(--font-d);font-size:1.75rem;font-weight:800;margin-bottom:2rem}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);padding:2rem}
+    .form-group{margin-bottom:1.25rem}
+    .form-label{display:block;font-size:.8125rem;font-weight:600;color:var(--text-2);margin-bottom:.5rem;letter-spacing:.04em;text-transform:uppercase}
+    .form-input,.form-select,.form-textarea{width:100%;padding:.75rem 1rem;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-b);font-size:.9375rem;outline:none;transition:all .2s}
+    .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+    .form-select{-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238B92A5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .625rem center;background-size:14px;padding-right:2rem;cursor:pointer}
+    .form-textarea{resize:vertical;min-height:120px;line-height:1.6}
+    .row-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    .img-upload{border:2px dashed var(--border);border-radius:var(--radius);padding:2rem;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+    .img-upload:hover{border-color:var(--accent);background:var(--accent-dim)}
+    .img-upload input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+    .preview-box{margin-top:1rem;display:none}
+    .preview-box img{max-width:150px;max-height:120px;border-radius:var(--radius);object-fit:cover;border:1px solid var(--border)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.875rem 2rem;font-family:var(--font-b);font-size:.9375rem;font-weight:700;border-radius:var(--radius);border:none;cursor:pointer;transition:all .2s}
+    .btn-primary{background:var(--accent);color:#080A0F;box-shadow:0 0 20px rgba(0,212,255,.25)}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 0 30px rgba(0,212,255,.4)}
+    .btn-ghost{background:transparent;color:var(--text-2);border:1px solid var(--border)}
+    .msg{padding:.875rem 1.125rem;border-radius:var(--radius);font-size:.875rem;font-weight:500;margin-bottom:1rem;border:1px solid transparent}
+    .msg-error{background:var(--red-dim);color:var(--red);border-color:rgba(255,71,87,.2)}
+    .msg-success{background:var(--green-dim);color:var(--green);border-color:rgba(0,229,160,.2)}
+    .form-hint{font-size:.75rem;color:var(--text-3);margin-top:.375rem}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <a href="/admin" class="back">← Назад в админку</a>
+  <h1>➕ Добавить товар</h1>
+  <div class="card">
+    <div id="msg"></div>
+    <form id="form" enctype="multipart/form-data">
+      <div class="form-group">
+        <label class="form-label">Название товара *</label>
+        <input type="text" name="name" class="form-input" placeholder="Аккумулятор 36V 15Ah" required>
+      </div>
+      <div class="row-2">
+        <div class="form-group">
+          <label class="form-label">Категория *</label>
+          <select name="category" class="form-select" id="catSelect" required><option value="">— загрузка —</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Цена (₽) *</label>
+          <input type="number" name="price" class="form-input" placeholder="1990" min="1" step="0.01" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Описание *</label>
+        <textarea name="description" class="form-textarea" placeholder="Подробное описание…" required></textarea>
+      </div>
+      <div class="row-2">
+        <div class="form-group">
+          <label class="form-label">Количество</label>
+          <input type="number" name="stock" class="form-input" value="0" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Хит продаж</label>
+          <select name="featured" class="form-select">
+            <option value="false">Нет</option>
+            <option value="true">⭐ Да</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Фото товара</label>
+        <div class="img-upload" id="uploadArea">
+          <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="preview(event)">
+          <div id="ph"><div style="font-size:2.5rem;margin-bottom:.5rem">📸</div><div style="font-size:.875rem;color:var(--text-2)">Нажмите или перетащите</div><div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP</div></div>
+          <div class="preview-box" id="pbox"><img id="pimg" src="" alt=""><div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" id="pfname"></div></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">— или URL изображения</label>
+        <input type="url" name="image_url" class="form-input" placeholder="https://example.com/img.jpg">
+        <div class="form-hint">Если выбран файл, URL игнорируется</div>
+      </div>
+      <div style="display:flex;gap:.75rem;margin-top:.5rem">
+        <button type="submit" class="btn btn-primary">💾 Сохранить</button>
+        <button type="reset" class="btn btn-ghost" onclick="clearPrev()">Очистить</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+  const token = sessionStorage.getItem('adminToken');
+  if (!token) location.href = '/admin';
+
+  async function loadCategories() {
+    try {
+      const r = await fetch('/api/categories');
+      const { categories } = await r.json();
+      const sel = document.getElementById('catSelect');
+      sel.innerHTML = '<option value="">— выберите —</option>' + categories.map(c => `<option value="${c.slug}">${c.emoji} ${c.name}</option>`).join('');
+    } catch {}
+  }
+  loadCategories();
+
+  function preview(event) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => { document.getElementById('ph').style.display='none'; document.getElementById('pbox').style.display='block'; document.getElementById('pimg').src=e.target.result; document.getElementById('pfname').textContent=file.name; };
+    reader.readAsDataURL(file);
+  }
+  function clearPrev() { document.getElementById('ph').style.display=''; document.getElementById('pbox').style.display='none'; document.getElementById('pimg').src=''; }
+
+  document.getElementById('form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const msgEl = document.getElementById('msg');
+    const formData = new FormData(e.target);
+    try {
+      const r = await fetch('/api/admin/products', { method:'POST', headers:{Authorization:`Bearer ${token}`}, body:formData });
+      const d = await r.json();
+      if (r.ok) { msgEl.innerHTML = '<div class="msg msg-success">✅ Товар добавлен! <a href="/admin" style="color:var(--green)">Перейти в админку →</a></div>'; e.target.reset(); clearPrev(); }
+      else msgEl.innerHTML = `<div class="msg msg-error">${d.detail||'Ошибка'}</div>`;
+    } catch { msgEl.innerHTML = '<div class="msg msg-error">Ошибка соединения</div>'; }
+  });
+</script>
+</body>
+</html>

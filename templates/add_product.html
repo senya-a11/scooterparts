@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="/static/favicon/favicon.ico" type="image/x-icon">
-  <title>Добавить товар — ScooterParts</title>
+  <title>IMPORT — Добавить товар</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root{--bg:#080A0F;--bg-3:#12161E;--surface:#161B24;--border:rgba(255,255,255,.06);--border-hover:rgba(255,255,255,.12);--text:#F0F2F5;--text-2:#8B92A5;--text-3:#4E5568;--accent:#00D4FF;--accent-dim:rgba(0,212,255,.12);--green:#00E5A0;--green-dim:rgba(0,229,160,.12);--red:#FF4757;--red-dim:rgba(255,71,87,.12);--radius:10px;--radius-xl:24px;--font-d:'Syne',sans-serif;--font-b:'DM Sans',sans-serif;--ease:cubic-bezier(.16,1,.3,1)}
@@ -34,7 +34,25 @@
     .msg{padding:.875rem 1.125rem;border-radius:var(--radius);font-size:.875rem;font-weight:500;margin-bottom:1rem;border:1px solid transparent}
     .msg-error{background:var(--red-dim);color:var(--red);border-color:rgba(255,71,87,.2)}
     .msg-success{background:var(--green-dim);color:var(--green);border-color:rgba(0,229,160,.2)}
-    .form-hint{font-size:.75rem;color:var(--text-3);margin-top:.375rem}
+    .form-hint{font-size:.75rem;color:var(--text-3);margin-top:.375rem}    /* IMPORT Logo - Lightning bolt effect */
+    .logo-mark,.admin-logo-mark,.login-mark{
+      position:relative;
+      overflow:hidden;
+    }
+    .logo-mark::after,.admin-logo-mark::after,.login-mark::after{
+      content:'⚡';
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(135deg,#00D4FF 0%,#0099CC 100%);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+      font-size:inherit;
+    }
+
   </style>
 </head>
 <body>
@@ -54,8 +72,8 @@
           <select name="category" class="form-select" id="catSelect" required><option value="">— загрузка —</option></select>
         </div>
         <div class="form-group">
-          <label class="form-label">Цена (₽) *</label>
-          <input type="number" name="price" class="form-input" placeholder="1990" min="1" step="0.01" required>
+          <label class="form-label">Количество на складе</label>
+          <input type="number" name="stock" class="form-input" value="0" min="0" placeholder="10">
         </div>
       </div>
       <div class="form-group">
@@ -64,16 +82,35 @@
       </div>
       <div class="row-2">
         <div class="form-group">
-          <label class="form-label">Количество</label>
-          <input type="number" name="stock" class="form-input" value="0" min="0">
+          <label class="form-label">Цена продажи (₽) *</label>
+          <input type="number" name="price" class="form-input" placeholder="1990" min="1" step="0.01" required>
         </div>
         <div class="form-group">
-          <label class="form-label">Хит продаж</label>
-          <select name="featured" class="form-select">
-            <option value="false">Нет</option>
-            <option value="true">⭐ Да</option>
-          </select>
+          <label class="form-label">Себестоимость (₽)</label>
+          <input type="number" name="cost_price" class="form-input" placeholder="1500" min="0" step="0.01">
+          <div class="form-hint">Видна только в админке</div>
         </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Хит продаж</label>
+        <select name="featured" class="form-select">
+          <option value="false">Нет</option>
+          <option value="true">⭐ Да</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Статус товара</label>
+        <div style="display:flex;gap:1.5rem;padding:.5rem 0">
+          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
+            <input type="checkbox" name="in_stock" value="true" style="width:18px;height:18px;cursor:pointer">
+            <span style="font-size:.9375rem">✅ В наличии</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
+            <input type="checkbox" name="preorder" value="true" style="width:18px;height:18px;cursor:pointer">
+            <span style="font-size:.9375rem">📦 По предзаказу</span>
+          </label>
+        </div>
+        <div class="form-hint">Можно выбрать оба статуса одновременно</div>
       </div>
       <div class="form-group">
         <label class="form-label">Фото товара</label>
@@ -121,6 +158,11 @@
     e.preventDefault();
     const msgEl = document.getElementById('msg');
     const formData = new FormData(e.target);
+    
+    // Обрабатываем чекбоксы правильно
+    if (!formData.get('in_stock')) formData.set('in_stock', 'false');
+    if (!formData.get('preorder')) formData.set('preorder', 'false');
+    
     try {
       const r = await fetch('/api/admin/products', { method:'POST', headers:{Authorization:`Bearer ${token}`}, body:formData });
       const d = await r.json();

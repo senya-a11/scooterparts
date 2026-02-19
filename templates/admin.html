@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="/static/favicon/favicon.ico" type="image/x-icon">
-  <title>Admin — ScooterParts</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&display=swap" rel="stylesheet">
+  <title>Admin — IMPORT</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg:#080A0F; --bg-2:#0D1017; --bg-3:#12161E;
@@ -31,7 +31,8 @@
     .login-card{background:var(--bg-3);border:1px solid var(--border-hover);border-radius:var(--radius-xl);padding:2.5rem;width:100%;max-width:400px;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:fadeUp .4s var(--ease)}
     @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
     .login-logo{display:flex;align-items:center;justify-content:center;gap:.625rem;font-family:var(--font-d);font-size:1.375rem;font-weight:700;margin-bottom:.5rem}
-    .login-mark{width:40px;height:40px;background:linear-gradient(135deg,var(--accent),#0099CC);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 20px var(--accent-glow)}
+    .login-mark{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:24px;position:relative}
+    .login-mark::after{content:'⚡';position:absolute;background:linear-gradient(135deg,#FFD700 0%,#FFA500 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 10px rgba(255,215,0,.4))}
     .login-logo span{color:var(--accent)}
     .login-sub{text-align:center;font-size:.8125rem;color:var(--text-3);margin-bottom:2rem}
     .badge-admin{display:inline-flex;align-items:center;gap:.375rem;padding:.25rem .75rem;background:var(--amber-dim);color:var(--amber);border:1px solid rgba(255,176,32,.25);border-radius:100px;font-size:.75rem;font-weight:600;margin:0 auto .5rem;width:fit-content}
@@ -69,7 +70,8 @@
     .admin-header{background:rgba(8,10,15,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
     .admin-header-inner{max-width:1400px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:62px;gap:1.5rem}
     .admin-logo{display:flex;align-items:center;gap:.625rem;font-family:var(--font-d);font-size:1.125rem;font-weight:700}
-    .admin-logo-mark{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),#0099CC);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
+    .admin-logo-mark{width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:18px;position:relative}
+    .admin-logo-mark::after{content:'⚡';position:absolute;background:linear-gradient(135deg,#FFD700 0%,#FFA500 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 6px rgba(255,215,0,.3))}
     .admin-logo span{color:var(--accent)}
     .admin-badge{font-size:.6875rem;font-weight:700;padding:.2rem .5rem;background:var(--amber-dim);color:var(--amber);border-radius:4px}
     .admin-nav{display:flex;gap:.25rem;overflow-x:auto}
@@ -89,7 +91,7 @@
     .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem}
     .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem}
     .stat-label{font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:.5rem}
-    .stat-val{font-family:var(--font-d);font-size:2rem;font-weight:800;letter-spacing:-.03em}
+    .stat-val{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;letter-spacing:-.01em}
     .stat-val.green{color:var(--green)} .stat-val.accent{color:var(--accent)} .stat-val.amber{color:var(--amber)} .stat-val.red{color:var(--red)}
 
     /* Tables */
@@ -98,6 +100,13 @@
     th{padding:.875rem 1rem;background:var(--bg-3);font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);text-align:left;border-bottom:1px solid var(--border)}
     td{padding:.875rem 1rem;font-size:.875rem;border-bottom:1px solid var(--border);vertical-align:middle}
     tr:last-child td{border-bottom:none}
+    .editable-cell{cursor:pointer;transition:background .2s}
+    .editable-cell:hover{background:rgba(0,212,255,0.05);text-decoration:underline;text-decoration-style:dotted}
+    .badge{display:inline-flex;align-items:center;padding:.25rem .625rem;border-radius:6px;font-size:.75rem;font-weight:700}
+    .badge-accent{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(0,212,255,.2)}
+    .badge-success{background:var(--green-dim);color:var(--green);border:1px solid rgba(0,229,160,.2)}
+    .badge-warning{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(255,176,32,.2)}
+    .badge-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,71,87,.2)}
     tr:hover td{background:rgba(255,255,255,.02)}
     .product-img-cell{width:48px;height:48px;background:var(--bg-3);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;overflow:hidden;flex-shrink:0}
     .product-img-cell img{width:100%;height:100%;object-fit:cover}
@@ -147,6 +156,40 @@
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     .toast-success{background:var(--green-dim);color:var(--green);border-color:rgba(0,229,160,.25)}
     .toast-error{background:var(--red-dim);color:var(--red);border-color:rgba(255,71,87,.25)}
+    /* Mobile hamburger menu */
+    .mobile-menu-btn{display:none;flex-direction:column;gap:4px;background:none;border:none;cursor:pointer;padding:.75rem;margin-right:.5rem;z-index:300}
+    .mobile-menu-btn span{width:20px;height:2px;background:var(--text);border-radius:2px;transition:all .3s}
+    .mobile-menu-btn.active span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+    .mobile-menu-btn.active span:nth-child(2){opacity:0}
+    .mobile-menu-btn.active span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+    
+    @media(max-width:768px){
+      .mobile-menu-btn{display:flex}
+      .admin-nav{position:fixed;left:0;top:62px;bottom:0;width:280px;max-width:85vw;background:var(--bg-2);border-right:1px solid var(--border);flex-direction:column;padding:1rem;gap:.5rem;transform:translateX(-100%);transition:transform .3s var(--ease);overflow-y:auto;z-index:200}
+      .admin-nav.active{transform:translateX(0)}
+      .admin-nav-btn{width:100%;justify-content:flex-start;padding:.75rem 1rem}
+      .admin-actions{gap:.5rem}
+      .admin-actions .btn{padding:.5rem .875rem;font-size:.8125rem}
+    }    /* IMPORT Logo - Lightning bolt effect */
+    .logo-mark,.admin-logo-mark,.login-mark{
+      position:relative;
+      overflow:hidden;
+    }
+    .logo-mark::after,.admin-logo-mark::after,.login-mark::after{
+      content:'⚡';
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(135deg,#00D4FF 0%,#0099CC 100%);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+      font-size:inherit;
+    }
+
+
   </style>
 </head>
 <body>
@@ -156,8 +199,8 @@
   <div class="login-bg-glow"></div>
   <div class="login-card">
     <div class="login-logo">
-      <div class="login-mark">🛴</div>
-      <span>Scooter<span>Parts</span></span>
+      <div class="login-mark">⚡</div>
+      <span>IM<span>PORT</span></span>
     </div>
     <div style="text-align:center;margin-bottom:1.5rem">
       <div class="badge-admin">⚙️ Панель администратора</div>
@@ -183,18 +226,24 @@
   <header class="admin-header">
     <div class="admin-header-inner">
       <div style="display:flex;align-items:center;gap:1rem">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+          <span></span><span></span><span></span>
+        </button>
         <div class="admin-logo">
-          <div class="admin-logo-mark">🛴</div>
-          <span>Scooter<span>Parts</span></span>
+          <div class="admin-logo-mark">⚡</div>
+          <span>IM<span>PORT</span></span>
           <span class="admin-badge">ADMIN</span>
         </div>
       </div>
-      <nav class="admin-nav">
+      <nav class="admin-nav" id="adminNav">
         <button class="admin-nav-btn active" data-sec="dashboard">📊 Дашборд</button>
         <button class="admin-nav-btn" data-sec="products">📦 Товары</button>
         <button class="admin-nav-btn" data-sec="categories">🏷️ Категории</button>
         <button class="admin-nav-btn" data-sec="orders">🛒 Заказы</button>
-        <button class="admin-nav-btn" data-sec="add-product">➕ Добавить товар</button>
+        <button class="admin-nav-btn" data-sec="top-clients">👥 Топ клиенты</button>
+        <button class="admin-nav-btn" data-sec="crm">📝 CRM</button>
+        <button class="admin-nav-btn" data-sec="add-product">➕ Обычный товар</button>
+        <button class="admin-nav-btn" data-sec="add-product-specs">🔧 Товар со спецификациями</button>
       </nav>
       <div class="admin-actions">
         <a href="/" class="btn btn-ghost btn-sm">На сайт ↗</a>
@@ -225,8 +274,8 @@
       <div id="productsMsg"></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Фото</th><th>Название</th><th>Категория</th><th>Цена</th><th>Склад</th><th>Хит</th><th>Действия</th></tr></thead>
-          <tbody id="productsTableBody"><tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка…</td></tr></tbody>
+          <thead><tr><th>Фото</th><th>Название</th><th>Категория</th><th>Цена</th><th>Склад</th><th>Себестоимость</th><th>В наличии</th><th>Предзаказ</th><th>Хит</th><th>Действия</th></tr></thead>
+          <tbody id="productsTableBody"><tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -304,14 +353,86 @@
       <div class="table-wrap">
         <table>
           <thead><tr><th>#</th><th>Клиент</th><th>Сумма</th><th>Статус</th><th>Оплата</th><th>Дата</th><th>Действия</th></tr></thead>
-          <tbody id="ordersTableBody"><tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка…</td></tr></tbody>
+          <tbody id="ordersTableBody"><tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка…</td></tr></tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- ─── TOP CLIENTS ─── -->
+    <div class="admin-section" id="sec-top-clients">
+      <h2 class="section-title">👥 Топ клиенты</h2>
+      <div class="msg msg-info" style="margin-bottom:1.5rem">
+        📈 Здесь показаны самые активные покупатели по сумме покупок, количеству заказов и дате последней покупки.
+      </div>
+      <div class="table-wrap">
+        <table id="topClientsTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Клиент</th>
+              <th>Email</th>
+              <th>Телефон</th>
+              <th>Заказов</th>
+              <th>Оплачено</th>
+              <th>Всего потрачено</th>
+              <th>Последний заказ</th>
+            </tr>
+          </thead>
+          <tbody id="topClientsTableBody">
+            <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ─── CRM WITH NOTES ─── -->
+    <div class="admin-section" id="sec-crm">
+      <h2 class="section-title">📝 CRM — Управление клиентами</h2>
+      <p style="color:var(--text-2);margin-bottom:2rem">Добавляйте заметки о клиентах, отслеживайте их активность</p>
+      
+      <div class="table-wrap">
+        <table id="crmTable">
+          <thead>
+            <tr>
+              <th>Клиент</th>
+              <th>Заказов</th>
+              <th>Общая сумма</th>
+              <th>Последний заказ</th>
+              <th>Заметок</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody id="crmTableBody">
+            <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Notes Modal -->
+    <div class="modal-overlay" id="notesModal">
+      <div class="modal" style="max-width:700px">
+        <div class="modal-header">
+          <h3 class="modal-title">📝 Заметки о клиенте: <span id="notesCustomerName"></span></h3>
+          <button class="modal-close" onclick="closeModal('notesModal')">✕</button>
+        </div>
+        <div class="modal-body" style="max-height:500px;overflow-y:auto">
+          <div id="notesList"></div>
+          <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border)">
+            <textarea id="newNoteText" placeholder="Добавить заметку о клиенте..." style="width:100%;padding:.875rem;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-b);font-size:.875rem;resize:vertical;min-height:80px;margin-bottom:.75rem"></textarea>
+            <button class="btn btn-primary" onclick="saveNote()">💾 Сохранить заметку</button>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- ─── ADD PRODUCT ─── -->
     <div class="admin-section" id="sec-add-product">
-      <h2 class="section-title">➕ Добавить товар</h2>
+      <h2 class="section-title">➕ Добавить обычный товар</h2>
+      <div class="msg msg-info" style="margin-bottom:1.5rem">
+        📦 Обычный товар — это стандартный товар с одной ценой, одним описанием и одним набором характеристик.
+        Если вам нужен товар с несколькими версиями/поколениями — используйте "Товар со спецификациями".
+      </div>
       <div id="addProductMsg"></div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.75rem;max-width:680px">
         <form id="addProductForm">
@@ -380,6 +501,150 @@
       </div>
     </div>
 
+    <!-- ─── ADD PRODUCT WITH SPECS ─── -->
+    <div class="admin-section" id="sec-add-product-specs">
+      <h2 class="section-title">🔧 Добавить товар со спецификациями</h2>
+      <div class="msg msg-info" style="margin-bottom:1.5rem">
+        🔧 <strong>Товар со спецификациями</strong> — это товар, у которого есть несколько версий/поколений.<br>
+        Например: iPhone (основной товар) → iPhone 13, iPhone 14, iPhone 15 (спецификации).<br>
+        У каждой спецификации своя цена, описание, характеристики и наличие.
+      </div>
+      <div id="addProductSpecsMsg"></div>
+      
+      <!-- Step 1: Create main product -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.75rem;max-width:680px;margin-bottom:1.5rem">
+        <h3 style="font-family:var(--font-d);font-size:1.125rem;font-weight:700;margin-bottom:1.25rem">
+          Шаг 1: Создайте основной товар
+        </h3>
+        <form id="addProductWithSpecsForm">
+          <div class="form-group">
+            <label class="form-label">Название основного товара *</label>
+            <input type="text" name="name" class="form-input" placeholder="Например: iPhone" required>
+            <div class="form-hint">Это общее название для всех версий</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <div class="form-group">
+              <label class="form-label">Категория *</label>
+              <select name="category" class="form-select" id="productCategorySelectSpecs" required>
+                <option value="">— выберите —</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Базовая цена (₽) *</label>
+              <input type="number" name="price" class="form-input" placeholder="0" min="0" step="0.01" required>
+              <div class="form-hint">Будет заменена ценами спецификаций</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Общее описание *</label>
+            <textarea name="description" class="form-textarea" placeholder="Общее описание товара, которое будет показано до выбора спецификации…" required rows="4"></textarea>
+          </div>
+
+          <!-- Image section -->
+          <div class="form-group">
+            <label class="form-label">Основное изображение товара</label>
+            <div class="img-upload-area" id="uploadAreaSpecs">
+              <input type="file" name="image_file" id="imageFileSpecs" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewImageSpecs(event)">
+              <div id="uploadPlaceholderSpecs">
+                <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
+                <div style="font-size:.875rem;color:var(--text-2)">Нажмите или перетащите файл</div>
+                <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
+              </div>
+              <div class="img-preview" id="imgPreviewSpecs">
+                <img id="previewImgSpecs" src="" alt="Preview">
+                <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" id="previewFileNameSpecs"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">— или вставьте URL изображения</label>
+            <input type="url" name="image_url" class="form-input" placeholder="https://example.com/image.jpg">
+          </div>
+
+          <input type="hidden" name="has_specifications" value="true">
+          <input type="hidden" name="stock" value="0">
+          <input type="hidden" name="featured" value="false">
+
+          <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+            <button type="submit" class="btn btn-primary">💾 Создать основной товар</button>
+            <button type="reset" class="btn btn-ghost" onclick="clearPreviewSpecs()">Очистить</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Step 2: Add specifications (will be shown after main product is created) -->
+      <div id="specificationsPanel" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.75rem;max-width:900px">
+        <h3 style="font-family:var(--font-d);font-size:1.125rem;font-weight:700;margin-bottom:1.25rem">
+          Шаг 2: Добавьте спецификации/версии
+        </h3>
+        <div class="msg msg-success" style="margin-bottom:1.5rem">
+          ✅ Основной товар создан! ID: <span id="createdProductId"></span><br>
+          Теперь добавьте к нему версии/поколения (например: iPhone 13, iPhone 14, iPhone 15)
+        </div>
+
+        <form id="addSpecificationForm">
+          <input type="hidden" id="specProductId" name="product_id">
+          
+          <div class="form-group">
+            <label class="form-label">Название версии/спецификации *</label>
+            <input type="text" name="name" class="form-input" placeholder="Например: iPhone 13" required>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <div class="form-group">
+              <label class="form-label">Цена версии (₽) *</label>
+              <input type="number" name="price" class="form-input" placeholder="59990" min="1" step="0.01" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Количество на складе</label>
+              <input type="number" name="stock" class="form-input" value="0" min="0">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Описание версии</label>
+            <textarea name="description" class="form-textarea" placeholder="Особенности именно этой версии…" rows="3"></textarea>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <div class="form-group">
+              <label class="form-label">В наличии</label>
+              <select name="in_stock" class="form-select">
+                <option value="false">Нет</option>
+                <option value="true">✓ Да</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Предзаказ</label>
+              <select name="preorder" class="form-select">
+                <option value="false">Нет</option>
+                <option value="true">📦 Да</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Изображение версии (опционально)</label>
+            <input type="url" name="image_url" class="form-input" placeholder="https://example.com/iphone13.jpg">
+            <div class="form-hint">Если не указано, будет использовано изображение основного товара</div>
+          </div>
+
+          <div style="display:flex;gap:.75rem;margin-top:1.25rem">
+            <button type="submit" class="btn btn-primary">➕ Добавить спецификацию</button>
+            <button type="button" class="btn btn-ghost" onclick="finishAddingSpecs()">✓ Завершить</button>
+          </div>
+        </form>
+
+        <div id="addedSpecsList" style="margin-top:2rem;padding-top:2rem;border-top:1px solid var(--border)">
+          <h4 style="font-weight:700;margin-bottom:1rem">Добавленные спецификации:</h4>
+          <div id="specsListContent">
+            <p style="color:var(--text-3);font-size:.875rem">Пока не добавлено ни одной спецификации</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /admin-body -->
 </div><!-- /admin-panel -->
 
@@ -437,6 +702,12 @@
             <option value="false">Нет</option><option value="true">⭐ Да</option>
           </select>
         </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">По предзаказу</label>
+        <select name="preorder" class="form-select" id="editProductPreorder">
+          <option value="false">Нет</option><option value="true">📦 Да</option>
+        </select>
       </div>
       <div class="form-group">
         <label class="form-label">Новое изображение (файл)</label>
@@ -524,6 +795,8 @@
     if (name === 'categories') loadCategories();
     if (name === 'orders') loadOrders();
     if (name === 'dashboard') loadDashboard();
+    if (name === 'top-clients') loadTopClients();
+    if (name === 'crm') loadCRM();
     if (name === 'add-product') loadCategoriesForSelect();
   }
 
@@ -641,9 +914,11 @@
 
   function loadCategoriesForSelect() {
     const sel = document.getElementById('productCategorySelect');
+    const selSpecs = document.getElementById('productCategorySelectSpecs');
     const editSel = document.getElementById('editProductCategory');
     const options = categories.map(c => `<option value="${c.slug}">${c.emoji} ${c.name}</option>`).join('');
     if (sel) sel.innerHTML = '<option value="">— выберите —</option>' + options;
+    if (selSpecs) selSpecs.innerHTML = '<option value="">— выберите —</option>' + options;
     if (editSel) editSel.innerHTML = options;
   }
 
@@ -655,7 +930,7 @@
       const products = await r.json();
       const catMap = Object.fromEntries(categories.map(c => [c.slug, `${c.emoji} ${c.name}`]));
       const tbody = document.getElementById('productsTableBody');
-      if (!products.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-3)">Товаров нет</td></tr>'; return; }
+      if (!products.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-3)">Товаров нет</td></tr>'; return; }
       tbody.innerHTML = products.map(p => {
         const imgCell = p.image_url && p.image_url.startsWith('/static/uploads')
           ? `<div class="product-img-cell"><img src="${p.image_url}" alt="${p.name}"></div>`
@@ -664,8 +939,11 @@
           <td>${imgCell}</td>
           <td style="max-width:200px"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div></td>
           <td>${catMap[p.category] || p.category}</td>
-          <td>${fmt(p.price)} ₽</td>
-          <td><span style="color:${p.stock>0?'var(--green)':'var(--red)'}">${p.stock}</span></td>
+          <td class="editable-cell" onclick="editPrice(${p.id}, ${p.price})">${fmt(p.price)} ₽</td>
+          <td class="editable-cell" onclick="editStock(${p.id}, ${p.stock})"><span style="color:${p.stock>0?'var(--green)':'var(--red)'}">${p.stock}</span></td>
+          <td class="editable-cell" onclick="editCostPrice(${p.id}, ${p.cost_price || 0})">${p.cost_price ? fmt(p.cost_price) + ' ₽' : '—'}</td>
+          <td><input type="checkbox" ${p.in_stock?'checked':''} onchange="toggleInStock(${p.id}, this.checked)" style="width:18px;height:18px;cursor:pointer"></td>
+          <td><input type="checkbox" ${p.preorder?'checked':''} onchange="togglePreorder(${p.id}, this.checked)" style="width:18px;height:18px;cursor:pointer"></td>
           <td>${p.featured ? '⭐' : '—'}</td>
           <td><div style="display:flex;gap:.375rem">
             <button class="btn btn-xs btn-secondary" onclick="openEditProduct(${JSON.stringify(p).replace(/"/g,'&quot;')})">✏️</button>
@@ -674,6 +952,54 @@
         </tr>`;
       }).join('');
     } catch { console.error('Load products error'); }
+  }
+
+  // Inline editing functions
+  async function editPrice(productId, currentPrice) {
+    const newPrice = prompt('Введите новую цену:', currentPrice);
+    if (!newPrice || newPrice === currentPrice.toString()) return;
+    await updateProductField(productId, 'price', parseFloat(newPrice));
+  }
+
+  async function editStock(productId, currentStock) {
+    const newStock = prompt('Введите количество на складе:', currentStock);
+    if (!newStock || newStock === currentStock.toString()) return;
+    await updateProductField(productId, 'stock', parseInt(newStock));
+  }
+
+  async function editCostPrice(productId, currentCost) {
+    const newCost = prompt('Введите себестоимость:', currentCost);
+    if (newCost === null) return;
+    await updateProductField(productId, 'cost_price', newCost ? parseFloat(newCost) : null);
+  }
+
+  async function toggleInStock(productId, checked) {
+    await updateProductField(productId, 'in_stock', checked);
+  }
+
+  async function togglePreorder(productId, checked) {
+    await updateProductField(productId, 'preorder', checked);
+  }
+
+  async function updateProductField(productId, field, value) {
+    const formData = new FormData();
+    formData.append(field, value);
+    try {
+      const r = await fetch(`/api/admin/products/${productId}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${adminToken}` },
+        body: formData
+      });
+      if (r.ok) {
+        showToast('success', 'Обновлено');
+        loadProducts();
+      } else {
+        const d = await r.json();
+        showToast('error', d.detail || 'Ошибка');
+      }
+    } catch {
+      showToast('error', 'Ошибка соединения');
+    }
   }
 
   function getCatIcon(cat) {
@@ -720,6 +1046,131 @@
     } catch { showMsg('addProductMsg','error','Ошибка соединения'); }
   });
 
+  // ─── PRODUCT WITH SPECIFICATIONS ───
+  let currentProductWithSpecs = null;
+  let addedSpecifications = [];
+
+  function previewImageSpecs(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('uploadPlaceholderSpecs').style.display = 'none';
+      document.getElementById('imgPreviewSpecs').style.display = 'block';
+      document.getElementById('previewImgSpecs').src = e.target.result;
+      document.getElementById('previewFileNameSpecs').textContent = file.name;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearPreviewSpecs() {
+    document.getElementById('uploadPlaceholderSpecs').style.display = '';
+    document.getElementById('imgPreviewSpecs').style.display = 'none';
+    document.getElementById('previewImgSpecs').src = '';
+    document.getElementById('imageFileSpecs').value = '';
+  }
+
+  // Add main product with specifications
+  document.getElementById('addProductWithSpecsForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    try {
+      const r = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${adminToken}` },
+        body: formData
+      });
+      const d = await r.json();
+      if (r.ok) {
+        currentProductWithSpecs = d.product;
+        addedSpecifications = [];
+        document.getElementById('createdProductId').textContent = d.product.id;
+        document.getElementById('specProductId').value = d.product.id;
+        document.getElementById('specificationsPanel').style.display = 'block';
+        showMsg('addProductSpecsMsg','success','✅ Основной товар создан! Теперь добавьте спецификации ниже');
+        e.target.reset(); 
+        clearPreviewSpecs();
+        // Scroll to specifications panel
+        document.getElementById('specificationsPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        showMsg('addProductSpecsMsg','error', d.detail||'Ошибка создания товара');
+      }
+    } catch { 
+      showMsg('addProductSpecsMsg','error','Ошибка соединения'); 
+    }
+  });
+
+  // Add specification to product
+  document.getElementById('addSpecificationForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const productId = document.getElementById('specProductId').value;
+    
+    try {
+      const r = await fetch(`/api/admin/products/${productId}/specifications`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${adminToken}` },
+        body: formData
+      });
+      const d = await r.json();
+      if (r.ok) {
+        addedSpecifications.push(d.specification);
+        updateSpecsList();
+        showToast('success', '✅ Спецификация добавлена!');
+        e.target.reset();
+        // Keep product_id
+        document.getElementById('specProductId').value = productId;
+      } else {
+        showToast('error', d.detail || 'Ошибка добавления спецификации');
+      }
+    } catch {
+      showToast('error', 'Ошибка соединения');
+    }
+  });
+
+  function updateSpecsList() {
+    const container = document.getElementById('specsListContent');
+    if (addedSpecifications.length === 0) {
+      container.innerHTML = '<p style="color:var(--text-3);font-size:.875rem">Пока не добавлено ни одной спецификации</p>';
+      return;
+    }
+
+    container.innerHTML = addedSpecifications.map((spec, idx) => `
+      <div style="padding:1rem;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:.75rem">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.5rem">
+          <div>
+            <strong style="font-size:.9375rem">${idx + 1}. ${spec.name}</strong>
+            <div style="font-size:.875rem;color:var(--text-2);margin-top:.25rem">
+              Цена: ${fmt(spec.price)} ₽ · Склад: ${spec.stock} шт.
+            </div>
+          </div>
+          <span class="badge ${spec.in_stock ? 'badge-success' : 'badge-danger'}" style="font-size:.75rem">
+            ${spec.in_stock ? '✓ В наличии' : '✕ Нет'}
+          </span>
+        </div>
+        ${spec.description ? `<p style="font-size:.8125rem;color:var(--text-3);margin-top:.5rem">${spec.description}</p>` : ''}
+      </div>
+    `).join('');
+  }
+
+  function finishAddingSpecs() {
+    if (addedSpecifications.length === 0) {
+      alert('Добавьте хотя бы одну спецификацию перед завершением!');
+      return;
+    }
+    showToast('success', `✅ Товар со спецификациями готов! Добавлено ${addedSpecifications.length} версий`);
+    // Reset form
+    document.getElementById('addProductWithSpecsForm').reset();
+    document.getElementById('addSpecificationForm').reset();
+    document.getElementById('specificationsPanel').style.display = 'none';
+    currentProductWithSpecs = null;
+    addedSpecifications = [];
+    updateSpecsList();
+    // Switch to products view
+    switchSection('products');
+    loadProducts();
+  }
+
   function openEditProduct(product) {
     document.getElementById('editProductId').value = product.id;
     document.getElementById('editProductName').value = product.name;
@@ -727,6 +1178,7 @@
     document.getElementById('editProductDesc').value = product.description;
     document.getElementById('editProductStock').value = product.stock;
     document.getElementById('editProductFeatured').value = product.featured ? 'true' : 'false';
+    document.getElementById('editProductPreorder').value = product.preorder ? 'true' : 'false';
     document.getElementById('editProductImgUrl').value = product.image_url || '';
     // Populate category select
     const sel = document.getElementById('editProductCategory');
@@ -807,6 +1259,200 @@
       if (r.ok) { showToast('success', `Заказ #${orderId}: статус обновлён`); loadOrders(); }
       else showToast('error', d.detail||'Ошибка');
     } catch { showToast('error','Ошибка соединения'); }
+  }
+
+
+  // ── Top Clients: Load Top Customers ──
+  async function loadTopClients() {
+    const tbody = document.getElementById('topClientsTableBody');
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка...</td></tr>';
+    try {
+      const r = await fetch('/api/admin/top-customers?limit=50', {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      const customers = await r.json();
+      if (!r.ok) throw new Error('Failed to load');
+      
+      if (customers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-3)">Пока нет покупателей</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = customers.map((c, idx) => {
+        const lastOrder = c.last_order_date ? new Date(c.last_order_date).toLocaleDateString('ru-RU') : '—';
+        const profit = (c.total_spent || 0).toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        
+        return `
+          <tr>
+            <td><strong>${idx + 1}</strong></td>
+            <td><strong>${c.full_name || c.username}</strong></td>
+            <td style="color:var(--text-2)">${c.email}</td>
+            <td style="color:var(--text-2)">${c.phone || '—'}</td>
+            <td><span class="badge badge-accent">${c.order_count}</span></td>
+            <td><span class="badge badge-success">${c.paid_orders}</span></td>
+            <td><strong style="font-family:'JetBrains Mono',monospace;color:var(--green)">${profit} ₽</strong></td>
+            <td style="color:var(--text-2);font-size:.8125rem">${lastOrder}</td>
+          </tr>
+        `;
+      }).join('');
+    } catch (err) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--red)">Ошибка загрузки данных</td></tr>';
+    }
+  }
+
+
+  // ── CRM: Load Customers with Notes ──
+  let currentCustomerId = null;
+
+  async function loadCRM() {
+    const tbody = document.getElementById('crmTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка...</td></tr>';
+    try {
+      const r = await fetch('/api/admin/customers', {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      const customers = await r.json();
+      if (!r.ok) throw new Error('Failed to load');
+      
+      if (customers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-3)">Пока нет покупателей</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = customers.map((c) => {
+        const lastOrder = c.last_order_date ? new Date(c.last_order_date).toLocaleDateString('ru-RU') : '—';
+        const profit = (c.total_spent || 0).toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        const vipBadge = c.total_spent > 100000 ? '<span class="badge badge-warning" style="margin-left:.5rem">VIP</span>' : '';
+        
+        return `
+          <tr>
+            <td>
+              <strong>${c.full_name || c.username}</strong>${vipBadge}
+              <div style="font-size:.8125rem;color:var(--text-2)">${c.email}</div>
+            </td>
+            <td><span class="badge badge-accent">${c.order_count}</span></td>
+            <td><strong style="font-family:'JetBrains Mono',monospace;color:var(--green)">${profit} ₽</strong></td>
+            <td style="color:var(--text-2);font-size:.8125rem">${lastOrder}</td>
+            <td><span class="badge badge-success">${c.notes_count || 0}</span></td>
+            <td>
+              <button class="btn btn-xs btn-secondary" onclick="openNotes('${c.id}', '${c.full_name || c.username}')">📝 Заметки</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    } catch (err) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--red)">Ошибка загрузки данных</td></tr>';
+    }
+  }
+
+  async function openNotes(userId, userName) {
+    currentCustomerId = userId;
+    document.getElementById('notesCustomerName').textContent = userName;
+    document.getElementById('notesModal').classList.add('active');
+    await loadNotes(userId);
+  }
+
+  async function loadNotes(userId) {
+    const notesList = document.getElementById('notesList');
+    notesList.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка...</div>';
+    
+    try {
+      const r = await fetch(`/api/admin/customers/${userId}/notes`, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      const notes = await r.json();
+      
+      if (notes.length === 0) {
+        notesList.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-3)">Заметок пока нет</div>';
+        return;
+      }
+      
+      notesList.innerHTML = notes.map(n => {
+        const date = new Date(n.created_at).toLocaleString('ru-RU');
+        return `
+          <div style="background:var(--bg-2);padding:1rem;border-radius:12px;margin-bottom:.75rem;border:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;font-size:.75rem;color:var(--text-3)">
+              <span>${n.created_by} • ${date}</span>
+              <button class="btn btn-xs btn-danger" onclick="deleteNote(${n.id})">Удалить</button>
+            </div>
+            <div style="color:var(--text-2);line-height:1.6">${n.note}</div>
+          </div>
+        `;
+      }).join('');
+    } catch (err) {
+      notesList.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--red)">Ошибка загрузки заметок</div>';
+    }
+  }
+
+  async function saveNote() {
+    const noteText = document.getElementById('newNoteText').value.trim();
+    if (!noteText) {
+      showToast('error', 'Введите текст заметки');
+      return;
+    }
+    
+    try {
+      const r = await fetch(`/api/admin/customers/${currentCustomerId}/notes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminToken}`
+        },
+        body: JSON.stringify({ note: noteText })
+      });
+      
+      if (r.ok) {
+        document.getElementById('newNoteText').value = '';
+        showToast('success', 'Заметка добавлена');
+        await loadNotes(currentCustomerId);
+        await loadCRM(); // Обновить количество заметок в таблице
+      } else {
+        const d = await r.json();
+        showToast('error', d.detail || 'Ошибка');
+      }
+    } catch {
+      showToast('error', 'Ошибка соединения');
+    }
+  }
+
+  async function deleteNote(noteId) {
+    if (!confirm('Удалить эту заметку?')) return;
+    
+    try {
+      const r = await fetch(`/api/admin/customers/notes/${noteId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      
+      if (r.ok) {
+        showToast('success', 'Заметка удалена');
+        await loadNotes(currentCustomerId);
+        await loadCRM();
+      } else {
+        const d = await r.json();
+        showToast('error', d.detail || 'Ошибка');
+      }
+    } catch {
+      showToast('error', 'Ошибка соединения');
+    }
+  }
+
+
+  // Mobile menu toggle
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  const adminNav = document.getElementById('adminNav');
+  if (mobileMenuBtn) {
+    mobileMenuBtn.addEventListener('click', () => {
+      mobileMenuBtn.classList.toggle('active');
+      adminNav.classList.toggle('active');
+    });
+    // Close menu when clicking nav item
+    document.querySelectorAll('.admin-nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        mobileMenuBtn.classList.remove('active');
+        adminNav.classList.remove('active');
+      });
+    });
   }
 
   // Close modals on overlay click

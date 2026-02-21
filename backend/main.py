@@ -1,4 +1,4 @@
-# backend/main.py  ·  IMPORT v5.1
+# backend/main.py  ·  IMPORT v8.3_FINAL
 from fastapi import FastAPI, HTTPException, Depends, status, Request, Response, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -19,6 +19,8 @@ from uuid import uuid4
 import secrets
 import shutil
 import aiofiles
+from PIL import Image
+import io
 
 import asyncpg
 from asyncpg.pool import Pool
@@ -28,8 +30,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from backend.security import CSRFProtection, CookieAuth, CookieConsent
+
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response as StarletteResponse
+import time
 
 # ========== НАСТРОЙКА ПУТЕЙ ==========
 BASE_DIR = Path(__file__).parent.parent
@@ -170,6 +177,10 @@ class PaymentCreate(BaseModel):
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM  = "HS256"
 security   = HTTPBearer()
+
+# Инициализация модулей безопасности
+csrf_protection = CSRFProtection(SECRET_KEY)
+cookie_auth = CookieAuth()
 
 
 class PasswordHasher:
@@ -490,7 +501,98 @@ async def lifespan(app: FastAPI):
 
 
 # ========== ПРИЛОЖЕНИЕ ==========
-app = FastAPI(title="IMPORT API v5.1", lifespan=lifespan)
+app = FastAPI(title="IMPORT API v8.3 Security Edition", lifespan=lifespan)
+
+# ========== SECURITY MIDDLEWARE ==========
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware для добавления заголовков безопасности ко всем ответам.
+    Защита от XSS, clickjacking, MIME sniffing и других атак.
+    """
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        
+        # Content Security Policy - защита от XSS
+        # Разрешаем скрипты только с того же домена и inline (для совместимости)
+        csp_policy = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "img-src 'self' data: https:; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self';"
+        )
+        response.headers["Content-Security-Policy"] = csp_policy
+        
+        # X-Frame-Options - защита от clickjacking
+        response.headers["X-Frame-Options"] = "DENY"
+        
+        # X-Content-Type-Options - защита от MIME sniffing
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        
+        # X-XSS-Protection (устаревший, но все еще полезен для старых браузеров)
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        
+        # Referrer-Policy - контроль передачи referrer
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        
+        # Permissions-Policy - ограничение доступа к API браузера
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        
+        # Strict-Transport-Security (HSTS) - только для HTTPS
+        # На продакшене (Render.com) будет HTTPS
+        if request.url.scheme == "https":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Rate Limiting Middleware - защита от brute-force
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    """
+    Простой rate limiter для защиты от brute-force атак.
+    Ограничивает количество запросов с одного IP.
+    """
+    def __init__(self, app, max_requests: int = 100, window: int = 60):
+        super().__init__(app)
+        self.max_requests = max_requests  # Максимум запросов
+        self.window = window  # Окно времени в секундах
+        self.requests = {}  # {ip: [(timestamp, count)]}
+    
+    async def dispatch(self, request: Request, call_next):
+        client_ip = request.client.host
+        current_time = time.time()
+        
+        # Очищаем старые записи
+        if client_ip in self.requests:
+            self.requests[client_ip] = [
+                (ts, count) for ts, count in self.requests[client_ip]
+                if current_time - ts < self.window
+            ]
+        
+        # Подсчитываем запросы
+        if client_ip not in self.requests:
+            self.requests[client_ip] = []
+        
+        total_requests = sum(count for _, count in self.requests[client_ip])
+        
+        if total_requests >= self.max_requests:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Слишком много запросов. Попробуйте позже."}
+            )
+        
+        # Добавляем текущий запрос
+        self.requests[client_ip].append((current_time, 1))
+        
+        response = await call_next(request)
+        return response
+
+app.add_middleware(RateLimitMiddleware, max_requests=100, window=60)
 
 app.add_middleware(
     CORSMiddleware,
@@ -1347,6 +1449,50 @@ async def update_order_status(order_id: int, body: dict, admin=Depends(verify_ad
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ==========================================
+# ========== IMAGE OPTIMIZATION ==========
+# ==========================================
+
+async def optimize_image(image_data: bytes, max_size: tuple = (1200, 1200), quality: int = 85) -> bytes:
+    """
+    Оптимизирует изображение: изменяет размер и сжимает
+    
+    Args:
+        image_data: Байты исходного изображения
+        max_size: Максимальный размер (ширина, высота)
+        quality: Качество сжатия JPEG (1-100)
+    
+    Returns:
+        Оптимизированные байты изображения
+    """
+    try:
+        # Открываем изображение
+        img = Image.open(io.BytesIO(image_data))
+        
+        # Конвертируем в RGB если необходимо (для PNG с прозрачностью)
+        if img.mode in ('RGBA', 'LA', 'P'):
+            # Создаем белый фон для прозрачных изображений
+            background = Image.new('RGB', img.size, (255, 255, 255))
+            if img.mode == 'P':
+                img = img.convert('RGBA')
+            background.paste(img, mask=img.split()[-1] if img.mode in ('RGBA', 'LA') else None)
+            img = background
+        elif img.mode != 'RGB':
+            img = img.convert('RGB')
+        
+        # Изменяем размер, сохраняя пропорции
+        img.thumbnail(max_size, Image.Resampling.LANCZOS)
+        
+        # Сохраняем оптимизированное изображение
+        output = io.BytesIO()
+        img.save(output, format='JPEG', quality=quality, optimize=True)
+        return output.getvalue()
+    except Exception as e:
+        # Если оптимизация не удалась, возвращаем оригинал
+        print(f"Image optimization failed: {e}")
+        return image_data
+
+
 @app.post("/api/admin/products")
 async def create_product(request: Request, admin=Depends(verify_admin)):
     try:
@@ -1373,17 +1519,59 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
         if not desc or len(desc) < 10:
             raise HTTPException(status_code=400, detail="Описание слишком короткое (мин. 10 символов)")
 
-        final_image = "/static/images/product_default.jpg"
+        # По умолчанию пустая строка (не null), чтобы избежать constraint violation
+        final_image = ""
 
         if image_file and isinstance(image_file, UploadFile) and image_file.filename:
+            # Валидация формата
             ext = Path(image_file.filename).suffix.lower()
-            if ext not in ['.jpg','.jpeg','.png','.gif','.webp']:
-                raise HTTPException(status_code=400, detail="Недопустимый формат файла")
-            fname = f"{uuid4().hex}{ext}"
-            fpath = UPLOAD_DIR / fname
-            async with aiofiles.open(fpath, 'wb') as buf:
-                await buf.write(await image_file.read())
-            final_image = f"/static/uploads/{fname}"
+            allowed_formats = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+            if ext not in allowed_formats:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Недопустимый формат файла. Разрешены: {', '.join(allowed_formats)}"
+                )
+            
+            # Чтение файла
+            file_content = await image_file.read()
+            
+            # Валидация размера (макс 10MB)
+            max_size_mb = 10
+            if len(file_content) > max_size_mb * 1024 * 1024:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Файл слишком большой. Максимум {max_size_mb}MB"
+                )
+            
+            # ВАЖНО: Убедимся что папка существует с правильными правами
+            UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+            
+            try:
+                # Оптимизация изображения
+                optimized_content = await optimize_image(file_content)
+                
+                # Сохранение
+                fname = f"{uuid4().hex}.jpg"  # Всегда сохраняем как JPEG после оптимизации
+                fpath = UPLOAD_DIR / fname
+                
+                # DEBUG: Логирование
+                print(f"📁 Saving image to: {fpath}")
+                print(f"📁 Upload dir exists: {UPLOAD_DIR.exists()}")
+                print(f"📁 Upload dir is writable: {os.access(UPLOAD_DIR, os.W_OK)}")
+                
+                async with aiofiles.open(fpath, 'wb') as buf:
+                    await buf.write(optimized_content)
+                
+                # Проверяем что файл действительно сохранился
+                if not fpath.exists():
+                    raise HTTPException(status_code=500, detail="Файл не был сохранен")
+                
+                print(f"✅ Image saved successfully: {fpath.name}")
+                final_image = f"/static/uploads/{fname}"
+                
+            except Exception as e:
+                print(f"❌ Error saving image: {e}")
+                raise HTTPException(status_code=500, detail=f"Ошибка сохранения файла: {str(e)}")
         elif image_url:
             final_image = image_url
 
@@ -1427,13 +1615,49 @@ async def update_product(product_id: int, request: Request, admin=Depends(verify
 
             final_image = existing['image_url']
             if image_file and isinstance(image_file, UploadFile) and image_file.filename:
+                # Валидация формата
                 ext = Path(image_file.filename).suffix.lower()
-                if ext not in ['.jpg','.jpeg','.png','.gif','.webp']:
-                    raise HTTPException(status_code=400, detail="Недопустимый формат файла")
-                fname = f"{uuid4().hex}{ext}"
-                async with aiofiles.open(UPLOAD_DIR / fname, 'wb') as buf:
-                    await buf.write(await image_file.read())
-                final_image = f"/static/uploads/{fname}"
+                allowed_formats = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+                if ext not in allowed_formats:
+                    raise HTTPException(
+                        status_code=400, 
+                        detail=f"Недопустимый формат файла. Разрешены: {', '.join(allowed_formats)}"
+                    )
+                
+                # Чтение и валидация размера
+                file_content = await image_file.read()
+                max_size_mb = 10
+                if len(file_content) > max_size_mb * 1024 * 1024:
+                    raise HTTPException(
+                        status_code=400, 
+                        detail=f"Файл слишком большой. Максимум {max_size_mb}MB"
+                    )
+                
+                # ВАЖНО: Убедимся что папка существует
+                UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+                
+                try:
+                    # Оптимизация
+                    optimized_content = await optimize_image(file_content)
+                    
+                    # Сохранение
+                    fname = f"{uuid4().hex}.jpg"
+                    fpath = UPLOAD_DIR / fname
+                    
+                    print(f"📁 Updating image to: {fpath}")
+                    
+                    async with aiofiles.open(fpath, 'wb') as buf:
+                        await buf.write(optimized_content)
+                    
+                    if not fpath.exists():
+                        raise HTTPException(status_code=500, detail="Файл не был сохранен")
+                    
+                    print(f"✅ Image updated successfully: {fpath.name}")
+                    final_image = f"/static/uploads/{fname}"
+                    
+                except Exception as e:
+                    print(f"❌ Error updating image: {e}")
+                    raise HTTPException(status_code=500, detail=f"Ошибка обновления файла: {str(e)}")
             elif image_url:
                 final_image = image_url
 
@@ -1714,6 +1938,20 @@ async def get_product_characteristics(product_id: int, specification_id: Optiona
 
 
 # ========== ЗАПУСК ==========
+@app.get("/api/debug/uploads")
+async def debug_uploads():
+    """Debug endpoint to check uploads directory"""
+    try:
+        files = list(UPLOAD_DIR.iterdir())
+        return {
+            "upload_dir": str(UPLOAD_DIR),
+            "exists": UPLOAD_DIR.exists(),
+            "files": [f.name for f in files if f.is_file()],
+            "count": len(files)
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
 if __name__ == "__main__":
     print("=" * 70)
     print("⚡ IMPORT v5.1")

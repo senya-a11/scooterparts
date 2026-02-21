@@ -3,9 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Полный каталог запчастей для электросамокатов IMPORT. Аккумуляторы, моторы, тормоза, контроллеры, колеса и аксессуары. Большой выбор, лучшие цены.">
+  <meta name="keywords" content="купить запчасти самокат, аккумулятор электросамокат, мотор-колесо, контроллер, тормозные диски, каталог запчастей">
+  <meta name="robots" content="index, follow">
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="Каталог запчастей — IMPORT">
+  <meta property="og:description" content="Большой выбор качественных запчастей для электросамокатов по лучшим ценам">
+  <meta property="og:type" content="website">
+  
   <link rel="icon" href="/static/favicon/favicon.ico" type="image/x-icon">
   <meta name="theme-color" content="#080A0F">
-  <title>Каталог — IMPORT</title>
+  <title>Каталог запчастей — IMPORT</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
@@ -79,7 +90,9 @@
     .product-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:all .3s var(--ease);display:flex;flex-direction:column}
     .product-card:hover{border-color:rgba(0,212,255,.2);transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.5)}
     .product-img{width:100%;height:210px;background:var(--bg-3);display:flex;align-items:center;justify-content:center;font-size:3.5rem;overflow:hidden;border-bottom:1px solid var(--border);position:relative}
-    .product-img img{width:100%;height:100%;object-fit:cover}
+    .product-img img{width:100%;height:100%;object-fit:cover;transition:opacity .3s ease}
+    .product-img img[loading="lazy"]{opacity:0}
+    .product-img img[loading="lazy"].loaded{opacity:1}
     .product-badge{position:absolute;left:.75rem;padding:.25rem .625rem;border-radius:100px;font-size:.6875rem;font-weight:700;display:block}
     .product-badge:nth-of-type(1){top:.75rem}
     .product-badge:nth-of-type(2){top:2.5rem}
@@ -110,6 +123,69 @@
     .add-btn:disabled{background:var(--surface-2);color:var(--text-3);cursor:not-allowed;transform:none}
     .state-box{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:1rem;padding:5rem 2rem;color:var(--text-3)}
     .state-icon{font-size:3rem;opacity:.3}
+
+    /* Product Detail Modal - П.2 */
+    .product-detail-modal{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:600;display:none;align-items:center;justify-content:center;padding:1.5rem}
+    .product-detail-modal.active{display:flex}
+    .product-detail-box{background:var(--bg-2);border:1px solid var(--border-hover);border-radius:var(--radius-lg);width:100%;max-width:900px;max-height:90vh;overflow-y:auto;animation:fadeUp .3s var(--ease);display:flex;flex-direction:column}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    .product-detail-header{position:sticky;top:0;background:var(--bg-2);padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;z-index:10}
+    .modal-title{font-family:var(--font-d);font-size:1.125rem;font-weight:700}
+    .modal-close{background:none;border:none;color:var(--text-3);font-size:1.25rem;cursor:pointer;padding:.25rem;transition:color .2s}
+    .modal-close:hover{color:var(--text)}
+    .product-detail-content{padding:2rem;display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+    .product-gallery{display:flex;flex-direction:column;gap:1rem}
+    .product-main-img{width:100%;aspect-ratio:1;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:4rem}
+    .product-main-img img{width:100%;height:100%;object-fit:cover}
+    .product-thumbnails{display:flex;gap:.75rem;overflow-x:auto}
+    .product-thumb{width:80px;height:80px;background:var(--bg-3);border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:1.5rem;transition:border-color .2s}
+    .product-thumb:hover,.product-thumb.active{border-color:var(--accent)}
+    .product-thumb img{width:100%;height:100%;object-fit:cover}
+    .product-info{display:flex;flex-direction:column;gap:1.5rem}
+    .product-detail-title{font-family:var(--font-b);font-size:1.75rem;font-weight:700;line-height:1.2;margin-bottom:.5rem}
+    .product-detail-cat{font-size:.875rem;color:var(--accent);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+    .product-detail-price{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;color:var(--accent)}
+    .product-detail-desc{font-size:.9375rem;line-height:1.7;color:var(--text-2)}
+    .product-characteristics{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem}
+    .char-title{font-family:var(--font-d);font-size:1rem;font-weight:700;margin-bottom:1rem}
+    .char-list{display:flex;flex-direction:column;gap:.75rem}
+    .char-item{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border)}
+    .char-item:last-child{border-bottom:none}
+    .char-name{font-size:.875rem;color:var(--text-3);font-weight:600}
+    .char-value{font-size:.875rem;color:var(--text);font-weight:500}
+    .product-actions{display:flex;gap:1rem;align-items:center;padding-top:1rem;border-top:1px solid var(--border)}
+    .qty-selector{display:flex;align-items:center;gap:.75rem}
+    .qty-label{font-size:.875rem;color:var(--text-2)}
+    .qty-controls{display:flex;align-items:center;gap:.5rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.25rem}
+    .qty-btn{width:32px;height:32px;background:none;border:none;color:var(--text);cursor:pointer;font-size:1.125rem;border-radius:6px;transition:background .2s;display:flex;align-items:center;justify-content:center}
+    .qty-btn:hover{background:rgba(255,255,255,.08)}
+    .qty-btn:disabled{opacity:.4;cursor:not-allowed}
+    .qty-input{width:48px;text-align:center;background:none;border:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.9375rem;font-weight:600}
+    .add-to-cart-btn{flex:1;padding:.875rem 1.5rem;background:var(--accent);color:#080A0F;border:none;border-radius:var(--radius);cursor:pointer;font-family:var(--font-b);font-size:.9375rem;font-weight:700;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+    .add-to-cart-btn:hover{box-shadow:0 0 24px var(--accent-glow);transform:translateY(-2px)}
+    .add-to-cart-btn:disabled{background:var(--surface-2);color:var(--text-3);cursor:not-allowed;transform:none}
+    .specs-selector{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem}
+    .specs-title{font-size:.875rem;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem}
+    .specs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.75rem}
+    .spec-option{padding:.75rem 1rem;background:var(--bg-3);border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .2s;text-align:center}
+    .spec-option:hover{border-color:var(--border-hover)}
+    .spec-option.active{border-color:var(--accent);background:var(--accent-dim)}
+    .spec-name{font-size:.8125rem;font-weight:600;margin-bottom:.25rem}
+    .spec-price{font-size:.75rem;color:var(--text-3)}
+    @media (max-width:768px){
+      .product-detail-modal{padding:.75rem}
+      .product-detail-content{grid-template-columns:1fr;gap:1.5rem;padding:1.5rem}
+      .product-detail-box{max-height:95vh}
+      .product-detail-header{padding:1rem 1.25rem}
+      .product-detail-title{font-size:1.375rem}
+      .product-detail-price{font-size:1.5rem}
+      .product-main-img{aspect-ratio:1;font-size:3rem}
+      .product-actions{flex-direction:column;gap:.75rem}
+      .qty-selector{width:100%;justify-content:space-between}
+      .add-to-cart-btn{width:100%}
+      .specs-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+      .product-thumbnails{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    }
 
     /* ═══ Active Orders Banner ═══ */
     .active-orders-banner{background:linear-gradient(135deg,var(--bg-3) 0%,rgba(0,229,160,.04) 100%);border-top:1px solid var(--border);padding:1rem 0}
@@ -356,6 +432,19 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- ══ PRODUCT DETAIL MODAL (П.2) ══ -->
+<div class="product-detail-modal" id="productDetailModal">
+  <div class="product-detail-box">
+    <div class="product-detail-header">
+      <h2 class="modal-title">Детали товара</h2>
+      <button class="modal-close" id="closeProductDetail">✕</button>
+    </div>
+    <div class="product-detail-content" id="productDetailContent">
+      <!-- Content loaded dynamically -->
+    </div>
+  </div>
+</div>
+
 <script>
   let currentUser = null, cart = [], allProducts = [], currentCat = 'all', searchTerm = '';
 
@@ -466,7 +555,7 @@
                             p.image_url.startsWith('http://') || 
                             p.image_url.startsWith('https://'));
       const imgHtml = hasValidImage
-        ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" onerror="this.parentElement.innerHTML='${icon}'">`
+        ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.parentElement.innerHTML='${icon}'">`
         : icon;
           
       // Формируем бейджи как на главной странице
@@ -478,7 +567,7 @@
       const badgesHtml = badges.length ? `<div class="product-badges">${badges.join('')}</div>` : '';
       
       return `
-      <div class="product-card">
+      <div class="product-card" onclick="openProductDetail(${p.id})" style="cursor:pointer">
         <div class="product-img">${imgHtml}</div>
         <div class="product-body">
           ${badgesHtml}
@@ -487,7 +576,7 @@
           <div class="product-desc">${p.description}</div>
           <div class="product-footer">
             <span class="product-price">${fmt(p.price)} ₽</span>
-            <button class="add-btn" onclick="addToCart(${p.id},${p.stock})" ${!p.in_stock && !p.preorder?'disabled':''}>
+            <button class="add-btn" onclick="event.stopPropagation(); addToCart(${p.id},${p.stock})" ${!p.in_stock && !p.preorder?'disabled':''}>
               ${p.in_stock || p.preorder ? 'В корзину' : 'Нет в наличии'}
             </button>
           </div>
@@ -646,6 +735,209 @@
   const urlParams = new URLSearchParams(location.search);
   const urlCat = urlParams.get('category');
   if (urlCat) currentCat = urlCat;
+
+  // ── PRODUCT DETAIL MODAL (П.2) ──
+  const productDetailModal = document.getElementById('productDetailModal');
+  const closeProductDetail = document.getElementById('closeProductDetail');
+  const productDetailContent = document.getElementById('productDetailContent');
+  let currentDetailProduct = null;
+  let selectedSpec = null;
+  let detailQty = 1;
+  
+  async function openProductDetail(productId) {
+    try {
+      const r = await fetch(`/api/products/${productId}`);
+      if (!r.ok) return showToast('error', 'Не удалось загрузить товар');
+      const product = await r.json();
+      currentDetailProduct = product;
+      selectedSpec = null;
+      detailQty = 1;
+      renderProductDetail(product);
+      productDetailModal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    } catch (e) {
+      showToast('error', 'Ошибка загрузки товара');
+    }
+  }
+  
+  function renderProductDetail(p) {
+    const icon = getIcon(p.category);
+    const hasValidImage = p.image_url && p.image_url.trim() && 
+                         (p.image_url.startsWith('/static/uploads/') || 
+                          p.image_url.startsWith('http://') || 
+                          p.image_url.startsWith('https://'));
+    
+    const mainImgHtml = hasValidImage
+      ? `<img src="${p.image_url}" alt="${p.name}" onerror="this.parentElement.innerHTML='${icon}'">`
+      : icon;
+    
+    let thumbnailsHtml = '';
+    if (p.images && p.images.length > 0) {
+      const allImages = [p.image_url, ...p.images];
+      thumbnailsHtml = `
+        <div class="product-thumbnails">
+          ${allImages.map((img, idx) => {
+            const imgSrc = img && img.trim() ? img : '';
+            return imgSrc ? `<div class="product-thumb ${idx === 0 ? 'active' : ''}" onclick="switchProductImage('${imgSrc}', this)">
+              <img src="${imgSrc}" alt="Изображение ${idx + 1}">
+            </div>` : '';
+          }).join('')}
+        </div>
+      `;
+    }
+    
+    let charsHtml = '';
+    if (p.characteristics && p.characteristics.length > 0) {
+      charsHtml = `
+        <div class="product-characteristics">
+          <div class="char-title">📋 Характеристики</div>
+          <div class="char-list">
+            ${p.characteristics.map(c => `
+              <div class="char-item">
+                <span class="char-name">${c.char_name}</span>
+                <span class="char-value">${c.char_value}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+    
+    let specsHtml = '';
+    if (p.has_specifications && p.specifications && p.specifications.length > 0) {
+      specsHtml = `
+        <div class="specs-selector">
+          <div class="specs-title">🔧 Выберите версию / поколение</div>
+          <div class="specs-grid">
+            ${p.specifications.map((spec, idx) => `
+              <div class="spec-option ${selectedSpec?.id === spec.id ? 'active' : ''}" 
+                   onclick="selectSpecification(${spec.id})">
+                <div class="spec-name">${spec.name}</div>
+                <div class="spec-price">${fmt(spec.price)} ₽</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+    
+    const currentItem = selectedSpec || p;
+    const currentPrice = selectedSpec ? selectedSpec.price : p.price;
+    const currentStock = selectedSpec ? selectedSpec.stock : p.stock;
+    const inStock = currentStock > 0;
+    
+    productDetailContent.innerHTML = `
+      <div class="product-gallery">
+        <div class="product-main-img" id="productMainImg">${mainImgHtml}</div>
+        ${thumbnailsHtml}
+      </div>
+      <div class="product-info">
+        <div>
+          <div class="product-detail-cat">${getName(p.category)}</div>
+          <h2 class="product-detail-title">${p.name}${selectedSpec ? ` - ${selectedSpec.name}` : ''}</h2>
+          <div class="product-detail-price">${fmt(currentPrice)} ₽</div>
+        </div>
+        
+        ${specsHtml}
+        
+        <div class="product-detail-desc">
+          <strong>Описание:</strong><br>
+          ${selectedSpec ? selectedSpec.description || p.description : p.description}
+        </div>
+        
+        ${charsHtml}
+        
+        <div class="product-actions">
+          <div class="qty-selector">
+            <span class="qty-label">Количество:</span>
+            <div class="qty-controls">
+              <button class="qty-btn" onclick="changeDetailQty(-1)" ${!inStock ? 'disabled' : ''}>−</button>
+              <input type="number" class="qty-input" value="${detailQty}" min="1" max="${currentStock}" readonly>
+              <button class="qty-btn" onclick="changeDetailQty(1)" ${!inStock ? 'disabled' : ''}>+</button>
+            </div>
+          </div>
+          <button class="add-to-cart-btn" onclick="addToCartFromDetail()" ${!inStock ? 'disabled' : ''}>
+            ${inStock ? '🛒 Добавить в корзину' : '✕ Нет в наличии'}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+  
+  function switchProductImage(imgSrc, thumbEl) {
+    document.getElementById('productMainImg').innerHTML = `<img src="${imgSrc}" alt="Product image">`;
+    document.querySelectorAll('.product-thumb').forEach(t => t.classList.remove('active'));
+    thumbEl.classList.add('active');
+  }
+  
+  function selectSpecification(specId) {
+    if (!currentDetailProduct.specifications) return;
+    selectedSpec = currentDetailProduct.specifications.find(s => s.id === specId);
+    detailQty = 1;
+    renderProductDetail(currentDetailProduct);
+  }
+  
+  function changeDetailQty(delta) {
+    const currentItem = selectedSpec || currentDetailProduct;
+    const maxStock = currentItem.stock || 0;
+    detailQty = Math.max(1, Math.min(detailQty + delta, maxStock));
+    renderProductDetail(currentDetailProduct);
+  }
+  
+  async function addToCartFromDetail() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      productDetailModal.classList.remove('active');
+      document.body.style.overflow = '';
+      location.href = '/';
+      return;
+    }
+    
+    if (currentDetailProduct.has_specifications && currentDetailProduct.specifications.length > 0 && !selectedSpec) {
+      showToast('error', 'Выберите версию / поколение товара');
+      return;
+    }
+    
+    const productId = currentDetailProduct.id;
+    const stock = selectedSpec ? selectedSpec.stock : currentDetailProduct.stock;
+    
+    if (stock <= 0) {
+      showToast('error', 'Товар не в наличии');
+      return;
+    }
+    
+    try {
+      const r = await fetch('/api/cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ product_id: productId, quantity: detailQty })
+      });
+      
+      if (r.ok) {
+        await loadCart();
+        productDetailModal.classList.remove('active');
+        document.body.style.overflow = '';
+        showToast('success', `✓ Добавлено ${detailQty} шт. в корзину`);
+      } else {
+        const d = await r.json();
+        showToast('error', d.detail || 'Ошибка');
+      }
+    } catch {
+      showToast('error', 'Ошибка соединения');
+    }
+  }
+  
+  closeProductDetail.addEventListener('click', () => {
+    productDetailModal.classList.remove('active');
+    document.body.style.overflow = '';
+  });
+  
+  productDetailModal.addEventListener('click', (e) => {
+    if (e.target === productDetailModal) {
+      productDetailModal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  });
 
   // ── Init ──
   (async () => {

@@ -157,19 +157,105 @@
     .toast-success{background:var(--green-dim);color:var(--green);border-color:rgba(0,229,160,.25)}
     .toast-error{background:var(--red-dim);color:var(--red);border-color:rgba(255,71,87,.25)}
     /* Mobile hamburger menu */
-    .mobile-menu-btn{display:none;flex-direction:column;gap:4px;background:none;border:none;cursor:pointer;padding:.75rem;margin-right:.5rem;z-index:300}
-    .mobile-menu-btn span{width:20px;height:2px;background:var(--text);border-radius:2px;transition:all .3s}
+    .mobile-menu-btn{display:none;flex-direction:column;gap:4px;background:none;border:none;cursor:pointer;padding:.75rem;margin-right:.5rem}
+    .mobile-menu-btn span{width:20px;height:2px;background:var(--text);border-radius:2px;transition:all .3s var(--ease)}
     .mobile-menu-btn.active span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
     .mobile-menu-btn.active span:nth-child(2){opacity:0}
     .mobile-menu-btn.active span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
     
+    /* НОВАЯ РЕАЛИЗАЦИЯ - Bottom Sheet Menu */
+    .mobile-nav-wrapper{
+      display:none;
+      position:fixed;
+      inset:0;
+      z-index:9999;
+      pointer-events:none;
+    }
+    .mobile-nav-wrapper.active{
+      pointer-events:all;
+    }
+    
+    /* Overlay - затемнение фона */
+    .mobile-nav-backdrop{
+      position:absolute;
+      inset:0;
+      background:rgba(0,0,0,0.7);
+      opacity:0;
+      transition:opacity .3s ease;
+    }
+    .mobile-nav-wrapper.active .mobile-nav-backdrop{
+      opacity:1;
+    }
+    
+    /* Само меню - Bottom Sheet */
+    .mobile-nav-sheet{
+      position:absolute;
+      left:0;
+      right:0;
+      bottom:0;
+      max-height:80vh;
+      background:var(--bg-2);
+      border-radius:var(--radius-xl) var(--radius-xl) 0 0;
+      padding:1rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom));
+      transform:translateY(100%);
+      transition:transform .3s var(--ease);
+      overflow-y:auto;
+      box-shadow:0 -10px 40px rgba(0,0,0,.5);
+    }
+    .mobile-nav-wrapper.active .mobile-nav-sheet{
+      transform:translateY(0);
+    }
+    
+    /* Handle - индикатор перетаскивания */
+    .mobile-nav-handle{
+      width:40px;
+      height:4px;
+      background:var(--border-hover);
+      border-radius:2px;
+      margin:0 auto 1rem;
+    }
+    
+    /* Кнопки навигации в мобильном меню */
+    .mobile-nav-items{
+      display:flex;
+      flex-direction:column;
+      gap:.5rem;
+    }
+    
+    .mobile-nav-item{
+      display:flex;
+      align-items:center;
+      gap:.75rem;
+      padding:.875rem 1.25rem;
+      background:transparent;
+      border:none;
+      border-radius:var(--radius);
+      color:var(--text-2);
+      font-family:var(--font-b);
+      font-size:.875rem;
+      font-weight:600;
+      text-align:left;
+      cursor:pointer;
+      transition:all .2s;
+      width:100%;
+    }
+    .mobile-nav-item:hover{
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+    }
+    .mobile-nav-item.active{
+      background:var(--accent-dim);
+      color:var(--accent);
+    }
+    
     @media(max-width:768px){
       .mobile-menu-btn{display:flex}
-      .admin-nav{position:fixed;left:0;top:62px;bottom:0;width:280px;max-width:85vw;background:var(--bg-2);border-right:1px solid var(--border);flex-direction:column;padding:1rem;gap:.5rem;transform:translateX(-100%);transition:transform .3s var(--ease);overflow-y:auto;z-index:200}
-      .admin-nav.active{transform:translateX(0)}
-      .admin-nav-btn{width:100%;justify-content:flex-start;padding:.75rem 1rem}
-      .admin-actions{gap:.5rem}
-      .admin-actions .btn{padding:.5rem .875rem;font-size:.8125rem}
+      .mobile-nav-wrapper{display:block}
+      .admin-nav{display:none !important} /* Скрываем старое меню */
+    }
+    
+    @media(min-width:769px){
+      .mobile-nav-wrapper{display:none !important}
     }    /* IMPORT Logo - Lightning bolt effect */
     .logo-mark,.admin-logo-mark,.login-mark{
       position:relative;
@@ -251,6 +337,24 @@
       </div>
     </div>
   </header>
+
+  <!-- НОВОЕ МОБИЛЬНОЕ МЕНЮ - Bottom Sheet -->
+  <div class="mobile-nav-wrapper" id="mobileNavWrapper">
+    <div class="mobile-nav-backdrop" id="mobileNavBackdrop"></div>
+    <div class="mobile-nav-sheet">
+      <div class="mobile-nav-handle"></div>
+      <div class="mobile-nav-items" id="mobileNavItems">
+        <button class="mobile-nav-item active" data-sec="dashboard">📊 Дашборд</button>
+        <button class="mobile-nav-item" data-sec="products">📦 Товары</button>
+        <button class="mobile-nav-item" data-sec="categories">🏷️ Категории</button>
+        <button class="mobile-nav-item" data-sec="orders">🛒 Заказы</button>
+        <button class="mobile-nav-item" data-sec="top-clients">👥 Топ клиенты</button>
+        <button class="mobile-nav-item" data-sec="crm">📝 CRM</button>
+        <button class="mobile-nav-item" data-sec="add-product">➕ Обычный товар</button>
+        <button class="mobile-nav-item" data-sec="add-product-specs">🔧 Товар со спецификациями</button>
+      </div>
+    </div>
+  </div>
 
   <div class="admin-body">
 
@@ -928,12 +1032,30 @@
       const r = await fetch('/api/products', { headers: { Authorization: `Bearer ${adminToken}` } });
       if (!r.ok) return;
       const products = await r.json();
+      
+      // П.4 - DEBUG: Логируем первый товар для проверки
+      if (products.length > 0) {
+        console.log('🔍 DEBUG - Первый товар:', products[0]);
+        console.log('🔍 DEBUG - image_url:', products[0].image_url);
+      }
+      
       const catMap = Object.fromEntries(categories.map(c => [c.slug, `${c.emoji} ${c.name}`]));
       const tbody = document.getElementById('productsTableBody');
       if (!products.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-3)">Товаров нет</td></tr>'; return; }
       tbody.innerHTML = products.map(p => {
-        const imgCell = p.image_url && p.image_url.startsWith('/static/uploads')
-          ? `<div class="product-img-cell"><img src="${p.image_url}" alt="${p.name}"></div>`
+        // П.4 - Улучшенная проверка изображений
+        const hasValidImage = p.image_url && p.image_url.trim() && 
+                             (p.image_url.startsWith('/static/uploads/') || 
+                              p.image_url.startsWith('http://') || 
+                              p.image_url.startsWith('https://'));
+        
+        // DEBUG для каждого товара
+        if (p.image_url && p.image_url.includes('uploads')) {
+          console.log(`📸 Товар "${p.name}": ${p.image_url} (hasValidImage: ${hasValidImage})`);
+        }
+        
+        const imgCell = hasValidImage
+          ? `<div class="product-img-cell"><img src="${p.image_url}" alt="${p.name}" onerror="console.error('❌ Ошибка загрузки:', '${p.image_url}'); this.parentElement.innerHTML='${getCatIcon(p.category)}'"></div>`
           : `<div class="product-img-cell">${getCatIcon(p.category)}</div>`;
         return `<tr>
           <td>${imgCell}</td>
@@ -1010,12 +1132,30 @@
   function previewImage(event) {
     const file = event.target.files[0];
     if (!file) return;
+    
+    // Валидация формата
+    const allowedFormats = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedFormats.includes(file.type)) {
+      showToast('Недопустимый формат файла. Используйте JPG, PNG, GIF или WebP', true);
+      event.target.value = '';
+      return;
+    }
+    
+    // Валидация размера (макс 10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      showToast('Файл слишком большой. Максимум 10 МБ', true);
+      event.target.value = '';
+      return;
+    }
+    
     const reader = new FileReader();
     reader.onload = e => {
       document.getElementById('uploadPlaceholder').style.display = 'none';
       document.getElementById('imgPreview').style.display = 'block';
       document.getElementById('previewImg').src = e.target.result;
-      document.getElementById('previewFileName').textContent = file.name;
+      const sizeKB = (file.size / 1024).toFixed(1);
+      document.getElementById('previewFileName').textContent = `${file.name} (${sizeKB} KB)`;
     };
     reader.readAsDataURL(file);
   }
@@ -1031,6 +1171,17 @@
   document.getElementById('addProductForm').addEventListener('submit', async e => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    
+    // П.4 - DEBUG: Проверяем что отправляется
+    console.log('📤 Отправка товара...');
+    for (let [key, value] of formData.entries()) {
+      if (key === 'image_file' && value instanceof File) {
+        console.log(`  ${key}:`, value.name, value.size, 'bytes', value.type);
+      } else {
+        console.log(`  ${key}:`, value);
+      }
+    }
+    
     const msgEl = document.getElementById('addProductMsg');
     try {
       const r = await fetch('/api/admin/products', {
@@ -1039,11 +1190,22 @@
         body: formData
       });
       const d = await r.json();
+      
+      // П.4 - DEBUG: Проверяем ответ
+      console.log('📥 Ответ сервера:', d);
+      if (d.product) {
+        console.log('🔍 image_url созданного товара:', d.product.image_url);
+      }
+      
       if (r.ok) {
         showMsg('addProductMsg','success','✅ Товар успешно добавлен!');
         e.target.reset(); clearPreview();
+        loadProducts(); // Перезагрузить список
       } else showMsg('addProductMsg','error', d.detail||'Ошибка');
-    } catch { showMsg('addProductMsg','error','Ошибка соединения'); }
+    } catch (err) { 
+      console.error('❌ Ошибка:', err);
+      showMsg('addProductMsg','error','Ошибка соединения'); 
+    }
   });
 
   // ─── PRODUCT WITH SPECIFICATIONS ───
@@ -1438,21 +1600,68 @@
   }
 
 
-  // Mobile menu toggle
+  // НОВАЯ РЕАЛИЗАЦИЯ - Mobile Bottom Sheet Menu
   const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-  const adminNav = document.getElementById('adminNav');
-  if (mobileMenuBtn) {
+  const mobileNavWrapper = document.getElementById('mobileNavWrapper');
+  const mobileNavBackdrop = document.getElementById('mobileNavBackdrop');
+  const mobileNavItems = document.getElementById('mobileNavItems');
+  
+  function closeMobileMenu() {
+    if (mobileMenuBtn) mobileMenuBtn.classList.remove('active');
+    if (mobileNavWrapper) mobileNavWrapper.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  
+  function openMobileMenu() {
+    if (mobileMenuBtn) mobileMenuBtn.classList.add('active');
+    if (mobileNavWrapper) mobileNavWrapper.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  
+  if (mobileMenuBtn && mobileNavWrapper) {
+    // Открытие/закрытие по клику на кнопку
     mobileMenuBtn.addEventListener('click', () => {
-      mobileMenuBtn.classList.toggle('active');
-      adminNav.classList.toggle('active');
+      if (mobileNavWrapper.classList.contains('active')) {
+        closeMobileMenu();
+      } else {
+        openMobileMenu();
+      }
     });
-    // Close menu when clicking nav item
-    document.querySelectorAll('.admin-nav-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        mobileMenuBtn.classList.remove('active');
-        adminNav.classList.remove('active');
+    
+    // Закрытие по клику на backdrop
+    if (mobileNavBackdrop) {
+      mobileNavBackdrop.addEventListener('click', closeMobileMenu);
+    }
+    
+    // Закрытие при выборе пункта меню + переключение секции
+    if (mobileNavItems) {
+      mobileNavItems.querySelectorAll('.mobile-nav-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const section = btn.dataset.sec;
+          
+          // Переключаем активный класс в мобильном меню
+          mobileNavItems.querySelectorAll('.mobile-nav-item').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          
+          // Переключаем активный класс в десктопном меню
+          document.querySelectorAll('.admin-nav-btn').forEach(b => {
+            if (b.dataset.sec === section) {
+              b.classList.add('active');
+            } else {
+              b.classList.remove('active');
+            }
+          });
+          
+          // Переключаем секцию
+          document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+          const targetSection = document.getElementById('sec-' + section);
+          if (targetSection) targetSection.classList.add('active');
+          
+          // Закрываем меню
+          closeMobileMenu();
+        });
       });
-    });
+    }
   }
 
   // Close modals on overlay click

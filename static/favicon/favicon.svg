@@ -1,0 +1,41 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Градиентный фон -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#080A0F;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#161B24;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D4FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00E5A0;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Фон с закругленными углами -->
+  <rect width="512" height="512" rx="90" fill="url(#bg)"/>
+  
+  <!-- Акцентная рамка -->
+  <rect x="16" y="16" width="480" height="480" rx="74" fill="none" stroke="url(#accent)" stroke-width="4" opacity="0.2"/>
+  
+  <!-- Текст IMPORT -->
+  <text x="256" y="310" 
+        font-family="Arial, Helvetica, sans-serif" 
+        font-size="110" 
+        font-weight="900" 
+        text-anchor="middle" 
+        fill="url(#accent)"
+        filter="url(#glow)">IMPORT</text>
+  
+  <!-- Декоративная молния/стрелка сверху -->
+  <path d="M 256 120 L 280 170 L 265 170 L 280 220 L 232 180 L 247 180 Z" 
+        fill="#FFD700" 
+        filter="url(#glow)"
+        opacity="0.9"/>
+</svg>

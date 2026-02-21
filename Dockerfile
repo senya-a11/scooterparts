@@ -36,11 +36,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Копируем всё приложение
 COPY . .
 
-# Создаём нужные папки
+# Создаём нужные папки с правильными правами
 RUN mkdir -p /app/static/uploads \
              /app/static/images \
              /app/static/favicon \
-             /app/data
+             /app/data && \
+    chmod -R 777 /app/static/uploads && \
+    chmod -R 755 /app/static/images && \
+    chmod -R 755 /app/static/favicon
 
 # Порт
 EXPOSE 8000

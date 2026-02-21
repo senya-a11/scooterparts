@@ -3,7 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" href="/static/favicon/favicon.ico" type="image/x-icon">
+  <!-- Favicons - IMPORT Branding -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/static/favicon/favicon-512x512.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/static/favicon/favicon-192x192.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png">
+  <link rel="shortcut icon" href="/static/favicon/favicon.ico">
+  <meta name="theme-color" content="#080A0F">
   <title>Admin — IMPORT</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
@@ -539,7 +546,7 @@
       </div>
       <div id="addProductMsg"></div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.75rem;max-width:680px">
-        <form id="addProductForm">
+        <form id="addProductForm" enctype="multipart/form-data">
           <div class="form-group">
             <label class="form-label">Название товара *</label>
             <input type="text" name="name" class="form-input" placeholder="Аккумулятор 36V 15Ah" required>
@@ -620,7 +627,7 @@
         <h3 style="font-family:var(--font-d);font-size:1.125rem;font-weight:700;margin-bottom:1.25rem">
           Шаг 1: Создайте основной товар
         </h3>
-        <form id="addProductWithSpecsForm">
+        <form id="addProductWithSpecsForm" enctype="multipart/form-data">
           <div class="form-group">
             <label class="form-label">Название основного товара *</label>
             <input type="text" name="name" class="form-input" placeholder="Например: iPhone" required>
@@ -687,7 +694,7 @@
           Теперь добавьте к нему версии/поколения (например: iPhone 13, iPhone 14, iPhone 15)
         </div>
 
-        <form id="addSpecificationForm">
+        <form id="addSpecificationForm" enctype="multipart/form-data">
           <input type="hidden" id="specProductId" name="product_id">
           
           <div class="form-group">
@@ -788,7 +795,7 @@
       <button class="modal-close" onclick="closeModal('editProductModal')">✕</button>
     </div>
     <div id="editProductMsg"></div>
-    <form id="editProductForm">
+    <form id="editProductForm" enctype="multipart/form-data">
       <input type="hidden" name="product_id" id="editProductId">
       <div class="form-group"><label class="form-label">Название</label><input type="text" name="name" class="form-input" id="editProductName" required></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
@@ -875,8 +882,14 @@
     document.getElementById('loginScreen').style.display = 'none';
     const panel = document.getElementById('adminPanel');
     panel.style.display = 'flex';
-    loadDashboard();
+    
+    // Активируем Dashboard при входе
+    switchSection('dashboard');
+    
+    // Загружаем категории для всех форм
     loadCategories();
+    
+    console.log('✅ Админ панель загружена');
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -910,10 +923,22 @@
 
   // ── Dashboard ──
   async function loadDashboard() {
+    const statsGrid = document.getElementById('statsGrid');
+    statsGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--text-3)">Загрузка статистики...</div>';
+    
     try {
+      console.log('🔄 Загрузка статистики...');
       const r = await fetch('/api/admin/stats', { headers: { Authorization: `Bearer ${adminToken}` } });
-      if (!r.ok) return;
+      
+      if (!r.ok) {
+        console.error(`❌ Ошибка загрузки статистики: HTTP ${r.status} ${r.statusText}`);
+        statsGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--red)">Ошибка загрузки: ${r.status} ${r.statusText}</div>`;
+        return;
+      }
+      
       const d = await r.json();
+      console.log('✅ Статистика загружена:', d);
+      
       document.getElementById('statsGrid').innerHTML = `
         <div class="stat-card"><div class="stat-label">👥 Пользователи</div><div class="stat-val accent">${d.users.total}</div></div>
         <div class="stat-card"><div class="stat-label">📦 Товаров</div><div class="stat-val">${d.products.total}</div></div>
@@ -924,7 +949,10 @@
         <div class="stat-card"><div class="stat-label">⏳ Активных заказов</div><div class="stat-val amber">${d.orders.active}</div></div>
         <div class="stat-card"><div class="stat-label">💰 Выручка (оплачено)</div><div class="stat-val green">${fmt(d.orders.revenue)} ₽</div></div>
       `;
-    } catch {}
+    } catch (error) {
+      console.error('❌ Критическая ошибка при загрузке статистики:', error);
+      statsGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--red)">Критическая ошибка загрузки. Проверьте консоль.</div>';
+    }
   }
 
   // ── Categories ──
@@ -1028,10 +1056,21 @@
 
   // ── Products ──
   async function loadProducts() {
+    const tbody = document.getElementById('productsTableBody');
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка товаров...</td></tr>';
+    
     try {
+      console.log('🔄 Загрузка товаров...');
       const r = await fetch('/api/products', { headers: { Authorization: `Bearer ${adminToken}` } });
-      if (!r.ok) return;
+      
+      if (!r.ok) {
+        console.error(`❌ Ошибка загрузки товаров: HTTP ${r.status} ${r.statusText}`);
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--red)">Ошибка загрузки: ${r.status} ${r.statusText}</td></tr>`;
+        return;
+      }
+      
       const products = await r.json();
+      console.log(`✅ Загружено товаров: ${products.length}`);
       
       // П.4 - DEBUG: Логируем первый товар для проверки
       if (products.length > 0) {
@@ -1040,22 +1079,22 @@
       }
       
       const catMap = Object.fromEntries(categories.map(c => [c.slug, `${c.emoji} ${c.name}`]));
-      const tbody = document.getElementById('productsTableBody');
       if (!products.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-3)">Товаров нет</td></tr>'; return; }
       tbody.innerHTML = products.map(p => {
         // П.4 - Улучшенная проверка изображений
         const hasValidImage = p.image_url && p.image_url.trim() && 
                              (p.image_url.startsWith('/static/uploads/') || 
                               p.image_url.startsWith('http://') || 
-                              p.image_url.startsWith('https://'));
+                              p.image_url.startsWith('https://') ||
+                              p.image_url.startsWith('data:image/'));
         
         // DEBUG для каждого товара
-        if (p.image_url && p.image_url.includes('uploads')) {
-          console.log(`📸 Товар "${p.name}": ${p.image_url} (hasValidImage: ${hasValidImage})`);
+        if (p.image_url && (p.image_url.includes('uploads') || p.image_url.includes('data:image'))) {
+          console.log(`📸 Товар "${p.name}": image_url length = ${p.image_url.length} (hasValidImage: ${hasValidImage})`);
         }
         
         const imgCell = hasValidImage
-          ? `<div class="product-img-cell"><img src="${p.image_url}" alt="${p.name}" onerror="console.error('❌ Ошибка загрузки:', '${p.image_url}'); this.parentElement.innerHTML='${getCatIcon(p.category)}'"></div>`
+          ? `<div class="product-img-cell"><img src="${p.image_url}" alt="${p.name}" onerror="console.error('❌ Ошибка загрузки'); this.parentElement.innerHTML='${getCatIcon(p.category)}'"></div>`
           : `<div class="product-img-cell">${getCatIcon(p.category)}</div>`;
         return `<tr>
           <td>${imgCell}</td>
@@ -1073,7 +1112,10 @@
           </div></td>
         </tr>`;
       }).join('');
-    } catch { console.error('Load products error'); }
+    } catch (error) {
+      console.error('❌ Критическая ошибка при загрузке товаров:', error);
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--red)">Критическая ошибка загрузки. Проверьте консоль.</td></tr>';
+    }
   }
 
   // Inline editing functions
@@ -1378,14 +1420,30 @@
   // ── Orders ──
   async function loadOrders() {
     const statusFilter = document.getElementById('orderStatusFilter').value;
+    const tbody = document.getElementById('ordersTableBody');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка заказов...</td></tr>';
+    
     let url = '/api/admin/orders?limit=100';
     if (statusFilter) url += `&status=${statusFilter}`;
+    
     try {
+      console.log('🔄 Загрузка заказов...');
       const r = await fetch(url, { headers: { Authorization: `Bearer ${adminToken}` } });
-      if (!r.ok) return;
+      
+      if (!r.ok) {
+        console.error(`❌ Ошибка загрузки заказов: HTTP ${r.status} ${r.statusText}`);
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--red)">Ошибка загрузки: ${r.status} ${r.statusText}</td></tr>`;
+        return;
+      }
+      
       const orders = await r.json();
-      const tbody = document.getElementById('ordersTableBody');
-      if (!orders.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-3)">Заказов нет</td></tr>'; return; }
+      console.log(`✅ Загружено заказов: ${orders.length}`);
+      
+      if (!orders.length) { 
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-3)">Заказов нет</td></tr>'; 
+        return; 
+      }
+      
       const statusLabels = { pending:'⏳ Ожидание', confirmed:'✅ Подтверждён', processing:'⚙️ В обработке', shipped:'📦 Отправлен', delivered:'🎉 Доставлен', cancelled:'❌ Отменён' };
       const statusClass = { pending:'status-pending', confirmed:'status-confirmed', processing:'status-processing', shipped:'status-shipped', delivered:'status-delivered', cancelled:'status-cancelled' };
       tbody.innerHTML = orders.map(o => `<tr>
@@ -1406,7 +1464,10 @@
           </select>
         </td>
       </tr>`).join('');
-    } catch {}
+    } catch (error) {
+      console.error('❌ Критическая ошибка при загрузке заказов:', error);
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--red)">Критическая ошибка загрузки. Проверьте консоль.</td></tr>';
+    }
   }
 
   async function updateOrderStatus(orderId, newStatus) {
@@ -1426,14 +1487,21 @@
 
   // ── Top Clients: Load Top Customers ──
   async function loadTopClients() {
+    console.log('🔄 Загрузка топ покупателей...');
     const tbody = document.getElementById('topClientsTableBody');
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка...</td></tr>';
     try {
       const r = await fetch('/api/admin/top-customers?limit=50', {
         headers: { Authorization: `Bearer ${adminToken}` }
       });
+      
+      if (!r.ok) {
+        console.error(`❌ HTTP ${r.status}: ${r.statusText}`);
+        throw new Error(`HTTP ${r.status}`);
+      }
+      
       const customers = await r.json();
-      if (!r.ok) throw new Error('Failed to load');
+      console.log(`✅ Загружено: ${customers.length} покупателей`);
       
       if (customers.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-3)">Пока нет покупателей</td></tr>';
@@ -1458,7 +1526,8 @@
         `;
       }).join('');
     } catch (err) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--red)">Ошибка загрузки данных</td></tr>';
+      console.error('❌ Критическая ошибка при загрузке топ покупателей:', err);
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--red)">Критическая ошибка загрузки. Проверьте консоль.</td></tr>';
     }
   }
 
@@ -1467,14 +1536,21 @@
   let currentCustomerId = null;
 
   async function loadCRM() {
+    console.log('🔄 Загрузка CRM данных...');
     const tbody = document.getElementById('crmTableBody');
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка...</td></tr>';
     try {
       const r = await fetch('/api/admin/customers', {
         headers: { Authorization: `Bearer ${adminToken}` }
       });
+      
+      if (!r.ok) {
+        console.error(`❌ HTTP ${r.status}: ${r.statusText}`);
+        throw new Error(`HTTP ${r.status}`);
+      }
+      
       const customers = await r.json();
-      if (!r.ok) throw new Error('Failed to load');
+      console.log(`✅ Загружено CRM записей: ${customers.length}`);
       
       if (customers.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-3)">Пока нет покупателей</td></tr>';
@@ -1503,7 +1579,8 @@
         `;
       }).join('');
     } catch (err) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--red)">Ошибка загрузки данных</td></tr>';
+      console.error('❌ Критическая ошибка при загрузке CRM:', err);
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--red)">Критическая ошибка загрузки. Проверьте консоль.</td></tr>';
     }
   }
 

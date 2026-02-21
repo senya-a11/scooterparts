@@ -53,10 +53,20 @@ templates = Jinja2Templates(directory=str(templates_path))
 STATIC_DIR = BASE_DIR / "static"
 DATA_DIR   = BASE_DIR / "data"
 UPLOAD_DIR = STATIC_DIR / "uploads"
+
+# Создаем директории с правильными правами
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
 (STATIC_DIR / "images").mkdir(exist_ok=True)
 (STATIC_DIR / "favicon").mkdir(exist_ok=True)
+
+# Устанавливаем права на запись для uploads
+try:
+    os.chmod(UPLOAD_DIR, 0o777)
+    print(f"✅ Права на папку uploads установлены: {UPLOAD_DIR}")
+except Exception as e:
+    print(f"⚠️ Не удалось установить права на {UPLOAD_DIR}: {e}")
+
 
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
 ADMIN_USERNAME = "admin"
@@ -307,7 +317,7 @@ class Database:
                     category VARCHAR(50) NOT NULL,
                     price DECIMAL(10,2) NOT NULL,
                     description TEXT NOT NULL,
-                    image_url VARCHAR(500) NOT NULL,
+                    image_url TEXT NOT NULL,
                     stock INTEGER DEFAULT 0,
                     featured BOOLEAN DEFAULT FALSE,
                     in_stock BOOLEAN DEFAULT FALSE,
@@ -328,6 +338,9 @@ class Database:
                     ALTER TABLE products ADD COLUMN IF NOT EXISTS in_stock BOOLEAN DEFAULT FALSE
                 ''')
                 await conn.execute('''
+                    ALTER TABLE products ADD COLUMN IF NOT EXISTS image_data TEXT
+                ''')
+                await conn.execute('''
                     ALTER TABLE products ADD COLUMN IF NOT EXISTS cost_price DECIMAL(10,2)
                 ''')
                 await conn.execute('''
@@ -336,7 +349,19 @@ class Database:
                 await conn.execute('''
                     ALTER TABLE products ADD COLUMN IF NOT EXISTS specifications_data TEXT
                 ''')
-            except Exception:
+                # КРИТИЧЕСКИЕ МИГРАЦИИ: изменение типа image_url для поддержки base64
+                await conn.execute('''
+                    ALTER TABLE products ALTER COLUMN image_url TYPE TEXT
+                ''')
+                await conn.execute('''
+                    ALTER TABLE product_specifications ALTER COLUMN image_url TYPE TEXT
+                ''')
+                await conn.execute('''
+                    ALTER TABLE product_images ALTER COLUMN image_url TYPE TEXT
+                ''')
+                print("✅ Миграция: все image_url изменены на TEXT для поддержки base64")
+            except Exception as e:
+                print(f"⚠️ Миграция: {e}")
                 pass  # Columns already exist
             
             # Спецификации товаров (версии/поколения)
@@ -347,7 +372,7 @@ class Database:
                     name VARCHAR(200) NOT NULL,
                     price DECIMAL(10,2) NOT NULL,
                     description TEXT,
-                    image_url VARCHAR(500),
+                    image_url TEXT,
                     stock INTEGER DEFAULT 0,
                     in_stock BOOLEAN DEFAULT FALSE,
                     preorder BOOLEAN DEFAULT FALSE,
@@ -378,7 +403,7 @@ class Database:
                     id SERIAL PRIMARY KEY,
                     product_id INTEGER NOT NULL,
                     specification_id INTEGER,
-                    image_url VARCHAR(500) NOT NULL,
+                    image_url TEXT NOT NULL,
                     sort_order INTEGER DEFAULT 0,
                     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
                     FOREIGN KEY (specification_id) REFERENCES product_specifications(id) ON DELETE CASCADE
@@ -477,7 +502,7 @@ class Database:
                     ("Контроллер Smart 36V","electronics",4900.00,"Интеллектуальный контроллер с Bluetooth и мобильным приложением.","/static/images/controller.jpg",15,False),
                     ("Дисплей Color LCD","electronics",3200.00,"Цветной LCD дисплей с подсветкой и индикацией всех параметров.","/static/images/display.jpg",12,True),
                     ("Тормозные диски Premium","brakes",2200.00,"Вентилируемые тормозные диски из нержавеющей стали.","/static/images/brakes.jpg",25,False),
-                    ("Колесо 10\" All-Terrain","tires",1800.00,"Пневматическое колесо для бездорожья с усиленными стенками.","/static/images/wheel.jpg",20,False),
+                    # УДАЛЕНО: ("Колесо 10\" All-Terrain","tires",1800.00,"Пневматическое колесо для бездорожья с усиленными стенками.","/static/images/wheel.jpg",20,False),
                     ("Тормозные колодки Premium","brakes",1200.00,"Керамические тормозные колодки для дисковых тормозов.","/static/images/brake-pads.jpg",30,True),
                     ("Руль алюминиевый","accessories",2500.00,"Алюминиевый руль с резиновыми накладками.","/static/images/handlebar.jpg",15,False),
                 ]
@@ -1240,6 +1265,69 @@ async def admin_login(login_data: AdminLogin):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/admin/migrate-images")
+async def migrate_images_to_base64(admin=Depends(verify_admin)):
+    """
+    Утилита для миграции изображений из файловой системы в base64
+    Полезно при переносе с файлового хранения на БД
+    """
+    try:
+        import base64
+        migrated = 0
+        failed = []
+        
+        async with db.pool.acquire() as conn:
+            # Получаем все товары с изображениями из файлов
+            products = await conn.fetch('''
+                SELECT id, name, image_url 
+                FROM products 
+                WHERE image_url LIKE '/static/uploads/%'
+            ''')
+            
+            for product in products:
+                try:
+                    # Путь к файлу
+                    file_path = STATIC_DIR / product['image_url'].lstrip('/')
+                    
+                    if not file_path.exists():
+                        failed.append(f"Product {product['id']}: File not found")
+                        continue
+                    
+                    # Читаем файл
+                    with open(file_path, 'rb') as f:
+                        file_data = f.read()
+                    
+                    # Оптимизируем
+                    optimized_data = await optimize_image(file_data)
+                    
+                    # Конвертируем в base64
+                    image_base64 = base64.b64encode(optimized_data).decode('utf-8')
+                    image_data_url = f"data:image/jpeg;base64,{image_base64}"
+                    
+                    # Обновляем в БД
+                    await conn.execute('''
+                        UPDATE products 
+                        SET image_url = $1 
+                        WHERE id = $2
+                    ''', image_data_url, product['id'])
+                    
+                    migrated += 1
+                    print(f"✅ Migrated: {product['name']}")
+                    
+                except Exception as e:
+                    failed.append(f"Product {product['id']}: {str(e)}")
+                    print(f"❌ Failed: {product['name']} - {e}")
+        
+        return {
+            "success": True,
+            "migrated": migrated,
+            "failed": failed,
+            "message": f"Migrated {migrated} images to base64"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/admin/stats")
 async def get_admin_stats(admin=Depends(verify_admin)):
     try:
@@ -1453,9 +1541,14 @@ async def update_order_status(order_id: int, body: dict, admin=Depends(verify_ad
 # ========== IMAGE OPTIMIZATION ==========
 # ==========================================
 
-async def optimize_image(image_data: bytes, max_size: tuple = (1200, 1200), quality: int = 85) -> bytes:
+async def optimize_image(image_data: bytes, max_size: tuple = (800, 800), quality: int = 75) -> bytes:
     """
-    Оптимизирует изображение: изменяет размер и сжимает
+    Оптимизирует изображение для хранения в базе данных (base64)
+    
+    Агрессивная оптимизация:
+    - Уменьшение до 800x800 (вместо 1200x1200)
+    - Качество 75% (вместо 85%)
+    - Это уменьшает размер на ~60-70%
     
     Args:
         image_data: Байты исходного изображения
@@ -1468,6 +1561,9 @@ async def optimize_image(image_data: bytes, max_size: tuple = (1200, 1200), qual
     try:
         # Открываем изображение
         img = Image.open(io.BytesIO(image_data))
+        
+        # Логируем исходный размер
+        print(f"📸 Original size: {img.size} ({len(image_data)} bytes)")
         
         # Конвертируем в RGB если необходимо (для PNG с прозрачностью)
         if img.mode in ('RGBA', 'LA', 'P'):
@@ -1482,14 +1578,19 @@ async def optimize_image(image_data: bytes, max_size: tuple = (1200, 1200), qual
         
         # Изменяем размер, сохраняя пропорции
         img.thumbnail(max_size, Image.Resampling.LANCZOS)
+        print(f"📸 Resized to: {img.size}")
         
         # Сохраняем оптимизированное изображение
         output = io.BytesIO()
         img.save(output, format='JPEG', quality=quality, optimize=True)
-        return output.getvalue()
+        optimized_data = output.getvalue()
+        
+        print(f"📸 Optimized size: {len(optimized_data)} bytes (compression: {100 - int(len(optimized_data)/len(image_data)*100)}%)")
+        
+        return optimized_data
     except Exception as e:
         # Если оптимизация не удалась, возвращаем оригинал
-        print(f"Image optimization failed: {e}")
+        print(f"⚠️ Image optimization failed: {e}, using original")
         return image_data
 
 
@@ -1497,6 +1598,12 @@ async def optimize_image(image_data: bytes, max_size: tuple = (1200, 1200), qual
 async def create_product(request: Request, admin=Depends(verify_admin)):
     try:
         form = await request.form()
+        
+        # КРИТИЧЕСКОЕ ЛОГИРОВАНИЕ
+        print("\n" + "="*80)
+        print("🔍 НАЧАЛО ОБРАБОТКИ ЗАПРОСА НА СОЗДАНИЕ ТОВАРА")
+        print("="*80)
+        
         name     = str(form.get("name","")).strip()
         category = str(form.get("category","")).strip()
         price    = float(form.get("price",0))
@@ -1509,6 +1616,22 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
         cost_price = float(cost_price_str) if cost_price_str else None
         image_url = str(form.get("image_url","")).strip()
         image_file = form.get("image_file")
+        
+        print(f"📝 Название: {name}")
+        print(f"📁 Категория: {category}")
+        print(f"💰 Цена: {price}")
+        print(f"🖼️  image_file получен: {image_file}")
+        print(f"🖼️  type(image_file): {type(image_file)}")
+        print(f"🖼️  isinstance(image_file, UploadFile): {isinstance(image_file, UploadFile)}")
+        
+        if image_file:
+            print(f"🖼️  image_file.filename: {getattr(image_file, 'filename', 'НЕТ АТРИБУТА')}")
+            print(f"🖼️  image_file.content_type: {getattr(image_file, 'content_type', 'НЕТ АТРИБУТА')}")
+            if hasattr(image_file, 'filename'):
+                print(f"🖼️  bool(image_file.filename): {bool(image_file.filename)}")
+        
+        print(f"🌐 image_url: '{image_url}'")
+        print("="*80 + "\n")
 
         if not name or len(name) < 3:
             raise HTTPException(status_code=400, detail="Название слишком короткое (мин. 3 символа)")
@@ -1522,7 +1645,16 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
         # По умолчанию пустая строка (не null), чтобы избежать constraint violation
         final_image = ""
 
-        if image_file and isinstance(image_file, UploadFile) and image_file.filename:
+        print("🔍 Проверка условий для обработки файла:")
+        print(f"   image_file существует: {image_file is not None}")
+        print(f"   isinstance(image_file, UploadFile): {isinstance(image_file, UploadFile)}")
+        if image_file and hasattr(image_file, 'filename'):
+            print(f"   image_file.filename: '{image_file.filename}'")
+            print(f"   bool(image_file.filename): {bool(image_file.filename)}")
+
+        # ИСПРАВЛЕНО: убрана проверка isinstance, т.к. Starlette возвращает другой тип
+        if image_file and hasattr(image_file, 'filename') and image_file.filename:
+            print("✅ УСЛОВИЕ ВЫПОЛНЕНО - начинаем обработку файла")
             # Валидация формата
             ext = Path(image_file.filename).suffix.lower()
             allowed_formats = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
@@ -1543,39 +1675,42 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
                     detail=f"Файл слишком большой. Максимум {max_size_mb}MB"
                 )
             
-            # ВАЖНО: Убедимся что папка существует с правильными правами
-            UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-            
+            # Оптимизация изображения
             try:
-                # Оптимизация изображения
                 optimized_content = await optimize_image(file_content)
                 
-                # Сохранение
-                fname = f"{uuid4().hex}.jpg"  # Всегда сохраняем как JPEG после оптимизации
-                fpath = UPLOAD_DIR / fname
+                # Конвертируем в base64 для хранения в БД
+                import base64
+                image_base64 = base64.b64encode(optimized_content).decode('utf-8')
+                image_data_url = f"data:image/jpeg;base64,{image_base64}"
+                
+                # Сохраняем в переменную для БД
+                final_image = image_data_url
                 
                 # DEBUG: Логирование
-                print(f"📁 Saving image to: {fpath}")
-                print(f"📁 Upload dir exists: {UPLOAD_DIR.exists()}")
-                print(f"📁 Upload dir is writable: {os.access(UPLOAD_DIR, os.W_OK)}")
-                
-                async with aiofiles.open(fpath, 'wb') as buf:
-                    await buf.write(optimized_content)
-                
-                # Проверяем что файл действительно сохранился
-                if not fpath.exists():
-                    raise HTTPException(status_code=500, detail="Файл не был сохранен")
-                
-                print(f"✅ Image saved successfully: {fpath.name}")
-                final_image = f"/static/uploads/{fname}"
+                print(f"📸 Image optimized: {len(file_content)} → {len(optimized_content)} bytes")
+                print(f"📸 Base64 size: {len(image_base64)} chars")
+                print(f"✅ Image converted to base64 successfully")
                 
             except Exception as e:
-                print(f"❌ Error saving image: {e}")
-                raise HTTPException(status_code=500, detail=f"Ошибка сохранения файла: {str(e)}")
+                print(f"❌ Error processing image: {e}")
+                import traceback
+                traceback.print_exc()
+                raise HTTPException(status_code=500, detail=f"Ошибка обработки изображения: {str(e)}")
         elif image_url:
+            print(f"ℹ️ Используется image_url: {image_url}")
             final_image = image_url
+        else:
+            print("⚠️ НИ ФАЙЛ, НИ URL НЕ ПРЕДОСТАВЛЕНЫ")
+            print(f"   image_file = {image_file}")
+            print(f"   image_url = '{image_url}'")
 
         async with db.pool.acquire() as conn:
+            print(f"\n💾 СОХРАНЕНИЕ В БД:")
+            print(f"   final_image длина: {len(final_image)}")
+            print(f"   final_image[:100]: {final_image[:100] if final_image else 'ПУСТО'}")
+            print("="*80 + "\n")
+            
             row = await conn.fetchrow('''
                 INSERT INTO products (name,category,price,description,image_url,stock,featured,in_stock,preorder,cost_price)
                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *
@@ -1614,7 +1749,7 @@ async def update_product(product_id: int, request: Request, admin=Depends(verify
             image_file = form.get("image_file")
 
             final_image = existing['image_url']
-            if image_file and isinstance(image_file, UploadFile) and image_file.filename:
+            if image_file and hasattr(image_file, 'filename') and image_file.filename:
                 # Валидация формата
                 ext = Path(image_file.filename).suffix.lower()
                 allowed_formats = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
@@ -1633,31 +1768,23 @@ async def update_product(product_id: int, request: Request, admin=Depends(verify
                         detail=f"Файл слишком большой. Максимум {max_size_mb}MB"
                     )
                 
-                # ВАЖНО: Убедимся что папка существует
-                UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-                
+                # Оптимизация изображения
                 try:
-                    # Оптимизация
                     optimized_content = await optimize_image(file_content)
                     
-                    # Сохранение
-                    fname = f"{uuid4().hex}.jpg"
-                    fpath = UPLOAD_DIR / fname
+                    # Конвертируем в base64
+                    import base64
+                    image_base64 = base64.b64encode(optimized_content).decode('utf-8')
+                    image_data_url = f"data:image/jpeg;base64,{image_base64}"
                     
-                    print(f"📁 Updating image to: {fpath}")
+                    final_image = image_data_url
                     
-                    async with aiofiles.open(fpath, 'wb') as buf:
-                        await buf.write(optimized_content)
-                    
-                    if not fpath.exists():
-                        raise HTTPException(status_code=500, detail="Файл не был сохранен")
-                    
-                    print(f"✅ Image updated successfully: {fpath.name}")
-                    final_image = f"/static/uploads/{fname}"
+                    print(f"📸 Image updated: {len(file_content)} → {len(optimized_content)} bytes")
+                    print(f"✅ Image converted to base64 successfully")
                     
                 except Exception as e:
                     print(f"❌ Error updating image: {e}")
-                    raise HTTPException(status_code=500, detail=f"Ошибка обновления файла: {str(e)}")
+                    raise HTTPException(status_code=500, detail=f"Ошибка обновления изображения: {str(e)}")
             elif image_url:
                 final_image = image_url
 
@@ -1774,7 +1901,7 @@ async def add_product_specification(product_id: int, request: Request, admin=Dep
             raise HTTPException(status_code=400, detail="Цена должна быть больше 0")
 
         final_image = None
-        if image_file and isinstance(image_file, UploadFile) and image_file.filename:
+        if image_file and hasattr(image_file, 'filename') and image_file.filename:
             ext = Path(image_file.filename).suffix.lower()
             if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
                 raise HTTPException(status_code=400, detail="Недопустимый формат файла")
@@ -1836,7 +1963,7 @@ async def update_specification(spec_id: int, request: Request, admin=Depends(ver
             sort_order = int(form.get("sort_order", existing['sort_order']))
 
             final_image = existing['image_url']
-            if image_file and isinstance(image_file, UploadFile) and image_file.filename:
+            if image_file and hasattr(image_file, 'filename') and image_file.filename:
                 ext = Path(image_file.filename).suffix.lower()
                 if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
                     raise HTTPException(status_code=400, detail="Недопустимый формат файла")

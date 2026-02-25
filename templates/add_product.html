@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Favicons - IMPORT Branding -->
-  <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="/static/favicon/favicon-512x512.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="/static/favicon/favicon-192x192.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png">
-  <link rel="shortcut icon" href="/static/favicon/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png?v=5">
+  <link rel="icon" type="image/png" sizes="512x512" href="/static/favicon/favicon-512x512.png?v=5">
+  <link rel="icon" type="image/png" sizes="192x192" href="/static/favicon/favicon-192x192.png?v=5">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png?v=5">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png?v=5">
+  <link rel="shortcut icon" href="/static/favicon/favicon.ico?v=5">
   <meta name="theme-color" content="#080A0F">
   <title>IMPORT — Добавить товар</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -120,17 +120,31 @@
         <div class="form-hint">Можно выбрать оба статуса одновременно</div>
       </div>
       <div class="form-group">
-        <label class="form-label">Фото товара</label>
-        <div class="img-upload" id="uploadArea">
-          <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="preview(event)">
-          <div id="ph"><div style="font-size:2.5rem;margin-bottom:.5rem">📸</div><div style="font-size:.875rem;color:var(--text-2)">Нажмите или перетащите</div><div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP</div></div>
-          <div class="preview-box" id="pbox"><img id="pimg" src="" alt=""><div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" id="pfname"></div></div>
+        <label class="form-label">Фото товара (до 5 шт)</label>
+        <div class="form-hint" style="margin-bottom:1rem">Первое фото будет основным. Можно загрузить до 5 изображений.</div>
+        <div id="imageUploads">
+          <div class="img-upload-item" data-index="0">
+            <div class="img-upload" onclick="document.getElementById('file_0').click()">
+              <input type="file" id="file_0" name="image_file_0" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewMulti(event, 0)" style="display:none">
+              <div class="upload-placeholder">
+                <div style="font-size:2.5rem;margin-bottom:.5rem">📸</div>
+                <div style="font-size:.875rem;color:var(--text-2)">Основное фото</div>
+                <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP</div>
+              </div>
+              <div class="preview-box" style="display:none">
+                <img class="preview-img" src="" alt="">
+                <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name"></div>
+                <button type="button" onclick="removeImage(event, 0)" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
+              </div>
+            </div>
+          </div>
         </div>
+        <button type="button" id="addMoreBtn" onclick="addImageUpload()" class="btn btn-ghost" style="margin-top:1rem;width:100%">+ Добавить еще фото</button>
       </div>
       <div class="form-group">
         <label class="form-label">— или URL изображения</label>
         <input type="url" name="image_url" class="form-input" placeholder="https://example.com/img.jpg">
-        <div class="form-hint">Если выбран файл, URL игнорируется</div>
+        <div class="form-hint">Если выбраны файлы, URL игнорируется</div>
       </div>
       <div style="display:flex;gap:.75rem;margin-top:.5rem">
         <button type="submit" class="btn btn-primary">💾 Сохранить</button>
@@ -143,6 +157,9 @@
   const token = sessionStorage.getItem('adminToken');
   if (!token) location.href = '/admin';
 
+  let imageCount = 1;
+  const MAX_IMAGES = 5;
+
   async function loadCategories() {
     try {
       const r = await fetch('/api/categories');
@@ -153,13 +170,91 @@
   }
   loadCategories();
 
-  function preview(event) {
-    const file = event.target.files[0]; if (!file) return;
+  function previewMulti(event, index) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const container = document.querySelector(`[data-index="${index}"]`);
+    const placeholder = container.querySelector('.upload-placeholder');
+    const preview = container.querySelector('.preview-box');
+    const img = container.querySelector('.preview-img');
+    const name = container.querySelector('.preview-name');
+    
     const reader = new FileReader();
-    reader.onload = e => { document.getElementById('ph').style.display='none'; document.getElementById('pbox').style.display='block'; document.getElementById('pimg').src=e.target.result; document.getElementById('pfname').textContent=file.name; };
+    reader.onload = e => {
+      placeholder.style.display = 'none';
+      preview.style.display = 'block';
+      img.src = e.target.result;
+      name.textContent = file.name;
+    };
     reader.readAsDataURL(file);
   }
-  function clearPrev() { document.getElementById('ph').style.display=''; document.getElementById('pbox').style.display='none'; document.getElementById('pimg').src=''; }
+
+  function removeImage(event, index) {
+    event.stopPropagation();
+    const container = document.querySelector(`[data-index="${index}"]`);
+    const input = container.querySelector('input[type="file"]');
+    const placeholder = container.querySelector('.upload-placeholder');
+    const preview = container.querySelector('.preview-box');
+    
+    input.value = '';
+    placeholder.style.display = '';
+    preview.style.display = 'none';
+  }
+
+  function addImageUpload() {
+    if (imageCount >= MAX_IMAGES) {
+      alert(`Максимум ${MAX_IMAGES} изображений`);
+      return;
+    }
+    
+    const container = document.getElementById('imageUploads');
+    const newIndex = imageCount;
+    
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'img-upload-item';
+    itemDiv.setAttribute('data-index', newIndex);
+    itemDiv.style.marginTop = '1rem';
+    
+    itemDiv.innerHTML = `
+      <div class="img-upload" onclick="document.getElementById('file_${newIndex}').click()">
+        <input type="file" id="file_${newIndex}" name="image_file_${newIndex}" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewMulti(event, ${newIndex})" style="display:none">
+        <div class="upload-placeholder">
+          <div style="font-size:2.5rem;margin-bottom:.5rem">📸</div>
+          <div style="font-size:.875rem;color:var(--text-2)">Доп. фото ${newIndex + 1}</div>
+          <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP</div>
+        </div>
+        <div class="preview-box" style="display:none">
+          <img class="preview-img" src="" alt="">
+          <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name"></div>
+          <button type="button" onclick="removeImage(event, ${newIndex})" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
+        </div>
+      </div>
+    `;
+    
+    container.appendChild(itemDiv);
+    imageCount++;
+    
+    if (imageCount >= MAX_IMAGES) {
+      document.getElementById('addMoreBtn').style.display = 'none';
+    }
+  }
+
+  function clearPrev() {
+    // Очистить все превью
+    for (let i = 0; i < imageCount; i++) {
+      const container = document.querySelector(`[data-index="${i}"]`);
+      if (container) {
+        const input = container.querySelector('input[type="file"]');
+        const placeholder = container.querySelector('.upload-placeholder');
+        const preview = container.querySelector('.preview-box');
+        
+        if (input) input.value = '';
+        if (placeholder) placeholder.style.display = '';
+        if (preview) preview.style.display = 'none';
+      }
+    }
+  }
 
   document.getElementById('form').addEventListener('submit', async e => {
     e.preventDefault();

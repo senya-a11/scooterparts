@@ -1,5 +1,5 @@
 # backend/main.py  ·  IMPORT v8.3_FINAL
-from fastapi import FastAPI, HTTPException, Depends, status, Request, Response, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, Depends, status, Request, Response, UploadFile, File, Form, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -128,6 +128,7 @@ class CartItem(BaseModel):
 class CartUpdate(BaseModel):
     product_id: int
     quantity: int
+    specification_id: Optional[int] = None
 
 
 class AdminLogin(BaseModel):
@@ -360,6 +361,15 @@ class Database:
                     ALTER TABLE product_images ALTER COLUMN image_url TYPE TEXT
                 ''')
                 print("✅ Миграция: все image_url изменены на TEXT для поддержки base64")
+                
+                # КРИТИЧЕСКАЯ МИГРАЦИЯ: обновление in_stock для всех существующих товаров
+                await conn.execute('''
+                    UPDATE products SET in_stock = (stock > 0) WHERE in_stock != (stock > 0)
+                ''')
+                await conn.execute('''
+                    UPDATE product_specifications SET in_stock = (stock > 0) WHERE in_stock != (stock > 0)
+                ''')
+                print("✅ Миграция: поле in_stock обновлено для всех товаров на основе stock")
             except Exception as e:
                 print(f"⚠️ Миграция: {e}")
                 pass  # Columns already exist
@@ -416,13 +426,32 @@ class Database:
                     id SERIAL PRIMARY KEY,
                     user_id UUID NOT NULL,
                     product_id INTEGER NOT NULL,
+                    specification_id INTEGER,
                     quantity INTEGER NOT NULL CHECK (quantity > 0),
                     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(user_id, product_id),
+                    UNIQUE(user_id, product_id, specification_id),
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+                    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+                    FOREIGN KEY (specification_id) REFERENCES product_specifications(id) ON DELETE CASCADE
                 )
             ''')
+            
+            # Миграция: добавляем specification_id если его нет
+            try:
+                await conn.execute('''
+                    ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS specification_id INTEGER
+                ''')
+                # Удаляем старое ограничение уникальности
+                await conn.execute('''
+                    ALTER TABLE cart_items DROP CONSTRAINT IF EXISTS cart_items_user_id_product_id_key
+                ''')
+                # Добавляем новое ограничение уникальности
+                await conn.execute('''
+                    ALTER TABLE cart_items ADD CONSTRAINT cart_items_unique 
+                    UNIQUE(user_id, product_id, specification_id)
+                ''')
+            except:
+                pass  # Columns/constraints already exist
 
             # Заказы
             await conn.execute('''
@@ -855,6 +884,8 @@ async def get_products(category: Optional[str] = None, featured: Optional[bool] 
             for r in rows:
                 d = dict(r)
                 d['price'] = float(d['price'])
+                # КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: гарантируем правильное значение in_stock
+                d['in_stock'] = bool(d.get('stock', 0) > 0)
                 if isinstance(d.get('created_at'), datetime):
                     d['created_at'] = d['created_at'].isoformat()
                 result.append(d)
@@ -872,6 +903,8 @@ async def get_product(product_id: int):
                 raise HTTPException(status_code=404, detail="Товар не найден")
             d = dict(row)
             d['price'] = float(d['price'])
+            # КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: гарантируем правильное значение in_stock
+            d['in_stock'] = bool(d.get('stock', 0) > 0)
             
             # Если товар имеет спецификации, загружаем их
             if d.get('has_specifications'):
@@ -886,6 +919,8 @@ async def get_product(product_id: int):
                 for s in specs:
                     spec_dict = dict(s)
                     spec_dict['price'] = float(spec_dict['price'])
+                    # КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: гарантируем правильное значение in_stock для спецификаций
+                    spec_dict['in_stock'] = bool(spec_dict.get('stock', 0) > 0)
                     if spec_dict.get('cost_price'):
                         spec_dict['cost_price'] = float(spec_dict['cost_price'])
                     
@@ -945,24 +980,47 @@ async def get_cart(user_id: str = Depends(get_current_user)):
     try:
         async with db.pool.acquire() as conn:
             items = await conn.fetch('''
-                SELECT ci.product_id, ci.quantity,
-                       p.name, p.category, p.price, p.description, p.image_url, p.stock
-                FROM cart_items ci JOIN products p ON ci.product_id = p.id
+                SELECT ci.product_id, ci.specification_id, ci.quantity,
+                       p.name, p.category, p.price, p.description, p.image_url, p.stock,
+                       ps.name as spec_name, ps.price as spec_price, ps.stock as spec_stock,
+                       ps.image_url as spec_image_url, ps.description as spec_description
+                FROM cart_items ci 
+                JOIN products p ON ci.product_id = p.id
+                LEFT JOIN product_specifications ps ON ci.specification_id = ps.id
                 WHERE ci.user_id = $1 ORDER BY ci.added_at DESC
             ''', user_id)
             total = 0
             result = []
             for item in items:
-                item_total = float(item['price']) * item['quantity']
+                # Если есть спецификация, используем её данные
+                if item['specification_id']:
+                    price = float(item['spec_price'])
+                    stock = item['spec_stock']
+                    image_url = item['spec_image_url'] or item['image_url']
+                    name = f"{item['name']} - {item['spec_name']}"
+                    description = item['spec_description'] or item['description']
+                else:
+                    price = float(item['price'])
+                    stock = item['stock']
+                    image_url = item['image_url']
+                    name = item['name']
+                    description = item['description']
+                
+                item_total = price * item['quantity']
                 total += item_total
                 result.append({
                     "product_id": item['product_id'],
+                    "specification_id": item['specification_id'],
                     "quantity": item['quantity'],
                     "product": {
-                        "id": item['product_id'], "name": item['name'],
-                        "category": item['category'], "price": float(item['price']),
-                        "description": item['description'], "image_url": item['image_url'],
-                        "stock": item['stock']
+                        "id": item['product_id'], 
+                        "specification_id": item['specification_id'],
+                        "name": name,
+                        "category": item['category'], 
+                        "price": price,
+                        "description": description, 
+                        "image_url": image_url,
+                        "stock": stock
                     },
                     "item_total": item_total
                 })
@@ -979,16 +1037,32 @@ async def add_to_cart(cart_item: CartUpdate, user_id: str = Depends(get_current_
         raise HTTPException(status_code=400, detail="Количество должно быть больше 0")
     try:
         async with db.pool.acquire() as conn:
-            product = await conn.fetchrow("SELECT id, stock FROM products WHERE id=$1", cart_item.product_id)
-            if not product:
-                raise HTTPException(status_code=404, detail="Товар не найден")
-            if product['stock'] < cart_item.quantity:
-                raise HTTPException(status_code=400, detail="Недостаточно товара на складе")
+            # Если указана спецификация, проверяем её
+            if cart_item.specification_id:
+                spec = await conn.fetchrow(
+                    "SELECT id, stock, product_id FROM product_specifications WHERE id=$1", 
+                    cart_item.specification_id
+                )
+                if not spec:
+                    raise HTTPException(status_code=404, detail="Спецификация не найдена")
+                if spec['product_id'] != cart_item.product_id:
+                    raise HTTPException(status_code=400, detail="Спецификация не принадлежит данному товару")
+                if spec['stock'] < cart_item.quantity:
+                    raise HTTPException(status_code=400, detail="Недостаточно товара на складе")
+            else:
+                # Проверяем основной товар
+                product = await conn.fetchrow("SELECT id, stock FROM products WHERE id=$1", cart_item.product_id)
+                if not product:
+                    raise HTTPException(status_code=404, detail="Товар не найден")
+                if product['stock'] < cart_item.quantity:
+                    raise HTTPException(status_code=400, detail="Недостаточно товара на складе")
+            
             await conn.execute('''
-                INSERT INTO cart_items (user_id, product_id, quantity)
-                VALUES ($1, $2, $3)
-                ON CONFLICT (user_id, product_id) DO UPDATE SET quantity = EXCLUDED.quantity
-            ''', user_id, cart_item.product_id, cart_item.quantity)
+                INSERT INTO cart_items (user_id, product_id, specification_id, quantity)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (user_id, product_id, specification_id) 
+                DO UPDATE SET quantity = EXCLUDED.quantity
+            ''', user_id, cart_item.product_id, cart_item.specification_id, cart_item.quantity)
             return {"message": "Товар добавлен в корзину"}
     except HTTPException:
         raise
@@ -997,14 +1071,21 @@ async def add_to_cart(cart_item: CartUpdate, user_id: str = Depends(get_current_
 
 
 @app.delete("/api/cart/{product_id}")
-async def remove_from_cart(product_id: int, user_id: str = Depends(get_current_user)):
+async def remove_from_cart(product_id: int, specification_id: Optional[int] = Query(None), user_id: str = Depends(get_current_user)):
     if not user_id:
         raise HTTPException(status_code=401, detail="Не авторизован")
     try:
         async with db.pool.acquire() as conn:
-            r = await conn.execute(
-                "DELETE FROM cart_items WHERE user_id=$1 AND product_id=$2", user_id, product_id
-            )
+            if specification_id is not None:
+                r = await conn.execute(
+                    "DELETE FROM cart_items WHERE user_id=$1 AND product_id=$2 AND specification_id=$3", 
+                    user_id, product_id, specification_id
+                )
+            else:
+                r = await conn.execute(
+                    "DELETE FROM cart_items WHERE user_id=$1 AND product_id=$2 AND specification_id IS NULL", 
+                    user_id, product_id
+                )
             if r == "DELETE 0":
                 raise HTTPException(status_code=404, detail="Товар не найден в корзине")
             return {"message": "Товар удалён из корзины"}
@@ -1021,24 +1102,43 @@ async def update_cart_quantity(product_id: int, body: dict, user_id: str = Depen
         raise HTTPException(status_code=401, detail="Не авторизован")
     
     quantity = body.get("quantity", 1)
+    specification_id = body.get("specification_id")
+    
     if quantity <= 0:
         raise HTTPException(status_code=400, detail="Количество должно быть больше 0")
     
     try:
         async with db.pool.acquire() as conn:
-            # Проверяем наличие товара и его stock
-            product = await conn.fetchrow("SELECT stock FROM products WHERE id=$1", product_id)
-            if not product:
-                raise HTTPException(status_code=404, detail="Товар не найден")
+            # Проверяем наличие товара/спецификации и stock
+            if specification_id:
+                item = await conn.fetchrow(
+                    "SELECT stock FROM product_specifications WHERE id=$1", 
+                    specification_id
+                )
+                if not item:
+                    raise HTTPException(status_code=404, detail="Спецификация не найдена")
+            else:
+                item = await conn.fetchrow(
+                    "SELECT stock FROM products WHERE id=$1", 
+                    product_id
+                )
+                if not item:
+                    raise HTTPException(status_code=404, detail="Товар не найден")
             
-            if product['stock'] < quantity:
-                raise HTTPException(status_code=400, detail=f"Недостаточно на складе (доступно: {product['stock']})")
+            if item['stock'] < quantity:
+                raise HTTPException(status_code=400, detail=f"Недостаточно на складе (доступно: {item['stock']})")
             
             # Обновляем количество
-            await conn.execute('''
-                UPDATE cart_items SET quantity = $1
-                WHERE user_id = $2 AND product_id = $3
-            ''', quantity, user_id, product_id)
+            if specification_id:
+                await conn.execute('''
+                    UPDATE cart_items SET quantity = $1
+                    WHERE user_id = $2 AND product_id = $3 AND specification_id = $4
+                ''', quantity, user_id, product_id, specification_id)
+            else:
+                await conn.execute('''
+                    UPDATE cart_items SET quantity = $1
+                    WHERE user_id = $2 AND product_id = $3 AND specification_id IS NULL
+                ''', quantity, user_id, product_id)
             
             return {"message": "Количество обновлено", "quantity": quantity}
     except HTTPException:
@@ -1071,15 +1171,23 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(get_curre
     try:
         async with db.pool.acquire() as conn:
             cart_items = await conn.fetch('''
-                SELECT ci.product_id, ci.quantity, p.name, p.price, p.stock
-                FROM cart_items ci JOIN products p ON ci.product_id = p.id
+                SELECT ci.product_id, ci.specification_id, ci.quantity, 
+                       p.name, p.price, p.stock,
+                       ps.name as spec_name, ps.price as spec_price, ps.stock as spec_stock
+                FROM cart_items ci 
+                JOIN products p ON ci.product_id = p.id
+                LEFT JOIN product_specifications ps ON ci.specification_id = ps.id
                 WHERE ci.user_id = $1
             ''', user_id)
 
             if not cart_items:
                 raise HTTPException(status_code=400, detail="Корзина пуста")
 
-            total = sum(float(i['price']) * i['quantity'] for i in cart_items)
+            # Подсчитываем общую сумму с учётом спецификаций
+            total = 0
+            for i in cart_items:
+                price = float(i['spec_price']) if i['specification_id'] else float(i['price'])
+                total += price * i['quantity']
 
             order_id = await conn.fetchval('''
                 INSERT INTO orders (user_id, total_amount, delivery_address, comment, status, payment_status)
@@ -1088,14 +1196,43 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(get_curre
             ''', user_id, total, order_data.delivery_address, order_data.comment)
 
             for item in cart_items:
+                # Определяем название и цену товара
+                if item['specification_id']:
+                    product_name = f"{item['name']} - {item['spec_name']}"
+                    price = float(item['spec_price'])
+                    stock_column = 'product_specifications'
+                    stock_id = item['specification_id']
+                    current_stock = item['spec_stock']
+                else:
+                    product_name = item['name']
+                    price = float(item['price'])
+                    stock_column = 'products'
+                    stock_id = item['product_id']
+                    current_stock = item['stock']
+                
+                # Проверяем наличие
+                if current_stock < item['quantity']:
+                    raise HTTPException(
+                        status_code=400, 
+                        detail=f"Недостаточно товара '{product_name}' на складе"
+                    )
+                
                 await conn.execute('''
                     INSERT INTO order_items (order_id, product_id, product_name, price, quantity)
                     VALUES ($1, $2, $3, $4, $5)
-                ''', order_id, item['product_id'], item['name'], float(item['price']), item['quantity'])
-                await conn.execute(
-                    "UPDATE products SET stock = stock - $1 WHERE id = $2",
-                    item['quantity'], item['product_id']
-                )
+                ''', order_id, item['product_id'], product_name, price, item['quantity'])
+                
+                # Обновляем остатки
+                if item['specification_id']:
+                    await conn.execute(
+                        "UPDATE product_specifications SET stock = stock - $1 WHERE id = $2",
+                        item['quantity'], item['specification_id']
+                    )
+                else:
+                    await conn.execute(
+                        "UPDATE products SET stock = stock - $1 WHERE id = $2",
+                        item['quantity'], item['product_id']
+                    )
 
             await conn.execute("DELETE FROM cart_items WHERE user_id=$1", user_id)
 
@@ -1610,26 +1747,30 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
         desc     = str(form.get("description","")).strip()
         stock    = int(form.get("stock",0))
         featured = str(form.get("featured","false")).lower() == "true"
-        in_stock = str(form.get("in_stock","false")).lower() == "true"
+        # ИСПРАВЛЕНИЕ: Автоматически определяем in_stock на основе stock
+        in_stock = stock > 0
         preorder = str(form.get("preorder","false")).lower() == "true"
         cost_price_str = str(form.get("cost_price","")).strip()
         cost_price = float(cost_price_str) if cost_price_str else None
         image_url = str(form.get("image_url","")).strip()
-        image_file = form.get("image_file")
+        
+        # Получаем все файлы изображений (до 5 штук)
+        image_files = []
+        for i in range(5):
+            img_file = form.get(f"image_file_{i}")
+            if img_file and hasattr(img_file, 'filename') and img_file.filename:
+                image_files.append(img_file)
+        
+        # Обратная совместимость: если используется старое поле image_file
+        old_image_file = form.get("image_file")
+        if old_image_file and hasattr(old_image_file, 'filename') and old_image_file.filename:
+            if not image_files:  # Только если новые файлы не загружены
+                image_files.append(old_image_file)
         
         print(f"📝 Название: {name}")
         print(f"📁 Категория: {category}")
         print(f"💰 Цена: {price}")
-        print(f"🖼️  image_file получен: {image_file}")
-        print(f"🖼️  type(image_file): {type(image_file)}")
-        print(f"🖼️  isinstance(image_file, UploadFile): {isinstance(image_file, UploadFile)}")
-        
-        if image_file:
-            print(f"🖼️  image_file.filename: {getattr(image_file, 'filename', 'НЕТ АТРИБУТА')}")
-            print(f"🖼️  image_file.content_type: {getattr(image_file, 'content_type', 'НЕТ АТРИБУТА')}")
-            if hasattr(image_file, 'filename'):
-                print(f"🖼️  bool(image_file.filename): {bool(image_file.filename)}")
-        
+        print(f"🖼️  Получено файлов изображений: {len(image_files)}")
         print(f"🌐 image_url: '{image_url}'")
         print("="*80 + "\n")
 
@@ -1644,24 +1785,19 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
 
         # По умолчанию пустая строка (не null), чтобы избежать constraint violation
         final_image = ""
+        additional_images = []
 
-        print("🔍 Проверка условий для обработки файла:")
-        print(f"   image_file существует: {image_file is not None}")
-        print(f"   isinstance(image_file, UploadFile): {isinstance(image_file, UploadFile)}")
-        if image_file and hasattr(image_file, 'filename'):
-            print(f"   image_file.filename: '{image_file.filename}'")
-            print(f"   bool(image_file.filename): {bool(image_file.filename)}")
-
-        # ИСПРАВЛЕНО: убрана проверка isinstance, т.к. Starlette возвращает другой тип
-        if image_file and hasattr(image_file, 'filename') and image_file.filename:
-            print("✅ УСЛОВИЕ ВЫПОЛНЕНО - начинаем обработку файла")
+        # Обработка всех загруженных изображений
+        for idx, image_file in enumerate(image_files):
+            print(f"🔍 Обработка изображения {idx + 1}/{len(image_files)}")
+            
             # Валидация формата
             ext = Path(image_file.filename).suffix.lower()
             allowed_formats = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
             if ext not in allowed_formats:
                 raise HTTPException(
                     status_code=400, 
-                    detail=f"Недопустимый формат файла. Разрешены: {', '.join(allowed_formats)}"
+                    detail=f"Недопустимый формат файла {image_file.filename}. Разрешены: {', '.join(allowed_formats)}"
                 )
             
             # Чтение файла
@@ -1672,7 +1808,7 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
             if len(file_content) > max_size_mb * 1024 * 1024:
                 raise HTTPException(
                     status_code=400, 
-                    detail=f"Файл слишком большой. Максимум {max_size_mb}MB"
+                    detail=f"Файл {image_file.filename} слишком большой. Максимум {max_size_mb}MB"
                 )
             
             # Оптимизация изображения
@@ -1684,37 +1820,47 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
                 image_base64 = base64.b64encode(optimized_content).decode('utf-8')
                 image_data_url = f"data:image/jpeg;base64,{image_base64}"
                 
-                # Сохраняем в переменную для БД
-                final_image = image_data_url
-                
-                # DEBUG: Логирование
-                print(f"📸 Image optimized: {len(file_content)} → {len(optimized_content)} bytes")
-                print(f"📸 Base64 size: {len(image_base64)} chars")
-                print(f"✅ Image converted to base64 successfully")
+                # Первое изображение - основное
+                if idx == 0:
+                    final_image = image_data_url
+                    print(f"📸 Основное изображение: {len(file_content)} → {len(optimized_content)} bytes")
+                else:
+                    additional_images.append(image_data_url)
+                    print(f"📸 Дополнительное изображение {idx}: {len(file_content)} → {len(optimized_content)} bytes")
                 
             except Exception as e:
-                print(f"❌ Error processing image: {e}")
+                print(f"❌ Error processing image {idx + 1}: {e}")
                 import traceback
                 traceback.print_exc()
-                raise HTTPException(status_code=500, detail=f"Ошибка обработки изображения: {str(e)}")
-        elif image_url:
+                raise HTTPException(status_code=500, detail=f"Ошибка обработки изображения {idx + 1}: {str(e)}")
+        
+        # Если файлы не загружены, используем URL
+        if not image_files and image_url:
             print(f"ℹ️ Используется image_url: {image_url}")
             final_image = image_url
-        else:
-            print("⚠️ НИ ФАЙЛ, НИ URL НЕ ПРЕДОСТАВЛЕНЫ")
-            print(f"   image_file = {image_file}")
-            print(f"   image_url = '{image_url}'")
 
         async with db.pool.acquire() as conn:
             print(f"\n💾 СОХРАНЕНИЕ В БД:")
             print(f"   final_image длина: {len(final_image)}")
-            print(f"   final_image[:100]: {final_image[:100] if final_image else 'ПУСТО'}")
+            print(f"   Дополнительных изображений: {len(additional_images)}")
             print("="*80 + "\n")
             
+            # Создаем товар
             row = await conn.fetchrow('''
                 INSERT INTO products (name,category,price,description,image_url,stock,featured,in_stock,preorder,cost_price)
                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *
             ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price)
+            
+            product_id = row['id']
+            
+            # Сохраняем дополнительные изображения
+            for idx, img_url in enumerate(additional_images):
+                await conn.execute('''
+                    INSERT INTO product_images (product_id, image_url, sort_order)
+                    VALUES ($1, $2, $3)
+                ''', product_id, img_url, idx + 1)
+                print(f"✅ Сохранено дополнительное изображение {idx + 1}")
+            
             d = dict(row)
             d['price'] = float(d['price'])
             if d.get('cost_price'):
@@ -1741,7 +1887,8 @@ async def update_product(product_id: int, request: Request, admin=Depends(verify
             desc     = str(form.get("description", existing['description'])).strip()
             stock    = int(form.get("stock", existing['stock']))
             featured = str(form.get("featured", str(existing['featured']))).lower() == "true"
-            in_stock = str(form.get("in_stock", str(existing.get('in_stock', False)))).lower() == "true"
+            # ИСПРАВЛЕНИЕ: Автоматически определяем in_stock на основе stock
+            in_stock = stock > 0
             preorder = str(form.get("preorder", str(existing.get('preorder', False)))).lower() == "true"
             cost_price_str = str(form.get("cost_price","")).strip()
             cost_price = float(cost_price_str) if cost_price_str else existing.get('cost_price')
@@ -1854,6 +2001,23 @@ async def test_auth():
 # ========== SPECIFICATIONS API ==========
 # ==========================================
 
+@app.get("/api/products/{product_id}/images")
+async def get_product_images(product_id: int):
+    """Получить все дополнительные изображения товара"""
+    try:
+        async with db.pool.acquire() as conn:
+            images = await conn.fetch('''
+                SELECT id, image_url, sort_order
+                FROM product_images
+                WHERE product_id = $1 AND specification_id IS NULL
+                ORDER BY sort_order ASC, id ASC
+            ''', product_id)
+            
+            return [dict(img) for img in images]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/products/{product_id}/specifications")
 async def get_product_specifications(product_id: int):
     """Получить все спецификации товара"""
@@ -1887,12 +2051,12 @@ async def add_product_specification(product_id: int, request: Request, admin=Dep
         price = float(form.get("price", 0))
         desc = str(form.get("description", "")).strip()
         stock = int(form.get("stock", 0))
-        in_stock = str(form.get("in_stock", "false")).lower() == "true"
+        # ИСПРАВЛЕНИЕ: Автоматически определяем in_stock на основе stock
+        in_stock = stock > 0
         preorder = str(form.get("preorder", "false")).lower() == "true"
         cost_price_str = str(form.get("cost_price", "")).strip()
         cost_price = float(cost_price_str) if cost_price_str else None
         image_url = str(form.get("image_url", "")).strip()
-        image_file = form.get("image_file")
         sort_order = int(form.get("sort_order", 0))
 
         if not name or len(name) < 3:
@@ -1900,17 +2064,57 @@ async def add_product_specification(product_id: int, request: Request, admin=Dep
         if price <= 0:
             raise HTTPException(status_code=400, detail="Цена должна быть больше 0")
 
+        # Получаем все файлы изображений (до 5 штук)
+        image_files = []
+        for i in range(5):
+            img_file = form.get(f"image_file_{i}")
+            if img_file and hasattr(img_file, 'filename') and img_file.filename:
+                image_files.append(img_file)
+        
+        # Обратная совместимость: если используется старое поле image_file
+        old_image_file = form.get("image_file")
+        if old_image_file and hasattr(old_image_file, 'filename') and old_image_file.filename:
+            if not image_files:  # Только если новые файлы не загружены
+                image_files.append(old_image_file)
+
         final_image = None
-        if image_file and hasattr(image_file, 'filename') and image_file.filename:
+        additional_images = []
+
+        # Обработка всех загруженных изображений
+        for idx, image_file in enumerate(image_files):
             ext = Path(image_file.filename).suffix.lower()
             if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
-                raise HTTPException(status_code=400, detail="Недопустимый формат файла")
-            fname = f"{uuid4().hex}{ext}"
-            fpath = UPLOAD_DIR / fname
-            async with aiofiles.open(fpath, 'wb') as buf:
-                await buf.write(await image_file.read())
-            final_image = f"/static/uploads/{fname}"
-        elif image_url:
+                raise HTTPException(status_code=400, detail=f"Недопустимый формат файла {image_file.filename}")
+            
+            # Чтение файла
+            file_content = await image_file.read()
+            
+            # Валидация размера
+            max_size_mb = 10
+            if len(file_content) > max_size_mb * 1024 * 1024:
+                raise HTTPException(status_code=400, detail=f"Файл {image_file.filename} слишком большой. Максимум {max_size_mb}MB")
+            
+            # Оптимизация изображения
+            try:
+                optimized_content = await optimize_image(file_content)
+                
+                # Конвертируем в base64
+                import base64
+                image_base64 = base64.b64encode(optimized_content).decode('utf-8')
+                image_data_url = f"data:image/jpeg;base64,{image_base64}"
+                
+                # Первое изображение - основное
+                if idx == 0:
+                    final_image = image_data_url
+                else:
+                    additional_images.append(image_data_url)
+                
+            except Exception as e:
+                print(f"❌ Error processing image {idx + 1}: {e}")
+                raise HTTPException(status_code=500, detail=f"Ошибка обработки изображения {idx + 1}: {str(e)}")
+        
+        # Если файлы не загружены, используем URL
+        if not image_files and image_url:
             final_image = image_url
 
         async with db.pool.acquire() as conn:
@@ -1923,11 +2127,22 @@ async def add_product_specification(product_id: int, request: Request, admin=Dep
             if not product['has_specifications']:
                 await conn.execute("UPDATE products SET has_specifications=true WHERE id=$1", product_id)
             
+            # Создаём спецификацию
             spec = await conn.fetchrow('''
                 INSERT INTO product_specifications (product_id, name, price, description, image_url, stock, in_stock, preorder, cost_price, sort_order)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 RETURNING *
             ''', product_id, name, price, desc, final_image, stock, in_stock, preorder, cost_price, sort_order)
+            
+            spec_id = spec['id']
+            
+            # Сохраняем дополнительные изображения
+            for idx, img_url in enumerate(additional_images):
+                await conn.execute('''
+                    INSERT INTO product_images (product_id, specification_id, image_url, sort_order)
+                    VALUES ($1, $2, $3, $4)
+                ''', product_id, spec_id, img_url, idx + 1)
+                print(f"✅ Сохранено дополнительное изображение спецификации {idx + 1}")
             
             d = dict(spec)
             d['price'] = float(d['price'])
@@ -1954,7 +2169,8 @@ async def update_specification(spec_id: int, request: Request, admin=Depends(ver
             price = float(form.get("price", existing['price']))
             desc = str(form.get("description", existing['description'] or "")).strip()
             stock = int(form.get("stock", existing['stock']))
-            in_stock = str(form.get("in_stock", str(existing.get('in_stock', False)))).lower() == "true"
+            # ИСПРАВЛЕНИЕ: Автоматически определяем in_stock на основе stock
+            in_stock = stock > 0
             preorder = str(form.get("preorder", str(existing.get('preorder', False)))).lower() == "true"
             cost_price_str = str(form.get("cost_price", "")).strip()
             cost_price = float(cost_price_str) if cost_price_str else existing.get('cost_price')

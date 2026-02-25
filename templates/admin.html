@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Favicons - IMPORT Branding -->
-  <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="/static/favicon/favicon-512x512.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="/static/favicon/favicon-192x192.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png">
-  <link rel="shortcut icon" href="/static/favicon/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png?v=5">
+  <link rel="icon" type="image/png" sizes="512x512" href="/static/favicon/favicon-512x512.png?v=5">
+  <link rel="icon" type="image/png" sizes="192x192" href="/static/favicon/favicon-192x192.png?v=5">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png?v=5">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png?v=5">
+  <link rel="shortcut icon" href="/static/favicon/favicon.ico?v=5">
   <meta name="theme-color" content="#080A0F">
   <title>Admin — IMPORT</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -140,6 +140,8 @@
     .img-upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
     .img-preview{margin-top:1rem;display:none}
     .img-preview img{max-width:160px;max-height:120px;border-radius:var(--radius);object-fit:cover;border:1px solid var(--border)}
+    .img-preview-multi{display:none;text-align:center}
+    .img-preview-multi img{max-width:160px;max-height:120px;border-radius:var(--radius);object-fit:cover;border:1px solid var(--border)}
 
     /* Orders */
     .order-status{display:inline-flex;align-items:center;gap:.375rem;padding:.25rem .625rem;border-radius:100px;font-size:.75rem;font-weight:700}
@@ -583,25 +585,32 @@
 
           <!-- Image section -->
           <div class="form-group">
-            <label class="form-label">Изображение товара</label>
-            <div class="img-upload-area" id="uploadArea">
-              <input type="file" name="image_file" id="imageFile" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewImage(event)">
-              <div id="uploadPlaceholder">
-                <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
-                <div style="font-size:.875rem;color:var(--text-2)">Нажмите или перетащите файл</div>
-                <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
-              </div>
-              <div class="img-preview" id="imgPreview">
-                <img id="previewImg" src="" alt="Preview">
-                <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" id="previewFileName"></div>
+            <label class="form-label">Изображения товара (до 5 шт)</label>
+            <div class="form-hint" style="margin-bottom:1rem">Первое фото будет основным. Можно загрузить до 5 изображений.</div>
+            <div id="imageUploadsRegular">
+              <div class="img-upload-item-regular" data-index="0">
+                <div class="img-upload-area" onclick="document.getElementById('imageFileRegular_0').click()">
+                  <input type="file" id="imageFileRegular_0" name="image_file_0" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewImageRegularMulti(event, 0)" style="display:none">
+                  <div class="upload-placeholder-multi">
+                    <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
+                    <div style="font-size:.875rem;color:var(--text-2)">Основное фото</div>
+                    <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
+                  </div>
+                  <div class="img-preview-multi" style="display:none">
+                    <img class="preview-img-multi" src="" alt="Preview">
+                    <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name-multi"></div>
+                    <button type="button" onclick="removeImageRegular(event, 0)" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
+                  </div>
+                </div>
               </div>
             </div>
+            <button type="button" id="addMoreBtnRegular" onclick="addImageUploadRegular()" class="btn btn-ghost" style="margin-top:1rem;width:100%">+ Добавить еще фото</button>
           </div>
 
           <div class="form-group">
             <label class="form-label">— или вставьте URL изображения</label>
             <input type="url" name="image_url" class="form-input" placeholder="https://example.com/image.jpg">
-            <div class="form-hint">Если выбран файл, URL игнорируется</div>
+            <div class="form-hint">Если выбраны файлы, URL игнорируется</div>
           </div>
 
           <div style="display:flex;gap:.75rem;flex-wrap:wrap">
@@ -653,24 +662,32 @@
 
           <!-- Image section -->
           <div class="form-group">
-            <label class="form-label">Основное изображение товара</label>
-            <div class="img-upload-area" id="uploadAreaSpecs">
-              <input type="file" name="image_file" id="imageFileSpecs" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewImageSpecs(event)">
-              <div id="uploadPlaceholderSpecs">
-                <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
-                <div style="font-size:.875rem;color:var(--text-2)">Нажмите или перетащите файл</div>
-                <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
-              </div>
-              <div class="img-preview" id="imgPreviewSpecs">
-                <img id="previewImgSpecs" src="" alt="Preview">
-                <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" id="previewFileNameSpecs"></div>
+            <label class="form-label">Изображения товара (до 5 шт)</label>
+            <div class="form-hint" style="margin-bottom:1rem">Первое фото будет основным. Можно загрузить до 5 изображений.</div>
+            <div id="imageUploadsSpecs">
+              <div class="img-upload-item-specs" data-index="0">
+                <div class="img-upload-area" onclick="document.getElementById('imageFileSpecs_0').click()">
+                  <input type="file" id="imageFileSpecs_0" name="image_file_0" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewImageSpecsMulti(event, 0)" style="display:none">
+                  <div class="upload-placeholder-multi">
+                    <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
+                    <div style="font-size:.875rem;color:var(--text-2)">Основное фото</div>
+                    <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
+                  </div>
+                  <div class="img-preview-multi" style="display:none">
+                    <img class="preview-img-multi" src="" alt="Preview">
+                    <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name-multi"></div>
+                    <button type="button" onclick="removeImageSpecs(event, 0)" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
+                  </div>
+                </div>
               </div>
             </div>
+            <button type="button" id="addMoreBtnSpecs" onclick="addImageUploadSpecs()" class="btn btn-ghost" style="margin-top:1rem;width:100%">+ Добавить еще фото</button>
           </div>
 
           <div class="form-group">
             <label class="form-label">— или вставьте URL изображения</label>
             <input type="url" name="image_url" class="form-input" placeholder="https://example.com/image.jpg">
+            <div class="form-hint">Если выбраны файлы, URL игнорируется</div>
           </div>
 
           <input type="hidden" name="has_specifications" value="true">
@@ -736,9 +753,32 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">Изображение версии (опционально)</label>
+            <label class="form-label">Изображения версии (до 5 шт, опционально)</label>
+            <div class="form-hint" style="margin-bottom:1rem">Первое фото будет основным для этой версии. Если не загружено, используется фото основного товара.</div>
+            <div id="imageUploadsSpec">
+              <div class="img-upload-item-spec" data-index="0">
+                <div class="img-upload-area" onclick="document.getElementById('imageFileSpec_0').click()">
+                  <input type="file" id="imageFileSpec_0" name="image_file_0" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewImageSpecMulti(event, 0)" style="display:none">
+                  <div class="upload-placeholder-multi">
+                    <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
+                    <div style="font-size:.875rem;color:var(--text-2)">Основное фото версии</div>
+                    <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
+                  </div>
+                  <div class="img-preview-multi" style="display:none">
+                    <img class="preview-img-multi" src="" alt="Preview">
+                    <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name-multi"></div>
+                    <button type="button" onclick="removeImageSpec(event, 0)" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button type="button" id="addMoreBtnSpec" onclick="addImageUploadSpec()" class="btn btn-ghost" style="margin-top:1rem;width:100%">+ Добавить еще фото</button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">— или вставьте URL изображения</label>
             <input type="url" name="image_url" class="form-input" placeholder="https://example.com/iphone13.jpg">
-            <div class="form-hint">Если не указано, будет использовано изображение основного товара</div>
+            <div class="form-hint">Если выбраны файлы, URL игнорируется</div>
           </div>
 
           <div style="display:flex;gap:.75rem;margin-top:1.25rem">
@@ -1171,6 +1211,118 @@
     return (categories.find(c => c.slug === cat)?.emoji) || icons[cat] || '📦';
   }
 
+  // Regular product multiple images
+  let imageCountRegular = 1;
+  const MAX_IMAGES_REGULAR = 5;
+
+  function previewImageRegularMulti(event, index) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Валидация формата
+    const allowedFormats = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedFormats.includes(file.type)) {
+      alert('Недопустимый формат файла. Используйте JPG, PNG, GIF или WebP');
+      event.target.value = '';
+      return;
+    }
+    
+    // Валидация размера (макс 10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert('Файл слишком большой. Максимум 10 МБ');
+      event.target.value = '';
+      return;
+    }
+    
+    const container = document.querySelector(`.img-upload-item-regular[data-index="${index}"]`);
+    const placeholder = container.querySelector('.upload-placeholder-multi');
+    const preview = container.querySelector('.img-preview-multi');
+    const img = container.querySelector('.preview-img-multi');
+    const name = container.querySelector('.preview-name-multi');
+    
+    const reader = new FileReader();
+    reader.onload = e => {
+      placeholder.style.display = 'none';
+      preview.style.display = 'block';
+      img.src = e.target.result;
+      const sizeKB = (file.size / 1024).toFixed(1);
+      name.textContent = `${file.name} (${sizeKB} KB)`;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeImageRegular(event, index) {
+    event.stopPropagation();
+    const container = document.querySelector(`.img-upload-item-regular[data-index="${index}"]`);
+    const input = container.querySelector('input[type="file"]');
+    const placeholder = container.querySelector('.upload-placeholder-multi');
+    const preview = container.querySelector('.img-preview-multi');
+    
+    input.value = '';
+    placeholder.style.display = '';
+    preview.style.display = 'none';
+  }
+
+  function addImageUploadRegular() {
+    if (imageCountRegular >= MAX_IMAGES_REGULAR) {
+      alert(`Максимум ${MAX_IMAGES_REGULAR} изображений`);
+      return;
+    }
+    
+    const container = document.getElementById('imageUploadsRegular');
+    const newIndex = imageCountRegular;
+    
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'img-upload-item-regular';
+    itemDiv.setAttribute('data-index', newIndex);
+    itemDiv.style.marginTop = '1rem';
+    
+    itemDiv.innerHTML = `
+      <div class="img-upload-area" onclick="document.getElementById('imageFileRegular_${newIndex}').click()">
+        <input type="file" id="imageFileRegular_${newIndex}" name="image_file_${newIndex}" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewImageRegularMulti(event, ${newIndex})" style="display:none">
+        <div class="upload-placeholder-multi">
+          <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
+          <div style="font-size:.875rem;color:var(--text-2)">Доп. фото ${newIndex + 1}</div>
+          <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
+        </div>
+        <div class="img-preview-multi" style="display:none">
+          <img class="preview-img-multi" src="" alt="Preview">
+          <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name-multi"></div>
+          <button type="button" onclick="removeImageRegular(event, ${newIndex})" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
+        </div>
+      </div>
+    `;
+    
+    container.appendChild(itemDiv);
+    imageCountRegular++;
+    
+    if (imageCountRegular >= MAX_IMAGES_REGULAR) {
+      document.getElementById('addMoreBtnRegular').style.display = 'none';
+    }
+  }
+
+  function clearPreviewRegular() {
+    // Очистить все превью
+    for (let i = 0; i < imageCountRegular; i++) {
+      const container = document.querySelector(`.img-upload-item-regular[data-index="${i}"]`);
+      if (container) {
+        const input = container.querySelector('input[type="file"]');
+        const placeholder = container.querySelector('.upload-placeholder-multi');
+        const preview = container.querySelector('.img-preview-multi');
+        
+        if (input) input.value = '';
+        if (placeholder) placeholder.style.display = '';
+        if (preview) preview.style.display = 'none';
+      }
+    }
+    
+    // Показать кнопку добавления
+    if (imageCountRegular >= MAX_IMAGES_REGULAR) {
+      document.getElementById('addMoreBtnRegular').style.display = '';
+    }
+  }
+
   function previewImage(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1203,10 +1355,7 @@
   }
 
   function clearPreview() {
-    document.getElementById('uploadPlaceholder').style.display = '';
-    document.getElementById('imgPreview').style.display = 'none';
-    document.getElementById('previewImg').src = '';
-    document.getElementById('imageFile').value = '';
+    clearPreviewRegular();
   }
 
   // Add product form
@@ -1254,6 +1403,85 @@
   let currentProductWithSpecs = null;
   let addedSpecifications = [];
 
+  // Multiple image upload for specs
+  let imageCountSpecs = 1;
+  const MAX_IMAGES_SPECS = 5;
+
+  function previewImageSpecsMulti(event, index) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const container = document.querySelector(`.img-upload-item-specs[data-index="${index}"]`);
+    if (!container) {
+      console.error(`Container not found for specs index ${index}`);
+      return;
+    }
+    const placeholder = container.querySelector('.upload-placeholder-multi');
+    const preview = container.querySelector('.img-preview-multi');
+    const img = container.querySelector('.preview-img-multi');
+    const name = container.querySelector('.preview-name-multi');
+    
+    const reader = new FileReader();
+    reader.onload = e => {
+      placeholder.style.display = 'none';
+      preview.style.display = 'block';
+      img.src = e.target.result;
+      name.textContent = file.name;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeImageSpecs(event, index) {
+    event.stopPropagation();
+    const container = document.querySelector(`.img-upload-item-specs[data-index="${index}"]`);
+    if (!container) return;
+    const input = container.querySelector('input[type="file"]');
+    const placeholder = container.querySelector('.upload-placeholder-multi');
+    const preview = container.querySelector('.img-preview-multi');
+    
+    input.value = '';
+    placeholder.style.display = '';
+    preview.style.display = 'none';
+  }
+
+  function addImageUploadSpecs() {
+    if (imageCountSpecs >= MAX_IMAGES_SPECS) {
+      alert(`Максимум ${MAX_IMAGES_SPECS} изображений`);
+      return;
+    }
+    
+    const container = document.getElementById('imageUploadsSpecs');
+    const newIndex = imageCountSpecs;
+    
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'img-upload-item-specs';
+    itemDiv.setAttribute('data-index', newIndex);
+    itemDiv.style.marginTop = '1rem';
+    
+    itemDiv.innerHTML = `
+      <div class="img-upload-area" onclick="document.getElementById('imageFileSpecs_${newIndex}').click()">
+        <input type="file" id="imageFileSpecs_${newIndex}" name="image_file_${newIndex}" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewImageSpecsMulti(event, ${newIndex})" style="display:none">
+        <div class="upload-placeholder-multi">
+          <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
+          <div style="font-size:.875rem;color:var(--text-2)">Доп. фото ${newIndex + 1}</div>
+          <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
+        </div>
+        <div class="img-preview-multi" style="display:none">
+          <img class="preview-img-multi" src="" alt="Preview">
+          <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name-multi"></div>
+          <button type="button" onclick="removeImageSpecs(event, ${newIndex})" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
+        </div>
+      </div>
+    `;
+    
+    container.appendChild(itemDiv);
+    imageCountSpecs++;
+    
+    if (imageCountSpecs >= MAX_IMAGES_SPECS) {
+      document.getElementById('addMoreBtnSpecs').style.display = 'none';
+    }
+  }
+
   function previewImageSpecs(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1268,10 +1496,24 @@
   }
 
   function clearPreviewSpecs() {
-    document.getElementById('uploadPlaceholderSpecs').style.display = '';
-    document.getElementById('imgPreviewSpecs').style.display = 'none';
-    document.getElementById('previewImgSpecs').src = '';
-    document.getElementById('imageFileSpecs').value = '';
+    // Очистить все превью для основного товара со спецификациями
+    for (let i = 0; i < imageCountSpecs; i++) {
+      const container = document.querySelector(`.img-upload-item-specs[data-index="${i}"]`);
+      if (container) {
+        const input = container.querySelector('input[type="file"]');
+        const placeholder = container.querySelector('.upload-placeholder-multi');
+        const preview = container.querySelector('.img-preview-multi');
+        
+        if (input) input.value = '';
+        if (placeholder) placeholder.style.display = '';
+        if (preview) preview.style.display = 'none';
+      }
+    }
+    
+    // Показать кнопку добавления, если была скрыта
+    if (imageCountSpecs >= MAX_IMAGES_SPECS) {
+      document.getElementById('addMoreBtnSpecs').style.display = '';
+    }
   }
 
   // Add main product with specifications
@@ -1303,6 +1545,121 @@
       showMsg('addProductSpecsMsg','error','Ошибка соединения'); 
     }
   });
+
+  // Specification multiple images
+  let imageCountSpec = 1;
+  const MAX_IMAGES_SPEC = 5;
+
+  function previewImageSpecMulti(event, index) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Валидация формата
+    const allowedFormats = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedFormats.includes(file.type)) {
+      alert('Недопустимый формат файла. Используйте JPG, PNG, GIF или WebP');
+      event.target.value = '';
+      return;
+    }
+    
+    // Валидация размера (макс 10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert('Файл слишком большой. Максимум 10 МБ');
+      event.target.value = '';
+      return;
+    }
+    
+    const container = document.querySelector(`.img-upload-item-spec[data-index="${index}"]`);
+    const placeholder = container.querySelector('.upload-placeholder-multi');
+    const preview = container.querySelector('.img-preview-multi');
+    const img = container.querySelector('.preview-img-multi');
+    const name = container.querySelector('.preview-name-multi');
+    
+    const reader = new FileReader();
+    reader.onload = e => {
+      placeholder.style.display = 'none';
+      preview.style.display = 'block';
+      img.src = e.target.result;
+      const sizeKB = (file.size / 1024).toFixed(1);
+      name.textContent = `${file.name} (${sizeKB} KB)`;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeImageSpec(event, index) {
+    event.stopPropagation();
+    const container = document.querySelector(`.img-upload-item-spec[data-index="${index}"]`);
+    const input = container.querySelector('input[type="file"]');
+    const placeholder = container.querySelector('.upload-placeholder-multi');
+    const preview = container.querySelector('.img-preview-multi');
+    
+    input.value = '';
+    placeholder.style.display = '';
+    preview.style.display = 'none';
+  }
+
+  function addImageUploadSpec() {
+    if (imageCountSpec >= MAX_IMAGES_SPEC) {
+      alert(`Максимум ${MAX_IMAGES_SPEC} изображений`);
+      return;
+    }
+    
+    const container = document.getElementById('imageUploadsSpec');
+    const newIndex = imageCountSpec;
+    
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'img-upload-item-spec';
+    itemDiv.setAttribute('data-index', newIndex);
+    itemDiv.style.marginTop = '1rem';
+    
+    itemDiv.innerHTML = `
+      <div class="img-upload-area" onclick="document.getElementById('imageFileSpec_${newIndex}').click()">
+        <input type="file" id="imageFileSpec_${newIndex}" name="image_file_${newIndex}" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewImageSpecMulti(event, ${newIndex})" style="display:none">
+        <div class="upload-placeholder-multi">
+          <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
+          <div style="font-size:.875rem;color:var(--text-2)">Доп. фото ${newIndex + 1}</div>
+          <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
+        </div>
+        <div class="img-preview-multi" style="display:none">
+          <img class="preview-img-multi" src="" alt="Preview">
+          <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name-multi"></div>
+          <button type="button" onclick="removeImageSpec(event, ${newIndex})" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
+        </div>
+      </div>
+    `;
+    
+    container.appendChild(itemDiv);
+    imageCountSpec++;
+    
+    if (imageCountSpec >= MAX_IMAGES_SPEC) {
+      document.getElementById('addMoreBtnSpec').style.display = 'none';
+    }
+  }
+
+  function clearPreviewSpec() {
+    // Очистить все превью
+    for (let i = 0; i < imageCountSpec; i++) {
+      const container = document.querySelector(`.img-upload-item-spec[data-index="${i}"]`);
+      if (container) {
+        const input = container.querySelector('input[type="file"]');
+        const placeholder = container.querySelector('.upload-placeholder-multi');
+        const preview = container.querySelector('.img-preview-multi');
+        
+        if (input) input.value = '';
+        if (placeholder) placeholder.style.display = '';
+        if (preview) preview.style.display = 'none';
+      }
+    }
+    
+    // Показать кнопку добавления
+    if (imageCountSpec >= MAX_IMAGES_SPEC) {
+      document.getElementById('addMoreBtnSpec').style.display = '';
+    }
+    
+    // Сбросить счётчик для нового товара
+    imageCountSpec = 1;
+  }
 
   // Add specification to product
   document.getElementById('addSpecificationForm').addEventListener('submit', async e => {

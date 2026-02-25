@@ -17,13 +17,14 @@
   <meta property="og:description" content="Качественные запчасти и аксессуары для вашего электросамоката. Гарантия качества, быстрая доставка.">
   <meta property="og:site_name" content="IMPORT">
   
-  <!-- Favicons - IMPORT Branding -->
-  <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="/static/favicon/favicon-512x512.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="/static/favicon/favicon-192x192.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png">
-  <link rel="shortcut icon" href="/static/favicon/favicon.ico">
+  <!-- Favicons - IMPORT Branding v5 -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png?v=5">
+  <link rel="icon" type="image/png" sizes="512x512" href="/static/favicon/favicon-512x512.png?v=5">
+  <link rel="icon" type="image/png" sizes="192x192" href="/static/favicon/favicon-192x192.png?v=5">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png?v=5">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png?v=5">
+  <link rel="shortcut icon" href="/static/favicon/favicon.ico?v=5">
+  <link rel="icon" type="image/svg+xml" href="/static/favicon/favicon.svg?v=5">
   <meta name="theme-color" content="#080A0F">
   
   <title>IMPORT — Премиум запчасти для электросамокатов</title>
@@ -312,7 +313,24 @@
     .qty-btn{width:28px;height:28px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;font-size:1rem;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all .2s}
     .qty-btn:hover{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
     .qty-input{width:50px;height:28px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;color:var(--text);text-align:center;font-size:.875rem;font-weight:600;outline:none}
-    .qty-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim)}    /* IMPORT Logo - Lightning bolt effect */
+    .qty-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim)}
+    
+    /* Product Carousel Styles */
+    .product-carousel{position:relative;width:100%;max-width:500px;margin:0 auto;background:var(--bg-3);border-radius:var(--radius-lg);overflow:hidden}
+    .carousel-main{position:relative;width:100%;height:400px;overflow:hidden}
+    .carousel-slide{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;transition:opacity .5s var(--ease);display:flex;align-items:center;justify-content:center}
+    .carousel-slide.active{opacity:1;z-index:1}
+    .carousel-slide img{width:100%;height:100%;object-fit:contain;padding:1rem}
+    .carousel-prev,.carousel-next{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.7);backdrop-filter:blur(10px);border:1px solid var(--border);color:var(--text);width:48px;height:48px;border-radius:50%;cursor:pointer;font-size:1.5rem;display:flex;align-items:center;justify-content:center;transition:all .2s var(--ease);z-index:10;user-select:none}
+    .carousel-prev{left:1rem}
+    .carousel-next{right:1rem}
+    .carousel-prev:hover,.carousel-next:hover{background:var(--accent);color:#080A0F;border-color:var(--accent);transform:translateY(-50%) scale(1.1)}
+    .carousel-dots{position:absolute;bottom:1rem;left:50%;transform:translateX(-50%);display:flex;gap:.5rem;z-index:10}
+    .carousel-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.3);cursor:pointer;transition:all .2s var(--ease);border:1px solid transparent}
+    .carousel-dot.active{background:var(--accent);width:28px;border-radius:5px}
+    .carousel-dot:hover{background:rgba(255,255,255,.5);transform:scale(1.2)}
+    
+    /* IMPORT Logo - Lightning bolt effect */
     .logo-mark,.admin-logo-mark,.login-mark{
       position:relative;
       overflow:hidden;
@@ -815,6 +833,8 @@
 
     cartBody.innerHTML = cart.map(item => {
       const p = item.product;
+      const specId = item.specification_id || 'null';
+      
       // ИСПРАВЛЕНИЕ п.2: Правильная логика отображения изображений в корзине
       const hasValidImage = p.image_url && p.image_url.trim() && 
                            (p.image_url.startsWith('/static/uploads/') || 
@@ -831,22 +851,24 @@
           <div class="cart-item-name">${p.name}</div>
           <div class="cart-item-price">${fmt(p.price)} ₽</div>
           <div class="qty-controls" style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem">
-            <button class="qty-btn" onclick="updateCartQty(${p.id}, ${item.quantity - 1}, ${p.stock})">−</button>
+            <button class="qty-btn" onclick="updateCartQty(${p.id}, ${specId}, ${item.quantity - 1}, ${p.stock})">−</button>
             <input type="number" class="qty-input" value="${item.quantity}" min="1" max="${p.stock}" 
-                   onchange="updateCartQty(${p.id}, this.value, ${p.stock})" readonly>
-            <button class="qty-btn" onclick="updateCartQty(${p.id}, ${item.quantity + 1}, ${p.stock})">+</button>
+                   onchange="updateCartQty(${p.id}, ${specId}, this.value, ${p.stock})" readonly>
+            <button class="qty-btn" onclick="updateCartQty(${p.id}, ${specId}, ${item.quantity + 1}, ${p.stock})">+</button>
             <span style="font-size:.75rem;color:var(--text-3);margin-left:.25rem">Итого: ${fmt(item.item_total)} ₽</span>
           </div>
         </div>
-        <button class="cart-item-remove" onclick="removeFromCart(${p.id})" title="Удалить">✕</button>
+        <button class="cart-item-remove" onclick="removeFromCart(${p.id}, ${specId})" title="Удалить">✕</button>
       </div>`;
     }).join('');
   }
 
   // Новая функция для обновления количества товара
-  async function updateCartQty(productId, newQty, stock) {
+  async function updateCartQty(productId, specificationId, newQty, stock) {
     newQty = parseInt(newQty);
-    if (newQty < 1) return removeFromCart(productId);
+    const specId = specificationId === 'null' ? null : specificationId;
+    
+    if (newQty < 1) return removeFromCart(productId, specId);
     if (newQty > stock) {
       showToast('error', 'Недостаточно товара на складе');
       return loadCart();
@@ -856,10 +878,19 @@
     if (!token) return;
     
     try {
+      const requestBody = { 
+        product_id: productId, 
+        quantity: newQty
+      };
+      
+      if (specId !== null) {
+        requestBody.specification_id = specId;
+      }
+      
       const r = await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ product_id: productId, quantity: newQty })
+        body: JSON.stringify(requestBody)
       });
       if (r.ok) {
         await loadCart();
@@ -892,11 +923,19 @@
     } catch { showToast('error', 'Ошибка соединения'); }
   }
 
-  async function removeFromCart(productId) {
+  async function removeFromCart(productId, specificationId) {
     const token = localStorage.getItem('token');
     if (!token) return;
+    
+    const specId = specificationId === 'null' ? null : specificationId;
+    
     try {
-      const r = await fetch(`/api/cart/${productId}`, {
+      let url = `/api/cart/${productId}`;
+      if (specId !== null) {
+        url += `?specification_id=${specId}`;
+      }
+      
+      const r = await fetch(url, {
         method: 'DELETE', headers: { Authorization: `Bearer ${token}` }
       });
       if (r.ok) { await loadCart(); showToast('success', 'Товар удалён из корзины'); }
@@ -951,9 +990,14 @@
       // Бейджи с улучшенным spacing (п.3)
       let badges = [];
       if (p.featured) badges.push('<span class="product-badge badge-featured">⭐ Популярный</span>');
-      if (p.in_stock) badges.push('<span class="product-badge badge-stock">✓ В наличии</span>');
+      // Используем поле in_stock для определения наличия
+      if (p.in_stock) {
+        badges.push('<span class="product-badge badge-stock">✓ В наличии</span>');
+      } else if (!p.preorder) {
+        // Показываем "Нет в наличии" только если товар не в наличии И не на предзаказе
+        badges.push('<span class="product-badge badge-out">✕ Нет в наличии</span>');
+      }
       if (p.preorder) badges.push('<span class="product-badge badge-preorder">📦 Предзаказ</span>');
-      if (p.stock === 0) badges.push('<span class="product-badge badge-out">✕ Нет в наличии</span>');
       const badgesHtml = badges.length ? `<div class="product-badges">${badges.join('')}</div>` : '';
       
       return `
@@ -966,8 +1010,8 @@
           <div class="product-desc">${p.description}</div>
           <div class="product-footer">
             <span class="product-price">${fmt(p.price)} ₽</span>
-            <button class="add-btn" onclick="event.stopPropagation(); addToCart(${p.id},${p.stock})" ${p.stock<=0?'disabled':''}>
-              ${p.stock>0 ? 'В корзину' : 'Нет в наличии'}
+            <button class="add-btn" onclick="event.stopPropagation(); addToCart(${p.id},${p.stock})" ${!p.in_stock && !p.preorder?'disabled':''}>
+              ${p.in_stock || p.preorder ? 'В корзину' : 'Нет в наличии'}
             </button>
           </div>
         </div>
@@ -1030,9 +1074,25 @@
       const r = await fetch(`/api/products/${productId}`);
       if (!r.ok) return showToast('error', 'Не удалось загрузить товар');
       const product = await r.json();
+      
+      // Загружаем дополнительные изображения
+      try {
+        const imgRes = await fetch(`/api/products/${productId}/images`);
+        if (imgRes.ok) {
+          const images = await imgRes.json();
+          product.additional_images = images.map(img => img.image_url);
+        } else {
+          product.additional_images = [];
+        }
+      } catch (e) {
+        console.log('No additional images found');
+        product.additional_images = [];
+      }
+      
       currentDetailProduct = product;
       selectedSpec = null;
       detailQty = 1;
+      currentSlide = 0; // Reset carousel
       renderProductDetail(product);
       productDetailModal.classList.add('active');
     } catch (e) {
@@ -1041,41 +1101,81 @@
   }
   
   function renderProductDetail(p) {
+    currentSlide = 0;
+    
+    // Определяем, какие данные использовать (товар или спецификацию)
+    const displayItem = selectedSpec || p;
+    
     const icon = catIcon(p.category);
-    const hasValidImage = p.image_url && p.image_url.trim() && 
-                         (p.image_url.startsWith('/static/uploads/') || 
-                          p.image_url.startsWith('http://') || 
-                          p.image_url.startsWith('https://'));
     
-    // Основное изображение
-    const mainImgHtml = hasValidImage
-      ? `<img src="${p.image_url}" alt="${p.name}">`
-      : icon;
+    // ИСПРАВЛЕНИЕ: Используем изображение спецификации, если она выбрана
+    const mainImageUrl = selectedSpec ? (selectedSpec.image_url || p.image_url) : p.image_url;
+    const hasValidImage = mainImageUrl && mainImageUrl.trim() && 
+                         (mainImageUrl.startsWith('/static/') || 
+                          mainImageUrl.startsWith('http://') || 
+                          mainImageUrl.startsWith('https://') ||
+                          mainImageUrl.startsWith('data:image'));
     
-    // Дополнительные изображения (если есть)
-    let thumbnailsHtml = '';
-    if (p.images && p.images.length > 0) {
-      const allImages = [p.image_url, ...p.images];
-      thumbnailsHtml = `
-        <div class="product-thumbnails">
-          ${allImages.map((img, idx) => {
-            const imgSrc = img && img.trim() ? img : '';
-            return imgSrc ? `<div class="product-thumb ${idx === 0 ? 'active' : ''}" onclick="switchProductImage('${imgSrc}', this)">
-              <img src="${imgSrc}" alt="Изображение ${idx + 1}">
-            </div>` : '';
-          }).join('')}
+    // Собираем все изображения: основное + дополнительные
+    // ИСПРАВЛЕНИЕ: Если выбрана спецификация, используем её изображения
+    let allImages = [];
+    if (hasValidImage) {
+      allImages.push(mainImageUrl);
+    }
+    
+    // Добавляем дополнительные изображения из спецификации или товара
+    if (selectedSpec && selectedSpec.images && selectedSpec.images.length > 0) {
+      allImages = allImages.concat(selectedSpec.images);
+    } else if (p.images && p.images.length > 0) {
+      allImages = allImages.concat(p.images);
+    }
+    
+    // Карусель изображений (если есть несколько фото)
+    let galleryHtml = '';
+    if (allImages.length > 1) {
+      galleryHtml = `
+        <div class="product-carousel">
+          <div class="carousel-main" id="carouselMain">
+            ${allImages.map((img, idx) => `
+              <div class="carousel-slide ${idx === 0 ? 'active' : ''}" data-index="${idx}">
+                <img src="${img}" alt="${p.name} - фото ${idx + 1}">
+              </div>
+            `).join('')}
+          </div>
+          ${allImages.length > 1 ? `
+            <button class="carousel-prev" onclick="carouselNav(-1)">‹</button>
+            <button class="carousel-next" onclick="carouselNav(1)">›</button>
+            <div class="carousel-dots">
+              ${allImages.map((_, idx) => `
+                <span class="carousel-dot ${idx === 0 ? 'active' : ''}" onclick="carouselGoTo(${idx})"></span>
+              `).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    } else if (allImages.length === 1) {
+      galleryHtml = `
+        <div class="product-main-img">
+          <img src="${allImages[0]}" alt="${p.name}">
+        </div>
+      `;
+    } else {
+      galleryHtml = `
+        <div class="product-main-img">
+          ${icon}
         </div>
       `;
     }
     
-    // Характеристики
+    // Характеристики - показываем характеристики спецификации, если она выбрана
     let charsHtml = '';
-    if (p.characteristics && p.characteristics.length > 0) {
+    const characteristics = selectedSpec ? (selectedSpec.characteristics || []) : (p.characteristics || []);
+    if (characteristics.length > 0) {
       charsHtml = `
         <div class="product-characteristics">
           <div class="char-title">📋 Характеристики</div>
           <div class="char-list">
-            ${p.characteristics.map(c => `
+            ${characteristics.map(c => `
               <div class="char-item">
                 <span class="char-name">${c.char_name}</span>
                 <span class="char-value">${c.char_value}</span>
@@ -1113,8 +1213,7 @@
     
     productDetailContent.innerHTML = `
       <div class="product-gallery">
-        <div class="product-main-img" id="productMainImg">${mainImgHtml}</div>
-        ${thumbnailsHtml}
+        ${galleryHtml}
       </div>
       <div class="product-info">
         <div>
@@ -1147,6 +1246,39 @@
         </div>
       </div>
     `;
+  }
+  
+  // Carousel functionality
+  let currentSlide = 0;
+  
+  function carouselNav(direction) {
+    const slides = document.querySelectorAll('.carousel-slide');
+    const dots = document.querySelectorAll('.carousel-dot');
+    if (slides.length === 0) return;
+    
+    slides[currentSlide].classList.remove('active');
+    dots[currentSlide].classList.remove('active');
+    
+    currentSlide += direction;
+    if (currentSlide < 0) currentSlide = slides.length - 1;
+    if (currentSlide >= slides.length) currentSlide = 0;
+    
+    slides[currentSlide].classList.add('active');
+    dots[currentSlide].classList.add('active');
+  }
+  
+  function carouselGoTo(index) {
+    const slides = document.querySelectorAll('.carousel-slide');
+    const dots = document.querySelectorAll('.carousel-dot');
+    if (slides.length === 0) return;
+    
+    slides[currentSlide].classList.remove('active');
+    dots[currentSlide].classList.remove('active');
+    
+    currentSlide = index;
+    
+    slides[currentSlide].classList.add('active');
+    dots[currentSlide].classList.add('active');
   }
   
   function switchProductImage(imgSrc, thumbEl) {
@@ -1184,9 +1316,9 @@
       return;
     }
     
-    // TODO: Когда будет поддержка спецификаций в корзине, использовать spec_id
-    // Пока добавляем основной товар
+    // ИСПРАВЛЕНИЕ: Отправляем specification_id в корзину
     const productId = currentDetailProduct.id;
+    const specificationId = selectedSpec ? selectedSpec.id : null;
     const stock = selectedSpec ? selectedSpec.stock : currentDetailProduct.stock;
     
     if (stock <= 0) {
@@ -1195,16 +1327,27 @@
     }
     
     try {
+      const requestBody = { 
+        product_id: productId, 
+        quantity: detailQty
+      };
+      
+      // Добавляем specification_id только если он есть
+      if (specificationId !== null) {
+        requestBody.specification_id = specificationId;
+      }
+      
       const r = await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ product_id: productId, quantity: detailQty })
+        body: JSON.stringify(requestBody)
       });
       
       if (r.ok) {
         await loadCart();
         productDetailModal.classList.remove('active');
-        showToast('success', `✓ Добавлено ${detailQty} шт. в корзину`);
+        const itemName = selectedSpec ? `${currentDetailProduct.name} - ${selectedSpec.name}` : currentDetailProduct.name;
+        showToast('success', `✓ Добавлено ${detailQty} шт. ${itemName} в корзину`);
       } else {
         const d = await r.json();
         showToast('error', d.detail || 'Ошибка');

@@ -453,6 +453,14 @@ class Database:
             except:
                 pass  # Columns/constraints already exist
 
+            # Миграция: delay_note в orders
+            try:
+                await conn.execute('''
+                    ALTER TABLE orders ADD COLUMN IF NOT EXISTS delay_note TEXT
+                ''')
+            except:
+                pass
+
             # Заказы
             await conn.execute('''
                 CREATE TABLE IF NOT EXISTS orders (
@@ -570,11 +578,22 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # Разрешаем скрипты только с того же домена и inline (для совместимости)
         csp_policy = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com; "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-            "font-src 'self' https://fonts.gstatic.com; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' "
+                "https://fonts.googleapis.com "
+                "https://cdn.jsdelivr.net "
+                "https://cdnjs.cloudflare.com "
+                "https://cdn.prod.website-files.com; "
+            "style-src 'self' 'unsafe-inline' "
+                "https://fonts.googleapis.com "
+                "https://cdn.jsdelivr.net "
+                "https://cdnjs.cloudflare.com; "
+            "font-src 'self' data: "
+                "https://fonts.gstatic.com "
+                "https://cdn.jsdelivr.net "
+                "https://cdnjs.cloudflare.com "
+                "https://cdn.prod.website-files.com; "
             "img-src 'self' data: https:; "
-            "connect-src 'self'; "
+            "connect-src 'self' https:; "
             "frame-ancestors 'none'; "
             "base-uri 'self'; "
             "form-action 'self';"
@@ -694,6 +713,18 @@ async def offer_page(request: Request):
 @app.get("/returns")
 async def returns_page(request: Request):
     return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "returns"})
+
+@app.get("/about")
+async def about_page(request: Request):
+    return templates.TemplateResponse("about.html", {"request": request})
+
+@app.get("/tracking")
+async def tracking_page(request: Request):
+    return templates.TemplateResponse("tracking.html", {"request": request})
+
+@app.get("/auth")
+async def auth_page(request: Request, next: str = "/"):
+    return templates.TemplateResponse("auth.html", {"request": request, "next_url": next})
 
 
 # ==========================================
@@ -1256,8 +1287,23 @@ async def get_user_orders(user_id: str = Depends(get_current_user)):
     try:
         async with db.pool.acquire() as conn:
             orders = await conn.fetch('''
-                SELECT id, status, total_amount, payment_status, created_at, delivery_address
-                FROM orders WHERE user_id=$1 ORDER BY created_at DESC
+                SELECT o.id, o.status, o.total_amount, o.payment_status,
+                       o.created_at, o.delivery_address, o.delay_note,
+                       COALESCE(
+                         json_agg(
+                           json_build_object(
+                             'product_name', oi.product_name,
+                             'quantity', oi.quantity,
+                             'price', oi.price
+                           ) ORDER BY oi.id
+                         ) FILTER (WHERE oi.id IS NOT NULL),
+                         '[]'
+                       ) AS items
+                FROM orders o
+                LEFT JOIN order_items oi ON oi.order_id = o.id
+                WHERE o.user_id=$1
+                GROUP BY o.id
+                ORDER BY o.created_at DESC
             ''', user_id)
             result = []
             for o in orders:
@@ -1265,6 +1311,16 @@ async def get_user_orders(user_id: str = Depends(get_current_user)):
                 d['total_amount'] = float(d['total_amount'])
                 if isinstance(d.get('created_at'), datetime):
                     d['created_at'] = d['created_at'].isoformat()
+                # Parse items JSON if returned as string
+                import json as _json
+                if isinstance(d.get('items'), str):
+                    try: d['items'] = _json.loads(d['items'])
+                    except: d['items'] = []
+                # Convert Decimal prices in items
+                if d.get('items'):
+                    for item in d['items']:
+                        if 'price' in item:
+                            item['price'] = float(item['price'])
                 result.append(d)
             return result
     except Exception as e:
@@ -1657,17 +1713,24 @@ async def delete_customer_note(note_id: int, admin=Depends(verify_admin)):
 @app.put("/api/admin/orders/{order_id}/status")
 async def update_order_status(order_id: int, body: dict, admin=Depends(verify_admin)):
     new_status = body.get("status")
-    valid = ['pending','confirmed','processing','shipped','delivered','cancelled']
+    delay_note = body.get("delay_note")  # Optional[str]
+    valid = [
+        'pending', 'confirmed', 'processing', 'shipped',
+        'customs', 'delivered', 'handed_over', 'completed', 'cancelled'
+    ]
     if new_status not in valid:
         raise HTTPException(status_code=400, detail=f"Недопустимый статус. Допустимые: {valid}")
     try:
         async with db.pool.acquire() as conn:
             r = await conn.execute(
-                "UPDATE orders SET status=$1, updated_at=NOW() WHERE id=$2", new_status, order_id
+                "UPDATE orders SET status=$1, delay_note=$2, updated_at=NOW() WHERE id=$3",
+                new_status,
+                delay_note if delay_note else None,
+                order_id
             )
             if r == "UPDATE 0":
                 raise HTTPException(status_code=404, detail="Заказ не найден")
-            return {"message": "Статус обновлён", "status": new_status}
+            return {"message": "Статус обновлён", "status": new_status, "delay_note": delay_note}
     except HTTPException:
         raise
     except Exception as e:

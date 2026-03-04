@@ -452,12 +452,15 @@
         <div style="display:flex;gap:.75rem;align-items:center">
           <select class="form-select" id="orderStatusFilter" style="width:auto" onchange="loadOrders()">
             <option value="">Все заказы</option>
-            <option value="pending">Ожидание</option>
-            <option value="confirmed">Подтверждён</option>
-            <option value="processing">В обработке</option>
-            <option value="shipped">Отправлен</option>
-            <option value="delivered">Доставлен</option>
-            <option value="cancelled">Отменён</option>
+            <option value="pending">📋 Создан</option>
+            <option value="confirmed">✅ Подтверждён</option>
+            <option value="processing">⚙️ В обработке</option>
+            <option value="shipped">🚚 В пути</option>
+            <option value="customs">🛃 На таможне</option>
+            <option value="delivered">📦 Доставлен</option>
+            <option value="handed_over">🤝 Передан получателю</option>
+            <option value="completed">🏁 Завершён</option>
+            <option value="cancelled">❌ Отменён</option>
           </select>
           <button class="btn btn-ghost btn-sm" onclick="loadOrders()">🔄 Обновить</button>
         </div>
@@ -468,6 +471,42 @@
           <thead><tr><th>#</th><th>Клиент</th><th>Сумма</th><th>Статус</th><th>Оплата</th><th>Дата</th><th>Действия</th></tr></thead>
           <tbody id="ordersTableBody"><tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка…</td></tr></tbody>
         </table>
+      </div>
+    </div>
+
+
+    <!-- ─── ORDER STATUS MODAL ─── -->
+    <div class="modal-overlay" id="statusModal">
+      <div class="modal" style="max-width:500px">
+        <div class="modal-header">
+          <h3 class="modal-title" id="statusModalTitle">🔄 Статус заказа</h3>
+          <button class="modal-close" id="closeStatusModalBtn">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Новый статус</label>
+            <select class="form-select" id="newStatusSelect">
+              <option value="pending">📋 Создан</option>
+              <option value="confirmed">✅ Подтверждён</option>
+              <option value="processing">⚙️ В обработке</option>
+              <option value="shipped">🚚 В пути</option>
+              <option value="customs">🛃 На таможне</option>
+              <option value="delivered">📦 Доставлен</option>
+              <option value="handed_over">🤝 Передан получателю</option>
+              <option value="completed">🏁 Завершён</option>
+              <option value="cancelled">❌ Отменён</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-top:1.125rem">
+            <label class="form-label">Уведомление о задержке <span style="color:var(--text-3);text-transform:none;letter-spacing:0;font-weight:400">(необязательно)</span></label>
+            <textarea class="form-textarea" id="delayNoteInput" placeholder="Например: задержка на таможне Москвы, ориентировочная дата — 20 марта 2025." style="min-height:76px"></textarea>
+            <p class="form-hint">Клиент увидит это сообщение на странице «Заказы».</p>
+          </div>
+          <div style="display:flex;gap:.75rem;margin-top:1.25rem">
+            <button class="btn btn-primary" style="flex:1" id="confirmStatusBtn">Сохранить</button>
+            <button class="btn btn-ghost" id="cancelStatusBtn">Отмена</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -956,6 +995,14 @@
     if (name === 'crm') loadCRM();
     if (name === 'add-product') loadCategoriesForSelect();
   }
+
+  // ── Wire status modal buttons ──
+  document.getElementById('closeStatusModalBtn').addEventListener('click', closeStatusModal);
+  document.getElementById('cancelStatusBtn').addEventListener('click', closeStatusModal);
+  document.getElementById('confirmStatusBtn').addEventListener('click', confirmStatusChange);
+  document.getElementById('statusModal').addEventListener('click', function(e) {
+    if (e.target === this) closeStatusModal();
+  });
 
   document.querySelectorAll('.admin-nav-btn').forEach(btn => {
     btn.addEventListener('click', () => switchSection(btn.dataset.sec));
@@ -1775,70 +1822,139 @@
   }
 
   // ── Orders ──
+  // ── Orders: status labels & classes ──
+  const ORDER_STATUS_LABELS = {
+    pending:     '📋 Создан',
+    confirmed:   '✅ Подтверждён',
+    processing:  '⚙️ В обработке',
+    shipped:     '🚚 В пути',
+    customs:     '🛃 На таможне',
+    delivered:   '📦 Доставлен',
+    handed_over: '🤝 Передан',
+    completed:   '🏁 Завершён',
+    cancelled:   '❌ Отменён'
+  };
+  const ORDER_STATUS_CLASS = {
+    pending:     'status-pending',
+    confirmed:   'status-confirmed',
+    processing:  'status-processing',
+    shipped:     'status-shipped',
+    customs:     'status-pending',
+    delivered:   'status-delivered',
+    handed_over: 'status-delivered',
+    completed:   'status-delivered',
+    cancelled:   'status-cancelled'
+  };
+
+  function escH(t) { return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
   async function loadOrders() {
     const statusFilter = document.getElementById('orderStatusFilter').value;
     const tbody = document.getElementById('ordersTableBody');
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка заказов...</td></tr>';
-    
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка заказов…</td></tr>';
+
     let url = '/api/admin/orders?limit=100';
-    if (statusFilter) url += `&status=${statusFilter}`;
-    
+    if (statusFilter) url += '&status=' + encodeURIComponent(statusFilter);
+
     try {
-      console.log('🔄 Загрузка заказов...');
-      const r = await fetch(url, { headers: { Authorization: `Bearer ${adminToken}` } });
-      
+      const r = await fetch(url, { headers: { Authorization: 'Bearer ' + adminToken } });
       if (!r.ok) {
-        console.error(`❌ Ошибка загрузки заказов: HTTP ${r.status} ${r.statusText}`);
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--red)">Ошибка загрузки: ${r.status} ${r.statusText}</td></tr>`;
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--red)">Ошибка загрузки: ' + r.status + '</td></tr>';
         return;
       }
-      
       const orders = await r.json();
-      console.log(`✅ Загружено заказов: ${orders.length}`);
-      
-      if (!orders.length) { 
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-3)">Заказов нет</td></tr>'; 
-        return; 
+      if (!orders.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-3)">Заказов нет</td></tr>';
+        return;
       }
-      
-      const statusLabels = { pending:'⏳ Ожидание', confirmed:'✅ Подтверждён', processing:'⚙️ В обработке', shipped:'📦 Отправлен', delivered:'🎉 Доставлен', cancelled:'❌ Отменён' };
-      const statusClass = { pending:'status-pending', confirmed:'status-confirmed', processing:'status-processing', shipped:'status-shipped', delivered:'status-delivered', cancelled:'status-cancelled' };
-      tbody.innerHTML = orders.map(o => `<tr>
-        <td style="font-weight:700">#${o.id}</td>
-        <td><div>${o.username||'—'}</div><div style="font-size:.75rem;color:var(--text-3)">${o.email||''}</div></td>
-        <td style="font-weight:700">${fmt(o.total_amount)} ₽</td>
-        <td><span class="order-status ${statusClass[o.status]||''}">${statusLabels[o.status]||o.status}</span></td>
-        <td><span style="font-size:.8125rem;color:${o.payment_status==='paid'?'var(--green)':'var(--text-3)'}">${o.payment_status==='paid'?'💚 Оплачен':o.payment_status==='waiting'?'⏳ Ожидает':'💔 Не оплачен'}</span></td>
-        <td style="font-size:.8125rem;color:var(--text-3)">${o.created_at?.split('T')[0]||'—'}</td>
-        <td>
-          <select class="form-select" style="font-size:.75rem;padding:.25rem .5rem;background:var(--bg-3)" onchange="updateOrderStatus(${o.id},this.value)">
-            <option value="">Изменить…</option>
-            <option value="confirmed">Подтвердить</option>
-            <option value="processing">В обработку</option>
-            <option value="shipped">Отправить</option>
-            <option value="delivered">Доставлен</option>
-            <option value="cancelled">Отменить</option>
-          </select>
-        </td>
-      </tr>`).join('');
-    } catch (error) {
-      console.error('❌ Критическая ошибка при загрузке заказов:', error);
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--red)">Критическая ошибка загрузки. Проверьте консоль.</td></tr>';
+
+      const rows = orders.map(function(o) {
+        const statusLabel = ORDER_STATUS_LABELS[o.status] || o.status;
+        const statusCls   = ORDER_STATUS_CLASS[o.status]  || '';
+        const payColor    = o.payment_status === 'paid' ? 'var(--green)' : 'var(--text-3)';
+        const payText     = o.payment_status === 'paid' ? '💚 Оплачен' : o.payment_status === 'waiting' ? '⏳ Ожидает' : '💔 Не оплачен';
+        const dateStr     = o.created_at ? o.created_at.split('T')[0] : '—';
+        const delayBadge  = o.delay_note
+          ? '<div style="font-size:.7rem;color:var(--amber);margin-top:.3rem">⚠️ ' + escH(o.delay_note.substring(0, 50)) + (o.delay_note.length > 50 ? '…' : '') + '</div>'
+          : '';
+        const orderId = o.id;
+        const safeStatus = escH(o.status || 'pending');
+        const safeDelay  = escH(o.delay_note || '');
+
+        return '<tr>'
+          + '<td style="font-weight:700">#' + orderId + '</td>'
+          + '<td><div>' + escH(o.username || '—') + '</div><div style="font-size:.75rem;color:var(--text-3)">' + escH(o.email || '') + '</div></td>'
+          + '<td style="font-weight:700">' + fmt(o.total_amount) + ' ₽</td>'
+          + '<td><span class="order-status ' + statusCls + '">' + statusLabel + '</span>' + delayBadge + '</td>'
+          + '<td><span style="font-size:.8125rem;color:' + payColor + '">' + payText + '</span></td>'
+          + '<td style="font-size:.8125rem;color:var(--text-3)">' + dateStr + '</td>'
+          + '<td><button class="btn btn-ghost btn-xs" data-order-id="' + orderId + '" data-order-status="' + safeStatus + '" data-order-delay="' + safeDelay + '" onclick="openStatusModal(this)">🔄 Статус</button></td>'
+          + '</tr>';
+      });
+      tbody.innerHTML = rows.join('');
+    } catch (err) {
+      console.error('loadOrders error:', err);
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--red)">Критическая ошибка. Проверьте консоль.</td></tr>';
+    }
+  }
+
+  // ── Status modal ──
+  let _currentOrderId = null;
+
+  function openStatusModal(btn) {
+    _currentOrderId = btn.dataset.orderId;
+    document.getElementById('statusModalTitle').textContent = '🔄 Статус заказа #' + _currentOrderId;
+    document.getElementById('newStatusSelect').value = btn.dataset.orderStatus || 'pending';
+    document.getElementById('delayNoteInput').value  = btn.dataset.orderDelay  || '';
+    document.getElementById('statusModal').classList.add('active');
+  }
+
+  function closeStatusModal() {
+    document.getElementById('statusModal').classList.remove('active');
+    _currentOrderId = null;
+  }
+
+  async function confirmStatusChange() {
+    if (!_currentOrderId) return;
+    const newStatus = document.getElementById('newStatusSelect').value;
+    const delayNote = document.getElementById('delayNoteInput').value.trim();
+    const btn = document.getElementById('confirmStatusBtn');
+    btn.disabled = true;
+    btn.textContent = 'Сохраняю…';
+    try {
+      const r = await fetch('/api/admin/orders/' + _currentOrderId + '/status', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminToken },
+        body: JSON.stringify({ status: newStatus, delay_note: delayNote || null })
+      });
+      const d = await r.json();
+      if (r.ok) {
+        showToast('success', 'Заказ #' + _currentOrderId + ': статус обновлён');
+        closeStatusModal();
+        loadOrders();
+      } else {
+        showToast('error', d.detail || 'Ошибка');
+      }
+    } catch (e) {
+      showToast('error', 'Ошибка соединения');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Сохранить';
     }
   }
 
   async function updateOrderStatus(orderId, newStatus) {
     if (!newStatus) return;
     try {
-      const r = await fetch(`/api/admin/orders/${orderId}/status`, {
+      const r = await fetch('/api/admin/orders/' + orderId + '/status', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminToken },
         body: JSON.stringify({ status: newStatus })
       });
       const d = await r.json();
-      if (r.ok) { showToast('success', `Заказ #${orderId}: статус обновлён`); loadOrders(); }
-      else showToast('error', d.detail||'Ошибка');
-    } catch { showToast('error','Ошибка соединения'); }
+      if (r.ok) { showToast('success', 'Заказ #' + orderId + ': статус обновлён'); loadOrders(); }
+      else showToast('error', d.detail || 'Ошибка');
+    } catch { showToast('error', 'Ошибка соединения'); }
   }
 
 

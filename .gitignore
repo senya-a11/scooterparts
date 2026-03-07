@@ -1,0 +1,23 @@
+# Fix #3: Файлы с секретами — никогда не в репозиторий
+.env
+.env.local
+.env.production
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Загруженные файлы
+static/uploads/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Логи
+*.log

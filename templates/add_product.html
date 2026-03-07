@@ -13,7 +13,7 @@
   <meta name="theme-color" content="#080A0F">
   <title>IMPORT — Добавить товар</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
+  <style nonce="{{ request.state.csp_nonce }}">
     :root{--bg:#080A0F;--bg-3:#12161E;--surface:#161B24;--border:rgba(255,255,255,.06);--border-hover:rgba(255,255,255,.12);--text:#F0F2F5;--text-2:#8B92A5;--text-3:#4E5568;--accent:#00D4FF;--accent-dim:rgba(0,212,255,.12);--green:#00E5A0;--green-dim:rgba(0,229,160,.12);--red:#FF4757;--red-dim:rgba(255,71,87,.12);--radius:10px;--radius-xl:24px;--font-d:'Syne',sans-serif;--font-b:'DM Sans',sans-serif;--ease:cubic-bezier(.16,1,.3,1)}
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
@@ -61,6 +61,7 @@
     }
 
   </style>
+<script src="/static/csrf-init.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -113,19 +114,37 @@
             <span style="font-size:.9375rem">✅ В наличии</span>
           </label>
           <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
-            <input type="checkbox" name="preorder" value="true" style="width:18px;height:18px;cursor:pointer">
+            <input type="checkbox" name="preorder" id="preorderCheck" value="true" style="width:18px;height:18px;cursor:pointer">
             <span style="font-size:.9375rem">📦 По предзаказу</span>
           </label>
         </div>
         <div class="form-hint">Можно выбрать оба статуса одновременно</div>
+      </div>
+      <!-- Цены предзаказа - показываем только при включённом предзаказе -->
+      <div id="preorderPrices" style="display:none">
+        <div style="padding:.875rem 1rem;background:rgba(255,176,32,.06);border:1px solid rgba(255,176,32,.2);border-radius:var(--radius);margin-bottom:1.25rem">
+          <div style="font-size:.8125rem;font-weight:700;color:#FFB020;margin-bottom:.875rem;letter-spacing:.04em;text-transform:uppercase">📦 Цены доставки по предзаказу</div>
+          <div class="row-2">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">🚗 Цена (авто, ₽)</label>
+              <input type="number" name="price_preorder_auto" class="form-input" placeholder="5990" min="0" step="0.01">
+              <div class="form-hint">Итоговая цена при доставке автотранспортом</div>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">✈️ Цена (самолёт, ₽)</label>
+              <input type="number" name="price_preorder_air" class="form-input" placeholder="7990" min="0" step="0.01">
+              <div class="form-hint">Итоговая цена при доставке самолётом</div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Фото товара (до 5 шт)</label>
         <div class="form-hint" style="margin-bottom:1rem">Первое фото будет основным. Можно загрузить до 5 изображений.</div>
         <div id="imageUploads">
           <div class="img-upload-item" data-index="0">
-            <div class="img-upload" onclick="document.getElementById('file_0').click()">
-              <input type="file" id="file_0" name="image_file_0" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewMulti(event, 0)" style="display:none">
+            <div class="img-upload" data-trigger="file_0">
+              <input type="file" id="file_0" name="image_file_0" accept=".jpg,.jpeg,.png,.gif,.webp" data-preview-idx="0" style="display:none">
               <div class="upload-placeholder">
                 <div style="font-size:2.5rem;margin-bottom:.5rem">📸</div>
                 <div style="font-size:.875rem;color:var(--text-2)">Основное фото</div>
@@ -134,12 +153,12 @@
               <div class="preview-box" style="display:none">
                 <img class="preview-img" src="" alt="">
                 <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name"></div>
-                <button type="button" onclick="removeImage(event, 0)" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
+                <button type="button" data-remove-img="0" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
               </div>
             </div>
           </div>
         </div>
-        <button type="button" id="addMoreBtn" onclick="addImageUpload()" class="btn btn-ghost" style="margin-top:1rem;width:100%">+ Добавить еще фото</button>
+        <button type="button" id="addMoreBtn" class="btn btn-ghost" style="margin-top:1rem;width:100%">+ Добавить еще фото</button>
       </div>
       <div class="form-group">
         <label class="form-label">— или URL изображения</label>
@@ -148,14 +167,20 @@
       </div>
       <div style="display:flex;gap:.75rem;margin-top:.5rem">
         <button type="submit" class="btn btn-primary">💾 Сохранить</button>
-        <button type="reset" class="btn btn-ghost" onclick="clearPrev()">Очистить</button>
+        <button type="reset" class="btn btn-ghost" id="clearBtn">Очистить</button>
       </div>
     </form>
   </div>
 </div>
-<script>
-  const token = sessionStorage.getItem('adminToken');
-  if (!token) location.href = '/admin';
+<script nonce="{{ request.state.csp_nonce }}">
+  // Показываем/скрываем поля цен предзаказа
+  const preorderCheck = document.getElementById('preorderCheck');
+  const preorderPrices = document.getElementById('preorderPrices');
+  preorderCheck.addEventListener('change', function(){
+    preorderPrices.style.display = this.checked ? 'block' : 'none';
+  });
+
+  // Доступ защищён на сервере — редирект в /admin если не авторизован
 
   let imageCount = 1;
   const MAX_IMAGES = 5;
@@ -202,7 +227,23 @@
     preview.style.display = 'none';
   }
 
-  function addImageUpload() {
+  document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('addMoreBtn')?.addEventListener('click', addImageUpload);
+  document.getElementById('clearBtn')?.addEventListener('click', clearPrev);
+  document.addEventListener('click', function(e) {
+    var area = e.target.closest('.img-upload[data-trigger]');
+    if (area) { var fi = document.getElementById(area.dataset.trigger); if (fi) fi.click(); return; }
+    var rmBtn = e.target.closest('[data-remove-img]');
+    if (rmBtn) removeImage(rmBtn, parseInt(rmBtn.dataset.removeImg));
+  });
+  document.addEventListener('change', function(e) {
+    if (e.target.type !== 'file') return;
+    var idx = e.target.dataset.previewIdx;
+    if (idx !== undefined) previewMulti(e, parseInt(idx));
+  });
+});
+
+function addImageUpload() {
     if (imageCount >= MAX_IMAGES) {
       alert(`Максимум ${MAX_IMAGES} изображений`);
       return;
@@ -217,8 +258,8 @@
     itemDiv.style.marginTop = '1rem';
     
     itemDiv.innerHTML = `
-      <div class="img-upload" onclick="document.getElementById('file_${newIndex}').click()">
-        <input type="file" id="file_${newIndex}" name="image_file_${newIndex}" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewMulti(event, ${newIndex})" style="display:none">
+      <div class="img-upload" data-trigger="file_${newIndex}">
+        <input type="file" id="file_${newIndex}" name="image_file_${newIndex}" accept=".jpg,.jpeg,.png,.gif,.webp" data-preview-idx="${newIndex}" style="display:none">
         <div class="upload-placeholder">
           <div style="font-size:2.5rem;margin-bottom:.5rem">📸</div>
           <div style="font-size:.875rem;color:var(--text-2)">Доп. фото ${newIndex + 1}</div>
@@ -227,7 +268,7 @@
         <div class="preview-box" style="display:none">
           <img class="preview-img" src="" alt="">
           <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name"></div>
-          <button type="button" onclick="removeImage(event, ${newIndex})" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
+          <button type="button" data-remove-img="${newIndex}" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
         </div>
       </div>
     `;
@@ -266,12 +307,28 @@
     if (!formData.get('preorder')) formData.set('preorder', 'false');
     
     try {
-      const r = await fetch('/api/admin/products', { method:'POST', headers:{Authorization:`Bearer ${token}`}, body:formData });
+      const r = await fetch('/api/admin/products', { method:'POST', credentials:'include', body:formData });
       const d = await r.json();
       if (r.ok) { msgEl.innerHTML = '<div class="msg msg-success">✅ Товар добавлен! <a href="/admin" style="color:var(--green)">Перейти в админку →</a></div>'; e.target.reset(); clearPrev(); }
       else msgEl.innerHTML = `<div class="msg msg-error">${d.detail||'Ошибка'}</div>`;
     } catch { msgEl.innerHTML = '<div class="msg msg-error">Ошибка соединения</div>'; }
   });
 </script>
+
+<div class="cookie-banner" id="cookieBanner" role="dialog" aria-label="Уведомление об использовании Cookie" aria-live="polite">
+  <div class="cookie-inner">
+    <div class="cookie-icon" aria-hidden="true">&#127850;</div>
+    <div class="cookie-text">
+      <strong>Мы используем Cookie-файлы</strong>
+      <p>Необходимые Cookie обеспечивают работу сайта (авторизация, корзина). С вашего согласия мы также используем аналитические Cookie. Подробнее — в <a href="/privacy-policy#cookies" target="_blank">Политике конфиденциальности</a>.</p>
+    </div>
+    <div class="cookie-actions">
+      <button class="btn-ca" id="cookieAccept">Принять все</button>
+      <button class="btn-cd" id="cookieDecline">Только необходимые</button>
+      <button class="btn-cdet" id="cookieDetails">Подробнее</button>
+    </div>
+  </div>
+</div>
+<script src="/static/cookie-consent.js" defer></script>
 </body>
 </html>

@@ -13,7 +13,7 @@
   <meta name="theme-color" content="#080A0F">
   <title>Оплата — IMPORT</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
+  <style nonce="{{ request.state.csp_nonce }}">
     :root{--bg:#080A0F;--surface:#161B24;--border:rgba(255,255,255,.06);--text:#F0F2F5;--text-2:#8B92A5;--accent:#00D4FF;--green:#00E5A0;--amber:#FFB020;--radius:10px;--font-d:'Syne',sans-serif;--font-b:'DM Sans',sans-serif}
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem}
@@ -27,6 +27,7 @@
     .btn:hover{opacity:.9;transform:translateY(-1px)}
     .btn-ghost{background:transparent;color:var(--text-2);border:1px solid var(--border);margin-top:.75rem;display:block}
   </style>
+<script src="/static/csrf-init.js"></script>
 </head>
 <body>
   <div class="card">
@@ -41,5 +42,6 @@
     <a href="/" class="btn">← Вернуться в магазин</a>
     <a href="/" class="btn btn-ghost">Проверить заказы</a>
   </div>
+<script src="/static/cookie-consent.js" defer></script>
 </body>
 </html>

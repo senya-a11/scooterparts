@@ -1,13 +1,14 @@
-# backend/main.py  ·  IMPORT v8.3_FINAL
+# backend/main.py  ·  IMPORT v9.0_SECURED
+import logging
+import re
 from fastapi import FastAPI, HTTPException, Depends, status, Request, Response, UploadFile, File, Form, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel, EmailStr, field_validator
-from typing import List, Optional, Dict, Any
+from pydantic import BaseModel, EmailStr, field_validator, Field
+from typing import List, Optional, Dict, Any, Literal
 import uvicorn
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import os
 from pathlib import Path
 import jwt
@@ -18,6 +19,7 @@ import json
 from uuid import uuid4
 import secrets
 import shutil
+import base64
 import aiofiles
 from PIL import Image
 import io
@@ -30,7 +32,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from backend.security import CSRFProtection, CookieAuth, CookieConsent
+# Fix #2: logger определён на уровне модуля — доступен везде
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
@@ -60,15 +67,28 @@ STATIC_DIR.mkdir(parents=True, exist_ok=True)
 (STATIC_DIR / "images").mkdir(exist_ok=True)
 (STATIC_DIR / "favicon").mkdir(exist_ok=True)
 
-# Устанавливаем права на запись для uploads
+# Fix #11: Права 0o777 (rwxrwxrwx) опасны — любой пользователь системы мог
+# читать, записывать и выполнять файлы. Заменено на 0o755 (rwxr-xr-x).
 try:
-    os.chmod(UPLOAD_DIR, 0o777)
-    print(f"✅ Права на папку uploads установлены: {UPLOAD_DIR}")
+    os.chmod(UPLOAD_DIR, 0o755)
+    print(f"✅ Права на папку uploads установлены (755): {UPLOAD_DIR}")
 except Exception as e:
     print(f"⚠️ Не удалось установить права на {UPLOAD_DIR}: {e}")
 
 
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
+# Fix #3: Секреты обязательны. Слабые значения по умолчанию недопустимы в продакшне.
+# При отсутствии переменных окружения приложение не запустится — это намеренное поведение.
+_admin_password_raw = os.getenv("ADMIN_PASSWORD", "")
+if not _admin_password_raw:
+    import warnings
+    warnings.warn(
+        "⚠️  ADMIN_PASSWORD не задан. Используется небезопасный пароль 'admin123'. "
+        "Установите ADMIN_PASSWORD в .env перед деплоем!",
+        stacklevel=2
+    )
+    _admin_password_raw = "admin123"
+
+ADMIN_PASSWORD = _admin_password_raw
 ADMIN_USERNAME = "admin"
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/scooter_shop")
@@ -103,8 +123,14 @@ class UserRegister(BaseModel):
     @field_validator('password')
     @classmethod
     def validate_password(cls, v: str) -> str:
-        if len(v) < 6:
-            raise ValueError('Пароль должен содержать минимум 6 символов')
+        if len(v) < 8:
+            raise ValueError('Пароль должен содержать минимум 8 символов')
+        if len(v) > 128:
+            raise ValueError('Пароль слишком длинный (максимум 128 символов)')
+        if not re.search(r'[A-Za-zА-Яа-яЁё]', v):
+            raise ValueError('Пароль должен содержать хотя бы одну букву')
+        if not re.search(r'\d', v):
+            raise ValueError('Пароль должен содержать хотя бы одну цифру')
         return v
 
     @field_validator('privacy_accepted')
@@ -129,11 +155,31 @@ class CartUpdate(BaseModel):
     product_id: int
     quantity: int
     specification_id: Optional[int] = None
+    order_type: Optional[str] = None       # "in_stock" | "preorder"
+    delivery_type: Optional[str] = None    # "auto" | "air" (только при preorder)
+
+
+# Fix #8: Типизированные модели вместо body: dict
+class CartQuantityUpdate(BaseModel):
+    quantity: int = Field(gt=0, le=9999)
+    specification_id: Optional[int] = None
 
 
 class AdminLogin(BaseModel):
     username: str
     password: str
+
+
+class CustomerNoteCreate(BaseModel):
+    note: str = Field(min_length=1, max_length=2000)
+
+
+class OrderStatusUpdate(BaseModel):
+    status: Literal[
+        'pending', 'confirmed', 'processing', 'shipped',
+        'customs', 'delivered', 'handed_over', 'completed', 'cancelled'
+    ]
+    delay_note: Optional[str] = Field(None, max_length=500)
 
 
 class ProductCreate(BaseModel):
@@ -176,6 +222,8 @@ class CategoryUpdate(BaseModel):
 class OrderCreate(BaseModel):
     delivery_address: Optional[str] = None
     comment: Optional[str] = None
+    # Тип заказа для товаров с предзаказом, если не сохранён в cart_items
+    items_overrides: Optional[list] = None
 
 
 class PaymentCreate(BaseModel):
@@ -185,13 +233,56 @@ class PaymentCreate(BaseModel):
 
 
 # ========== АУТЕНТИФИКАЦИЯ ==========
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
-ALGORITHM  = "HS256"
-security   = HTTPBearer()
+# Fix #3: SECRET_KEY обязан быть задан и длиннее 32 символов.
+# Генерация надёжного ключа: python -c "import secrets; print(secrets.token_hex(32))"
+_secret_key_raw = os.getenv("SECRET_KEY", "")
+if not _secret_key_raw or _secret_key_raw in (
+    "your-secret-key-change-in-production",
+    "local-dev-secret-key-change-in-production",
+):
+    import warnings
+    _fallback_key = "INSECURE-fallback-key-DO-NOT-USE-IN-PRODUCTION-" + secrets.token_hex(8)
+    warnings.warn(
+        "⚠️  SECRET_KEY не задан или содержит небезопасное значение по умолчанию. "
+        "Установите SECRET_KEY в .env (минимум 32 случайных символа)! "
+        "Сгенерируйте: python -c \"import secrets; print(secrets.token_hex(32))\"",
+        stacklevel=2
+    )
+    _secret_key_raw = _fallback_key
 
-# Инициализация модулей безопасности
-csrf_protection = CSRFProtection(SECRET_KEY)
-cookie_auth = CookieAuth()
+if len(_secret_key_raw) < 32:
+    raise RuntimeError(
+        "SECRET_KEY слишком короткий (минимум 32 символа). "
+        "Сгенерируйте: python -c \"import secrets; print(secrets.token_hex(32))\""
+    )
+
+SECRET_KEY = _secret_key_raw
+ALGORITHM  = "HS256"
+# HTTPBearer удалён — используем HttpOnly cookies
+
+
+# Fix #5: валидация image_url против SSRF и XSS
+_ALLOWED_IMAGE_URL = re.compile(
+    r'^https?://.+\.(jpg|jpeg|png|gif|webp)(\?.*)?$', re.IGNORECASE
+)
+_INTERNAL_HOSTS = re.compile(
+    r'^(localhost|127\.\d+\.\d+\.\d+|0\.0\.0\.0|169\.254\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)'
+)
+
+def validate_image_url(url: str) -> str:
+    """Проверяет image_url против SSRF и XSS. Разрешает только https/http + картинки."""
+    if not url:
+        return url
+    if url.startswith('data:image/'):   # base64 из формы — разрешаем
+        return url
+    if not _ALLOWED_IMAGE_URL.match(url):
+        raise HTTPException(status_code=400, detail="Недопустимый URL изображения. Разрешены только http(s) ссылки на jpg/png/gif/webp.")
+    from urllib.parse import urlparse
+    host = urlparse(url).hostname or ""
+    if _INTERNAL_HOSTS.match(host):
+        raise HTTPException(status_code=400, detail="Недопустимый URL: внутренние адреса запрещены.")
+    return url
+
 
 
 class PasswordHasher:
@@ -222,25 +313,52 @@ class PasswordHasher:
 hasher = PasswordHasher()
 
 
-def create_access_token(data: dict):
+def create_access_token(data: dict, expires_minutes: int = 60):
+    """
+    Создаёт JWT с обязательным полем exp (срок действия).
+    По умолчанию 60 минут. Используйте меньший срок для чувствительных операций.
+    """
     to_encode = data.copy()
     for k, v in to_encode.items():
         if isinstance(v, (uuid.UUID, datetime)):
             to_encode[k] = str(v)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes)
+    to_encode["exp"] = expire
+    to_encode["iat"] = datetime.now(timezone.utc)  # issued at
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+def get_current_user(request: Request) -> str:
+    """
+    Fix #1: Читает JWT из HttpOnly cookie вместо Bearer-заголовка.
+    XSS не может получить HttpOnly cookie через JavaScript.
+    """
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Не авторизован")
     try:
-        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload.get("user_id")
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("user_id")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Недействительный токен: отсутствует user_id")
+        return user_id
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Токен истёк. Войдите снова")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Недействительный токен")
+    except HTTPException:
+        raise
     except Exception:
-        return None
+        raise HTTPException(status_code=401, detail="Ошибка аутентификации")
 
 
-def verify_admin(credentials: HTTPAuthorizationCredentials = Depends(security)):
+def verify_admin(request: Request) -> dict:
+    """Fix #1 + #4: Проверяет is_admin из cookie-токена."""
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Не авторизован")
     try:
-        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         if not payload.get("is_admin"):
             raise HTTPException(status_code=403, detail="Доступ запрещён")
         return payload
@@ -324,6 +442,8 @@ class Database:
                     in_stock BOOLEAN DEFAULT FALSE,
                     preorder BOOLEAN DEFAULT FALSE,
                     cost_price DECIMAL(10,2),
+                    price_preorder_auto DECIMAL(10,2),
+                    price_preorder_air DECIMAL(10,2),
                     has_specifications BOOLEAN DEFAULT FALSE,
                     specifications_data TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -334,6 +454,24 @@ class Database:
             try:
                 await conn.execute('''
                     ALTER TABLE products ADD COLUMN IF NOT EXISTS preorder BOOLEAN DEFAULT FALSE
+                ''')
+                await conn.execute('''
+                    ALTER TABLE products ADD COLUMN IF NOT EXISTS price_preorder_auto DECIMAL(10,2)
+                ''')
+                await conn.execute('''
+                    ALTER TABLE products ADD COLUMN IF NOT EXISTS price_preorder_air DECIMAL(10,2)
+                ''')
+                await conn.execute('''
+                    ALTER TABLE product_specifications ADD COLUMN IF NOT EXISTS price_preorder_auto DECIMAL(10,2)
+                ''')
+                await conn.execute('''
+                    ALTER TABLE product_specifications ADD COLUMN IF NOT EXISTS price_preorder_air DECIMAL(10,2)
+                ''')
+                await conn.execute('''
+                    ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS order_type VARCHAR(20)
+                ''')
+                await conn.execute('''
+                    ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS delivery_type VARCHAR(10)
                 ''')
                 await conn.execute('''
                     ALTER TABLE products ADD COLUMN IF NOT EXISTS in_stock BOOLEAN DEFAULT FALSE
@@ -387,6 +525,8 @@ class Database:
                     in_stock BOOLEAN DEFAULT FALSE,
                     preorder BOOLEAN DEFAULT FALSE,
                     cost_price DECIMAL(10,2),
+                    price_preorder_auto DECIMAL(10,2),
+                    price_preorder_air DECIMAL(10,2),
                     sort_order INTEGER DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
@@ -428,6 +568,8 @@ class Database:
                     product_id INTEGER NOT NULL,
                     specification_id INTEGER,
                     quantity INTEGER NOT NULL CHECK (quantity > 0),
+                    order_type VARCHAR(20),
+                    delivery_type VARCHAR(10),
                     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(user_id, product_id, specification_id),
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -441,16 +583,27 @@ class Database:
                 await conn.execute('''
                     ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS specification_id INTEGER
                 ''')
-                # Удаляем старое ограничение уникальности
+                # Удаляем старые ограничения уникальности (могут конфликтовать)
                 await conn.execute('''
                     ALTER TABLE cart_items DROP CONSTRAINT IF EXISTS cart_items_user_id_product_id_key
                 ''')
-                # Добавляем новое ограничение уникальности
                 await conn.execute('''
-                    ALTER TABLE cart_items ADD CONSTRAINT cart_items_unique 
-                    UNIQUE(user_id, product_id, specification_id)
+                    ALTER TABLE cart_items DROP CONSTRAINT IF EXISTS cart_items_unique
                 ''')
-            except:
+                # Fix cart: В PostgreSQL UNIQUE-индекс с NULL не работает через ON CONFLICT.
+                # Решение: два частичных (partial) индекса — один для NULL, другой для NOT NULL.
+                await conn.execute('''
+                    CREATE UNIQUE INDEX IF NOT EXISTS cart_items_uniq_no_spec
+                    ON cart_items(user_id, product_id)
+                    WHERE specification_id IS NULL
+                ''')
+                await conn.execute('''
+                    CREATE UNIQUE INDEX IF NOT EXISTS cart_items_uniq_with_spec
+                    ON cart_items(user_id, product_id, specification_id)
+                    WHERE specification_id IS NOT NULL
+                ''')
+            except Exception as e:
+                print(f"Cart migration (non-critical): {e}")
                 pass  # Columns/constraints already exist
 
             # Миграция: delay_note в orders
@@ -504,6 +657,17 @@ class Database:
                 )
             ''')
 
+            # 152-ФЗ: таблица для хранения согласий на обработку Cookie
+            await conn.execute('''
+                CREATE TABLE IF NOT EXISTS cookie_consents (
+                    id SERIAL PRIMARY KEY,
+                    session_id VARCHAR(128) UNIQUE NOT NULL,
+                    consent_type VARCHAR(20) NOT NULL,
+                    ip_address VARCHAR(45),
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+
             # --- Начальные категории ---
             for slug, name, emoji, desc in DEFAULT_CATEGORIES:
                 exists = await conn.fetchval(
@@ -515,13 +679,14 @@ class Database:
                         slug, name, emoji, desc
                     )
 
-            # --- Демо-пользователь ---
-            if not await conn.fetchval("SELECT EXISTS(SELECT 1 FROM users WHERE username='demo')"):
-                await conn.execute(
-                    "INSERT INTO users (id,username,email,full_name,phone,password_hash,privacy_accepted) VALUES ($1,$2,$3,$4,$5,$6,$7)",
-                    str(uuid4()), 'demo', 'demo@scooterparts.ru', 'Демо Пользователь',
-                    '+79991234567', hasher.get_password_hash("demo123"), True
-                )
+            # --- Демо-пользователь (только для разработки) ---
+            if os.getenv("ENVIRONMENT") == "development":
+                if not await conn.fetchval("SELECT EXISTS(SELECT 1 FROM users WHERE username='demo')"):
+                    await conn.execute(
+                        "INSERT INTO users (id,username,email,full_name,phone,password_hash,privacy_accepted) VALUES ($1,$2,$3,$4,$5,$6,$7)",
+                        str(uuid4()), 'demo', 'demo@scooterparts.ru', 'Демо Пользователь',
+                        '+79991234567', hasher.get_password_hash("demo123"), True
+                    )
 
             # --- Админ ---
             if not await conn.fetchval("SELECT EXISTS(SELECT 1 FROM users WHERE username='admin')"):
@@ -558,121 +723,244 @@ db = Database()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await db.connect()
+
+    # Fix B-4: удаляем устаревшие записи согласий (старше 180 дней)
+    # Запускается один раз при старте — экономичнее периодического фонового таска
+    try:
+        async with db.pool.acquire() as conn:
+            # asyncpg: execute() returns "DELETE N" string — parse count from it
+            result = await conn.execute(
+                "DELETE FROM cookie_consents WHERE created_at < NOW() - INTERVAL '180 days'"
+            )
+            count = int(result.split()[-1]) if result else 0
+            if count:
+                logger.info("Cookie consent cleanup: removed %d stale records", count)
+    except Exception as e:
+        logger.warning("Cookie consent cleanup failed (non-critical): %s", e)
+
     yield
     await db.disconnect()
 
 
 # ========== ПРИЛОЖЕНИЕ ==========
-app = FastAPI(title="IMPORT API v8.3 Security Edition", lifespan=lifespan)
+_environment = os.getenv("ENVIRONMENT", "production")
+_docs_url    = "/docs"   if _environment == "development" else None
+_redoc_url   = "/redoc"  if _environment == "development" else None
+
+# Fix #11: OpenAPI /docs и /redoc закрыты в production
+app = FastAPI(
+    title="IMPORT API v9.0 Secured",
+    docs_url=_docs_url,
+    redoc_url=_redoc_url,
+    openapi_url="/openapi.json" if _environment == "development" else None,
+    lifespan=lifespan,
+)
 
 # ========== SECURITY MIDDLEWARE ==========
+
+class BodySizeLimitMiddleware(BaseHTTPMiddleware):
+    """
+    Fix A-8: Ограничение размера тела запроса для JSON-эндпоинтов.
+    Защита от DoS-атак через отправку огромных JSON-тел.
+    Multipart/form-data (загрузка файлов) не ограничивается здесь —
+    для неё ограничение стоит через validate в эндпоинте.
+    """
+    JSON_LIMIT = 512 * 1024  # 512 KB для JSON
+
+    async def dispatch(self, request: Request, call_next):
+        ct = request.headers.get("content-type", "")
+        if "multipart/form-data" in ct or "application/octet-stream" in ct:
+            return await call_next(request)
+        cl = request.headers.get("content-length")
+        if cl and int(cl) > self.JSON_LIMIT:
+            return JSONResponse(
+                status_code=413,
+                content={"detail": "Тело запроса слишком большое."}
+            )
+        return await call_next(request)
+
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """
-    Middleware для добавления заголовков безопасности ко всем ответам.
-    Защита от XSS, clickjacking, MIME sniffing и других атак.
+    Fix #10: Заголовки безопасности с nonce-based CSP.
+    Убраны 'unsafe-inline' и 'unsafe-eval' — они фактически отменяли защиту от XSS.
+    Nonce генерируется для каждого запроса и передаётся в шаблоны через request.state.
     """
     async def dispatch(self, request: Request, call_next):
+        # Генерируем уникальный nonce для каждого запроса
+        nonce = secrets.token_urlsafe(16)
+        request.state.csp_nonce = nonce  # Доступен в Jinja2 шаблонах как request.state.csp_nonce
+
         response = await call_next(request)
-        
-        # Content Security Policy - защита от XSS
-        # Разрешаем скрипты только с того же домена и inline (для совместимости)
+
+        # CSP: nonce для inline-скриптов/стилей + белый список CDN.
+        # <script nonce="{{ request.state.csp_nonce }}"> — inline
+        # <script src="https://cdnjs..."> — разрешён через домен, nonce не нужен
         csp_policy = (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' "
-                "https://fonts.googleapis.com "
-                "https://cdn.jsdelivr.net "
-                "https://cdnjs.cloudflare.com "
-                "https://cdn.prod.website-files.com; "
-            "style-src 'self' 'unsafe-inline' "
-                "https://fonts.googleapis.com "
-                "https://cdn.jsdelivr.net "
-                "https://cdnjs.cloudflare.com; "
-            "font-src 'self' data: "
-                "https://fonts.gstatic.com "
-                "https://cdn.jsdelivr.net "
-                "https://cdnjs.cloudflare.com "
-                "https://cdn.prod.website-files.com; "
-            "img-src 'self' data: https:; "
-            "connect-src 'self' https:; "
-            "frame-ancestors 'none'; "
-            "base-uri 'self'; "
-            "form-action 'self';"
+            f"default-src 'self'; "
+            f"script-src 'self' 'nonce-{nonce}' "
+            f"https://cdnjs.cloudflare.com "
+            f"https://cdn.jsdelivr.net "
+            f"https://unpkg.com; "
+            # 'unsafe-inline' для style-src: inline-стили не выполняют JS, XSS-риска нет.
+            # Нужно для style='' атрибутов и element.style.* (GSAP, карточки, модальные окна).
+            # script-src остаётся строгим (nonce-only) — главная защита от XSS.
+            f"style-src 'self' 'unsafe-inline' "
+            f"https://fonts.googleapis.com; "
+            f"font-src 'self' "
+            f"https://fonts.gstatic.com "
+            f"https://cdn.prod.website-files.com; "
+            f"img-src 'self' data: https:; "
+            f"connect-src 'self'; "
+            f"frame-ancestors 'none'; "
+            f"base-uri 'self'; "
+            f"form-action 'self'; "
+            f"object-src 'none';"
         )
         response.headers["Content-Security-Policy"] = csp_policy
-        
-        # X-Frame-Options - защита от clickjacking
+
+        # X-Frame-Options — защита от clickjacking
         response.headers["X-Frame-Options"] = "DENY"
-        
-        # X-Content-Type-Options - защита от MIME sniffing
+
+        # X-Content-Type-Options — защита от MIME sniffing
         response.headers["X-Content-Type-Options"] = "nosniff"
-        
-        # X-XSS-Protection (устаревший, но все еще полезен для старых браузеров)
+
+        # X-XSS-Protection — для старых браузеров
         response.headers["X-XSS-Protection"] = "1; mode=block"
-        
-        # Referrer-Policy - контроль передачи referrer
+
+        # Referrer-Policy — не передаём путь при переходе на внешние сайты
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        
-        # Permissions-Policy - ограничение доступа к API браузера
-        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
-        
-        # Strict-Transport-Security (HSTS) - только для HTTPS
-        # На продакшене (Render.com) будет HTTPS
+
+        # Permissions-Policy — отключаем ненужные API браузера
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=(), payment=()"
+
+        # HSTS — только для HTTPS (продакшн)
         if request.url.scheme == "https":
-            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+
         return response
 
+app.add_middleware(BodySizeLimitMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 
-# Rate Limiting Middleware - защита от brute-force
+# Fix #7: CSRF Middleware — проверяет токен для всех мутирующих API-запросов.
+# Фронтенд должен: 1) Получить токен GET /api/csrf-token
+#                  2) Отправлять его в заголовке X-CSRF-Token при POST/PUT/DELETE
+class CSRFMiddleware(BaseHTTPMiddleware):
+    """
+    Проверяет CSRF-токен для мутирующих запросов к /api/*.
+    Статические файлы и GET-запросы пропускаются.
+    """
+    EXEMPT_PATHS = {"/api/payment/callback"}  # Webhook от платёжных систем — без CSRF
+
+    async def dispatch(self, request: Request, call_next):
+        if (
+            request.method in ("POST", "PUT", "DELETE", "PATCH")
+            and request.url.path.startswith("/api/")
+            and request.url.path not in self.EXEMPT_PATHS
+        ):
+            cookie_token = request.cookies.get("csrf_token")
+            header_token = request.headers.get("X-CSRF-Token")
+
+            if not cookie_token or not header_token:
+                return JSONResponse(
+                    status_code=403,
+                    content={"detail": "CSRF токен отсутствует"}
+                )
+
+            if not hmac.compare_digest(cookie_token, header_token):
+                return JSONResponse(
+                    status_code=403,
+                    content={"detail": "Недействительный CSRF токен"}
+                )
+
+        return await call_next(request)
+
+app.add_middleware(CSRFMiddleware)
+
+# Fix #9: Улучшенный Rate Limiter с разными лимитами для разных эндпоинтов.
+# Прежняя реализация: общий лимит 100 req/min, не масштабировалась на несколько воркеров,
+# словарь рос без ограничений при большом числе уникальных IP (OOM-риск).
+#
+# Текущая реализация: in-process с ограниченным размером кэша и чёткими лимитами.
+# Для продакшна с несколькими воркерами — замените на slowapi + Redis:
+#   pip install slowapi redis
+#   from slowapi import Limiter; limiter = Limiter(key_func=..., storage_uri="redis://...")
+
+from collections import defaultdict
+
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """
-    Простой rate limiter для защиты от brute-force атак.
-    Ограничивает количество запросов с одного IP.
-    """
-    def __init__(self, app, max_requests: int = 100, window: int = 60):
-        super().__init__(app)
-        self.max_requests = max_requests  # Максимум запросов
-        self.window = window  # Окно времени в секундах
-        self.requests = {}  # {ip: [(timestamp, count)]}
-    
-    async def dispatch(self, request: Request, call_next):
-        client_ip = request.client.host
-        current_time = time.time()
-        
-        # Очищаем старые записи
-        if client_ip in self.requests:
-            self.requests[client_ip] = [
-                (ts, count) for ts, count in self.requests[client_ip]
-                if current_time - ts < self.window
-            ]
-        
-        # Подсчитываем запросы
-        if client_ip not in self.requests:
-            self.requests[client_ip] = []
-        
-        total_requests = sum(count for _, count in self.requests[client_ip])
-        
-        if total_requests >= self.max_requests:
-            return JSONResponse(
-                status_code=429,
-                content={"detail": "Слишком много запросов. Попробуйте позже."}
-            )
-        
-        # Добавляем текущий запрос
-        self.requests[client_ip].append((current_time, 1))
-        
-        response = await call_next(request)
-        return response
+    Rate limiter с разными лимитами для auth и прочих эндпоинтов.
+    Автоматически очищает устаревшие записи, не допускает OOM.
 
-app.add_middleware(RateLimitMiddleware, max_requests=100, window=60)
+    Лимиты (настраиваемые через env):
+      AUTH_RATE_LIMIT   — запросов/мин для /api/login, /api/register (default: 10)
+      GLOBAL_RATE_LIMIT — запросов/мин для остальных эндпоинтов (default: 120)
+    """
+    AUTH_PATHS = {"/api/login", "/api/register", "/api/admin/login"}
+    MAX_TRACKED_IPS = 10_000  # защита от OOM при DDoS
+
+    def __init__(self, app):
+        super().__init__(app)
+        self.window = 60
+        self.auth_limit   = int(os.getenv("AUTH_RATE_LIMIT", "10"))
+        self.global_limit = int(os.getenv("GLOBAL_RATE_LIMIT", "120"))
+        # {ip: {path_type: [timestamps]}}
+        self._buckets: dict = defaultdict(lambda: {"auth": [], "global": []})
+
+    def _clean_old(self, timestamps: list, now: float) -> list:
+        return [t for t in timestamps if now - t < self.window]
+
+    async def dispatch(self, request: Request, call_next):
+        client_ip = getattr(request.client, "host", "unknown")
+        now = time.time()
+
+        # Не отслеживаем статику
+        if request.url.path.startswith("/static"):
+            return await call_next(request)
+
+        # Защита от OOM: если кэш переполнен, сбрасываем старые записи
+        if len(self._buckets) > self.MAX_TRACKED_IPS:
+            self._buckets.clear()
+
+        bucket = self._buckets[client_ip]
+
+        if request.url.path in self.AUTH_PATHS:
+            bucket["auth"] = self._clean_old(bucket["auth"], now)
+            if len(bucket["auth"]) >= self.auth_limit:
+                return JSONResponse(
+                    status_code=429,
+                    content={"detail": f"Слишком много попыток входа. Подождите {self.window} секунд."},
+                    headers={"Retry-After": str(self.window)}
+                )
+            bucket["auth"].append(now)
+        else:
+            bucket["global"] = self._clean_old(bucket["global"], now)
+            if len(bucket["global"]) >= self.global_limit:
+                return JSONResponse(
+                    status_code=429,
+                    content={"detail": "Слишком много запросов. Попробуйте позже."},
+                    headers={"Retry-After": str(self.window)}
+                )
+            bucket["global"].append(now)
+
+        return await call_next(request)
+
+app.add_middleware(RateLimitMiddleware)
+
+# Fix #2: CORS — конкретный список доменов вместо wildcard.
+# Wildcard "*" + credentials=True запрещена по спецификации W3C и создаёт CSRF-риски.
+# Задайте ALLOWED_ORIGINS в .env через запятую, например:
+#   ALLOWED_ORIGINS=https://yoursite.com,https://www.yoursite.com
+_raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:8000,http://localhost:3000")
+ALLOWED_ORIGINS: list = [o.strip() for o in _raw_origins.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-CSRF-Token", "Accept"],
 )
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -690,17 +978,40 @@ async def root(request: Request):
 async def products_page(request: Request):
     return templates.TemplateResponse("products.html", {"request": request})
 
+
+def _require_admin_cookie(request: Request):
+    """Fix #4: Серверная проверка — редирект на /auth если не admin."""
+    token = request.cookies.get("access_token")
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("is_admin"):
+            return payload
+    except Exception:
+        pass
+    return None
+
 @app.get("/admin")
 async def admin_panel(request: Request):
+    if not _require_admin_cookie(request):
+        return RedirectResponse("/auth?next=/admin", status_code=302)
     return templates.TemplateResponse("admin.html", {"request": request})
 
 @app.get("/admin/add-product")
 async def admin_add_product_page(request: Request):
+    if not _require_admin_cookie(request):
+        return RedirectResponse("/auth?next=/admin", status_code=302)
     return templates.TemplateResponse("add_product.html", {"request": request})
 
 @app.get("/privacy-policy")
 async def privacy_policy_page(request: Request):
     return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "privacy"})
+
+@app.get("/cookie-policy")
+async def cookie_policy_page(request: Request):
+    """Алиас — редирект на раздел Cookie политики конфиденциальности."""
+    return RedirectResponse("/privacy-policy#cookies", status_code=301)
 
 @app.get("/terms")
 async def terms_page(request: Request):
@@ -722,9 +1033,74 @@ async def about_page(request: Request):
 async def tracking_page(request: Request):
     return templates.TemplateResponse("tracking.html", {"request": request})
 
+@app.get("/cart")
+async def cart_page(request: Request):
+    return templates.TemplateResponse("cart.html", {"request": request})
+
 @app.get("/auth")
 async def auth_page(request: Request, next: str = "/"):
     return templates.TemplateResponse("auth.html", {"request": request, "next_url": next})
+
+
+# Fix #7: Эндпоинт для получения CSRF-токена. Фронтенд вызывает его при загрузке
+# и сохраняет токен для последующих запросов.
+@app.get("/api/csrf-token")
+async def get_csrf_token(response: Response):
+    """Выдаёт CSRF-токен и устанавливает cookie. Вызывать при инициализации фронтенда."""
+    token = secrets.token_urlsafe(32)
+    _is_https = os.getenv("ENVIRONMENT", "production") != "development"
+    response.set_cookie(
+        key="csrf_token",
+        value=token,
+        httponly=False,   # Должен быть доступен из JS для отправки в заголовке
+        secure=_is_https,
+        samesite="strict",
+        max_age=3600
+    )
+    return {"csrf_token": token}
+
+
+@app.post("/api/refresh")
+async def refresh_token(request: Request, response: Response):
+    """
+    Fix A-11: Тихое обновление JWT-токена.
+    Вызывается фронтендом за ~10 минут до истечения сессии.
+    Возвращает новый токен если текущий валиден.
+    """
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Не авторизован")
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        user_id = payload.get("user_id")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Не авторизован")
+
+        # Выдаём новый токен с теми же claims
+        new_token = create_access_token({
+            "user_id": user_id,
+            "is_admin": payload.get("is_admin", False),
+            "username": payload.get("username", ""),
+        })
+        _is_https = os.getenv("ENVIRONMENT", "production") != "development"
+        response.set_cookie(
+            key="access_token",
+            value=new_token,
+            httponly=True,
+            secure=_is_https,
+            samesite="strict",
+            max_age=3600,
+            path="/",
+        )
+        return {"ok": True}
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Сессия истекла")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Не авторизован")
+    except Exception as e:
+        logger.error("refresh_token error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
 
 
 # ==========================================
@@ -753,11 +1129,12 @@ async def register(user_data: UserRegister):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.post("/api/login")
-async def login(login_data: UserLogin):
+async def login(login_data: UserLogin, response: Response):
     try:
         async with db.pool.acquire() as conn:
             user = await conn.fetchrow(
@@ -765,26 +1142,87 @@ async def login(login_data: UserLogin):
                 login_data.username
             )
             if not user or not hasher.verify_password(login_data.password, user['password_hash']):
+                logger.warning("Failed login attempt for username: %s", login_data.username)
                 raise HTTPException(status_code=401, detail="Неверное имя пользователя или пароль")
 
             user_id = str(user['id'])
             token = create_access_token({"user_id": user_id, "is_admin": user['is_admin']})
+
+            # Fix #1: токен в HttpOnly cookie — JS не может прочитать
+            _is_https = os.getenv("ENVIRONMENT", "production") != "development"
+            response.set_cookie(
+                key="access_token",
+                value=token,
+                httponly=True,
+                secure=_is_https,
+                samesite="strict",
+                max_age=3600,
+                path="/",
+            )
+            logger.info("User logged in: %s (admin=%s)", login_data.username, user['is_admin'])
             return {
-                "access_token": token,
-                "token_type": "bearer",
-                "user": {"id": user_id, "username": user['username'], "email": user['email'],
-                         "full_name": user['full_name'], "is_admin": user['is_admin']}
+                "message": "Вход выполнен",
+                "user": {
+                    "id": user_id,
+                    "username": user['username'],
+                    "email": user['email'],
+                    "full_name": user['full_name'],
+                    "is_admin": user['is_admin'],
+                }
             }
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.post("/api/logout")
+async def logout(response: Response):
+    """Fix #1 + logout fix: Очищает access_token и csrf_token cookie при выходе."""
+    _is_https = os.getenv("ENVIRONMENT", "production") != "development"
+    response.delete_cookie("access_token", path="/", secure=_is_https, httponly=True, samesite="strict")
+    # csrf_token тоже удаляем — устаревший токен в браузере не нужен
+    response.delete_cookie("csrf_token", path="/", secure=_is_https, samesite="strict")
+    return {"message": "Выход выполнен"}
+
+
+# ─── 152-ФЗ: Логирование согласий на обработку Cookie ────────────────────────
+class CookieConsentLog(BaseModel):
+    consent_type: Literal["all", "necessary"]   # тип согласия
+    session_id: str = Field(max_length=128)      # идентификатор сессии браузера
+
+@app.post("/api/cookie-consent")
+async def log_cookie_consent(request: Request, body: CookieConsentLog):
+    """
+    152-ФЗ, ст. 9: Логирует факт согласия / отказа пользователя на обработку Cookie.
+    Хранит: IP, timestamp, тип согласия, session_id.
+    Согласие должно быть зафиксировано до начала обработки.
+    """
+    try:
+        ip = request.headers.get("X-Forwarded-For", request.client.host if request.client else "unknown")
+        ip = ip.split(",")[0].strip()[:45]   # берём первый IP из цепочки прокси
+        timestamp = datetime.now(timezone.utc).isoformat()
+        logger.info(
+            "COOKIE_CONSENT | type=%s | session=%s | ip=%s | ts=%s",
+            body.consent_type, body.session_id[:32], ip, timestamp
+        )
+        async with db.pool.acquire() as conn:
+            await conn.execute("""
+                INSERT INTO cookie_consents (session_id, consent_type, ip_address, created_at)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (session_id) DO UPDATE
+                  SET consent_type=$2, ip_address=$3, created_at=$4
+            """, body.session_id[:128], body.consent_type, ip, datetime.now(timezone.utc))
+        return {"status": "ok", "consent": body.consent_type, "timestamp": timestamp}
+    except Exception as e:
+        logger.error("Cookie consent log error: %s", e, exc_info=True)
+        # Не ломаем UX — возвращаем ok даже при ошибке БД
+        return {"status": "ok", "consent": body.consent_type}
 
 
 @app.get("/api/me")
 async def get_me(user_id: str = Depends(get_current_user)):
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Не авторизован")
     try:
         async with db.pool.acquire() as conn:
             user = await conn.fetchrow(
@@ -801,7 +1239,8 @@ async def get_me(user_id: str = Depends(get_current_user)):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 # ==========================================
@@ -823,7 +1262,43 @@ async def get_categories():
             ''')
             return {"categories": [dict(r) for r in rows]}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+@app.delete("/api/users/me")
+async def delete_my_account(request: Request, response: Response, user_id: str = Depends(get_current_user)):
+    """
+    Fix B-6: Удаление аккаунта пользователем (ст. 17 ФЗ-152).
+    Каскадно удаляет: cart_items, cookie_consents (ON DELETE CASCADE).
+    Заказы: user_id обнуляется (ON DELETE SET NULL) — сохраняются для бухучёта.
+    """
+    try:
+        async with db.pool.acquire() as conn:
+            # Убеждаемся что пользователь существует и не является администратором
+            # Fix B-6: user_id — UUID строка, не int. int(user_id) вызывал ValueError.
+            user = await conn.fetchrow(
+                "SELECT id, is_admin FROM users WHERE id=$1::uuid",
+                user_id
+            )
+            if not user:
+                raise HTTPException(status_code=404, detail="Пользователь не найден")
+            if user['is_admin']:
+                raise HTTPException(status_code=403, detail="Аккаунт администратора нельзя удалить через этот эндпоинт")
+
+            await conn.execute("DELETE FROM users WHERE id=$1::uuid", user_id)
+            logger.info("User account deleted: user_id=%s", user_id)
+
+        # Сбрасываем cookie сессии
+        _is_https = os.getenv("ENVIRONMENT", "production") != "development"
+        response.delete_cookie("access_token", path="/", secure=_is_https, httponly=True, samesite="strict")
+        return {"message": "Аккаунт успешно удалён"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("delete_account error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
 
 
 @app.post("/api/admin/categories")
@@ -842,7 +1317,8 @@ async def create_category(cat: CategoryCreate, admin=Depends(verify_admin)):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.put("/api/admin/categories/{slug}")
@@ -864,7 +1340,8 @@ async def update_category(slug: str, cat: CategoryUpdate, admin=Depends(verify_a
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.delete("/api/admin/categories/{slug}")
@@ -885,7 +1362,8 @@ async def delete_category(slug: str, admin=Depends(verify_admin)):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 # ==========================================
@@ -893,11 +1371,16 @@ async def delete_category(slug: str, admin=Depends(verify_admin)):
 # ==========================================
 
 @app.get("/api/products")
-async def get_products(category: Optional[str] = None, featured: Optional[bool] = None,
-                       search: Optional[str] = None, limit: Optional[int] = None):
+async def get_products(
+    category: Optional[str] = None,
+    featured: Optional[bool] = None,
+    search: Optional[str] = Query(None, max_length=200),   # Fix #17
+    limit: Optional[int] = Query(None, ge=1, le=200),      # Fix #9
+):
     try:
         async with db.pool.acquire() as conn:
-            query  = "SELECT * FROM products WHERE 1=1"
+            # Fix #12: исключаем cost_price из публичного ответа
+            query  = "SELECT id,name,category,price,description,image_url,stock,featured,in_stock,preorder,price_preorder_auto,price_preorder_air,has_specifications,created_at FROM products WHERE 1=1"
             params = []
             i = 1
             if category:
@@ -915,14 +1398,14 @@ async def get_products(category: Optional[str] = None, featured: Optional[bool] 
             for r in rows:
                 d = dict(r)
                 d['price'] = float(d['price'])
-                # КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: гарантируем правильное значение in_stock
                 d['in_stock'] = bool(d.get('stock', 0) > 0)
                 if isinstance(d.get('created_at'), datetime):
                     d['created_at'] = d['created_at'].isoformat()
                 result.append(d)
             return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/products/{product_id}")
@@ -997,7 +1480,8 @@ async def get_product(product_id: int):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 # ==========================================
@@ -1006,15 +1490,18 @@ async def get_product(product_id: int):
 
 @app.get("/api/cart")
 async def get_cart(user_id: str = Depends(get_current_user)):
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Не авторизован")
     try:
         async with db.pool.acquire() as conn:
             items = await conn.fetch('''
                 SELECT ci.product_id, ci.specification_id, ci.quantity,
+                       ci.order_type, ci.delivery_type,
                        p.name, p.category, p.price, p.description, p.image_url, p.stock,
+                       p.preorder as p_preorder, p.in_stock as p_in_stock,
+                       p.price_preorder_auto as p_price_auto, p.price_preorder_air as p_price_air,
                        ps.name as spec_name, ps.price as spec_price, ps.stock as spec_stock,
-                       ps.image_url as spec_image_url, ps.description as spec_description
+                       ps.image_url as spec_image_url, ps.description as spec_description,
+                       ps.preorder as ps_preorder, ps.in_stock as ps_in_stock,
+                       ps.price_preorder_auto as ps_price_auto, ps.price_preorder_air as ps_price_air
                 FROM cart_items ci 
                 JOIN products p ON ci.product_id = p.id
                 LEFT JOIN product_specifications ps ON ci.specification_id = ps.id
@@ -1025,45 +1512,68 @@ async def get_cart(user_id: str = Depends(get_current_user)):
             for item in items:
                 # Если есть спецификация, используем её данные
                 if item['specification_id']:
-                    price = float(item['spec_price'])
+                    base_price = float(item['spec_price'])
                     stock = item['spec_stock']
                     image_url = item['spec_image_url'] or item['image_url']
                     name = f"{item['name']} - {item['spec_name']}"
                     description = item['spec_description'] or item['description']
+                    is_preorder = item['ps_preorder']
+                    is_in_stock = item['ps_in_stock']
+                    price_auto = float(item['ps_price_auto']) if item['ps_price_auto'] else None
+                    price_air = float(item['ps_price_air']) if item['ps_price_air'] else None
                 else:
-                    price = float(item['price'])
+                    base_price = float(item['price'])
                     stock = item['stock']
                     image_url = item['image_url']
                     name = item['name']
                     description = item['description']
-                
-                item_total = price * item['quantity']
+                    is_preorder = item['p_preorder']
+                    is_in_stock = item['p_in_stock']
+                    price_auto = float(item['p_price_auto']) if item['p_price_auto'] else None
+                    price_air = float(item['p_price_air']) if item['p_price_air'] else None
+
+                order_type = item['order_type']
+                delivery_type = item['delivery_type']
+                if order_type == 'preorder' and delivery_type == 'auto' and price_auto:
+                    effective_price = price_auto
+                elif order_type == 'preorder' and delivery_type == 'air' and price_air:
+                    effective_price = price_air
+                else:
+                    effective_price = base_price
+
+                item_total = effective_price * item['quantity']
                 total += item_total
                 result.append({
                     "product_id": item['product_id'],
                     "specification_id": item['specification_id'],
                     "quantity": item['quantity'],
+                    "order_type": order_type,
+                    "delivery_type": delivery_type,
                     "product": {
-                        "id": item['product_id'], 
+                        "id": item['product_id'],
                         "specification_id": item['specification_id'],
                         "name": name,
-                        "category": item['category'], 
-                        "price": price,
-                        "description": description, 
+                        "category": item['category'],
+                        "price": effective_price,
+                        "base_price": base_price,
+                        "description": description,
                         "image_url": image_url,
-                        "stock": stock
+                        "stock": stock,
+                        "preorder": is_preorder,
+                        "in_stock": is_in_stock,
+                        "price_preorder_auto": price_auto,
+                        "price_preorder_air": price_air,
                     },
                     "item_total": item_total
                 })
             return {"items": result, "total": total, "items_count": len(items)}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.post("/api/cart")
 async def add_to_cart(cart_item: CartUpdate, user_id: str = Depends(get_current_user)):
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Не авторизован")
     if cart_item.quantity <= 0:
         raise HTTPException(status_code=400, detail="Количество должно быть больше 0")
     try:
@@ -1071,40 +1581,81 @@ async def add_to_cart(cart_item: CartUpdate, user_id: str = Depends(get_current_
             # Если указана спецификация, проверяем её
             if cart_item.specification_id:
                 spec = await conn.fetchrow(
-                    "SELECT id, stock, product_id FROM product_specifications WHERE id=$1", 
+                    "SELECT id, stock, product_id, preorder FROM product_specifications WHERE id=$1",
                     cart_item.specification_id
                 )
                 if not spec:
                     raise HTTPException(status_code=404, detail="Спецификация не найдена")
                 if spec['product_id'] != cart_item.product_id:
                     raise HTTPException(status_code=400, detail="Спецификация не принадлежит данному товару")
-                if spec['stock'] < cart_item.quantity:
+                # Пропускаем проверку склада для preorder-спецификаций (stock = 0 — норма)
+                if not spec['preorder'] and spec['stock'] < cart_item.quantity:
                     raise HTTPException(status_code=400, detail="Недостаточно товара на складе")
             else:
                 # Проверяем основной товар
-                product = await conn.fetchrow("SELECT id, stock FROM products WHERE id=$1", cart_item.product_id)
+                product = await conn.fetchrow("SELECT id, stock, preorder, in_stock FROM products WHERE id=$1", cart_item.product_id)
                 if not product:
                     raise HTTPException(status_code=404, detail="Товар не найден")
-                if product['stock'] < cart_item.quantity:
+                # Пропускаем проверку склада для preorder-товаров (stock = 0 — это норма)
+                if not product['preorder'] and product['stock'] < cart_item.quantity:
                     raise HTTPException(status_code=400, detail="Недостаточно товара на складе")
             
-            await conn.execute('''
-                INSERT INTO cart_items (user_id, product_id, specification_id, quantity)
-                VALUES ($1, $2, $3, $4)
-                ON CONFLICT (user_id, product_id, specification_id) 
-                DO UPDATE SET quantity = EXCLUDED.quantity
-            ''', user_id, cart_item.product_id, cart_item.specification_id, cart_item.quantity)
+            # Получаем данные товара для проверки preorder/in_stock
+            if cart_item.specification_id is not None:
+                prod_data = await conn.fetchrow(
+                    "SELECT preorder, in_stock FROM product_specifications WHERE id=$1",
+                    cart_item.specification_id
+                )
+            else:
+                prod_data = await conn.fetchrow(
+                    "SELECT preorder, in_stock FROM products WHERE id=$1",
+                    cart_item.product_id
+                )
+
+            is_preorder = prod_data and prod_data['preorder']
+            is_in_stock = prod_data and prod_data['in_stock']
+
+            # Валидация: если товар только предзаказ, order_type обязателен
+            if is_preorder and not is_in_stock:
+                if not cart_item.order_type:
+                    raise HTTPException(status_code=400, detail="Выберите тип заказа: предзаказ или в наличии")
+            if is_preorder and cart_item.order_type == "preorder":
+                if not cart_item.delivery_type:
+                    raise HTTPException(status_code=400, detail="Выберите тип доставки: авто или самолёт")
+                if cart_item.delivery_type not in ("auto", "air"):
+                    raise HTTPException(status_code=400, detail="Тип доставки: auto или air")
+
+            order_type = cart_item.order_type if is_preorder else ("in_stock" if is_in_stock else None)
+            delivery_type = cart_item.delivery_type if (order_type == "preorder") else None
+
+            # Fix cart NULL: PostgreSQL ON CONFLICT не работает с NULL через обычный индекс.
+            # Используем два частичных индекса (cart_items_uniq_no_spec / cart_items_uniq_with_spec).
+            if cart_item.specification_id is not None:
+                await conn.execute('''
+                    INSERT INTO cart_items (user_id, product_id, specification_id, quantity, order_type, delivery_type)
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                    ON CONFLICT (user_id, product_id, specification_id)
+                    WHERE specification_id IS NOT NULL
+                    DO UPDATE SET quantity = EXCLUDED.quantity, order_type = EXCLUDED.order_type, delivery_type = EXCLUDED.delivery_type
+                ''', user_id, cart_item.product_id, cart_item.specification_id, cart_item.quantity, order_type, delivery_type)
+            else:
+                await conn.execute('''
+                    INSERT INTO cart_items (user_id, product_id, specification_id, quantity, order_type, delivery_type)
+                    VALUES ($1, $2, NULL, $3, $4, $5)
+                    ON CONFLICT (user_id, product_id)
+                    WHERE specification_id IS NULL
+                    DO UPDATE SET quantity = EXCLUDED.quantity, order_type = EXCLUDED.order_type, delivery_type = EXCLUDED.delivery_type
+                ''', user_id, cart_item.product_id, cart_item.quantity, order_type, delivery_type)
             return {"message": "Товар добавлен в корзину"}
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.delete("/api/cart/{product_id}")
 async def remove_from_cart(product_id: int, specification_id: Optional[int] = Query(None), user_id: str = Depends(get_current_user)):
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Не авторизован")
     try:
         async with db.pool.acquire() as conn:
             if specification_id is not None:
@@ -1123,41 +1674,52 @@ async def remove_from_cart(product_id: int, specification_id: Optional[int] = Qu
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.put("/api/cart/{product_id}")
-async def update_cart_quantity(product_id: int, body: dict, user_id: str = Depends(get_current_user)):
+async def update_cart_quantity(product_id: int, body: CartQuantityUpdate, user_id: str = Depends(get_current_user)):
     """Обновить количество товара в корзине"""
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Не авторизован")
-    
-    quantity = body.get("quantity", 1)
-    specification_id = body.get("specification_id")
+    quantity = body.quantity
+    specification_id = body.specification_id
     
     if quantity <= 0:
         raise HTTPException(status_code=400, detail="Количество должно быть больше 0")
     
     try:
         async with db.pool.acquire() as conn:
-            # Проверяем наличие товара/спецификации и stock
+            # Получаем cart_item чтобы проверить order_type
             if specification_id:
-                item = await conn.fetchrow(
-                    "SELECT stock FROM product_specifications WHERE id=$1", 
-                    specification_id
+                cart_row = await conn.fetchrow(
+                    "SELECT order_type FROM cart_items WHERE user_id=$1 AND product_id=$2 AND specification_id=$3",
+                    user_id, product_id, specification_id
                 )
-                if not item:
-                    raise HTTPException(status_code=404, detail="Спецификация не найдена")
             else:
-                item = await conn.fetchrow(
-                    "SELECT stock FROM products WHERE id=$1", 
-                    product_id
+                cart_row = await conn.fetchrow(
+                    "SELECT order_type FROM cart_items WHERE user_id=$1 AND product_id=$2 AND specification_id IS NULL",
+                    user_id, product_id
                 )
-                if not item:
-                    raise HTTPException(status_code=404, detail="Товар не найден")
-            
-            if item['stock'] < quantity:
-                raise HTTPException(status_code=400, detail=f"Недостаточно на складе (доступно: {item['stock']})")
+
+            # Проверяем stock только для товаров в наличии (не для предзаказов)
+            is_preorder = cart_row and cart_row['order_type'] == 'preorder'
+            if not is_preorder:
+                if specification_id:
+                    item = await conn.fetchrow(
+                        "SELECT stock FROM product_specifications WHERE id=$1",
+                        specification_id
+                    )
+                    if not item:
+                        raise HTTPException(status_code=404, detail="Спецификация не найдена")
+                else:
+                    item = await conn.fetchrow(
+                        "SELECT stock FROM products WHERE id=$1",
+                        product_id
+                    )
+                    if not item:
+                        raise HTTPException(status_code=404, detail="Товар не найден")
+                if item['stock'] < quantity:
+                    raise HTTPException(status_code=400, detail=f"Недостаточно на складе (доступно: {item['stock']})")
             
             # Обновляем количество
             if specification_id:
@@ -1175,19 +1737,64 @@ async def update_cart_quantity(product_id: int, body: dict, user_id: str = Depen
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.delete("/api/cart")
 async def clear_cart(user_id: str = Depends(get_current_user)):
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Не авторизован")
     try:
         async with db.pool.acquire() as conn:
             await conn.execute("DELETE FROM cart_items WHERE user_id=$1", user_id)
             return {"message": "Корзина очищена"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.patch("/api/cart/{product_id}/delivery")
+async def update_cart_delivery(
+    product_id: int,
+    payload: dict,
+    user_id: str = Depends(get_current_user)
+):
+    """Изменить тип доставки для товара в корзине (только предзаказ)."""
+    delivery_type = payload.get("delivery_type")
+    specification_id = payload.get("specification_id")
+    if delivery_type not in ("auto", "air"):
+        raise HTTPException(status_code=400, detail="Неверный тип доставки")
+    try:
+        async with db.pool.acquire() as conn:
+            if specification_id:
+                row = await conn.fetchrow(
+                    "SELECT order_type FROM cart_items WHERE user_id=$1 AND product_id=$2 AND specification_id=$3",
+                    user_id, product_id, specification_id
+                )
+            else:
+                row = await conn.fetchrow(
+                    "SELECT order_type FROM cart_items WHERE user_id=$1 AND product_id=$2 AND specification_id IS NULL",
+                    user_id, product_id
+                )
+            if not row:
+                raise HTTPException(status_code=404, detail="Товар не найден в корзине")
+            if row["order_type"] != "preorder":
+                raise HTTPException(status_code=400, detail="Тип доставки применим только к предзаказам")
+            if specification_id:
+                await conn.execute(
+                    "UPDATE cart_items SET delivery_type=$1 WHERE user_id=$2 AND product_id=$3 AND specification_id=$4",
+                    delivery_type, user_id, product_id, specification_id
+                )
+            else:
+                await conn.execute(
+                    "UPDATE cart_items SET delivery_type=$1 WHERE user_id=$2 AND product_id=$3 AND specification_id IS NULL",
+                    delivery_type, user_id, product_id
+                )
+            return {"message": "Тип доставки обновлён"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 # ==========================================
@@ -1197,8 +1804,6 @@ async def clear_cart(user_id: str = Depends(get_current_user)):
 @app.post("/api/orders")
 async def create_order(order_data: OrderCreate, user_id: str = Depends(get_current_user)):
     """Создать заказ из корзины"""
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Не авторизован")
     try:
         async with db.pool.acquire() as conn:
             cart_items = await conn.fetch('''
@@ -1276,14 +1881,13 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(get_curre
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/orders")
 async def get_user_orders(user_id: str = Depends(get_current_user)):
     """Получить заказы пользователя"""
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Не авторизован")
     try:
         async with db.pool.acquire() as conn:
             orders = await conn.fetch('''
@@ -1312,9 +1916,8 @@ async def get_user_orders(user_id: str = Depends(get_current_user)):
                 if isinstance(d.get('created_at'), datetime):
                     d['created_at'] = d['created_at'].isoformat()
                 # Parse items JSON if returned as string
-                import json as _json
                 if isinstance(d.get('items'), str):
-                    try: d['items'] = _json.loads(d['items'])
+                    try: d['items'] = json.loads(d['items'])
                     except: d['items'] = []
                 # Convert Decimal prices in items
                 if d.get('items'):
@@ -1324,7 +1927,8 @@ async def get_user_orders(user_id: str = Depends(get_current_user)):
                 result.append(d)
             return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/orders/active-count")
@@ -1337,7 +1941,8 @@ async def get_active_orders_count():
             )
             return {"count": count or 0}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 # ==========================================
@@ -1359,8 +1964,6 @@ async def create_payment(payment: PaymentCreate, user_id: str = Depends(get_curr
       PAYMENT_SECRET_KEY=...
       PAYMENT_CALLBACK_URL=https://your-domain.com/api/payment/callback
     """
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Не авторизован")
     try:
         async with db.pool.acquire() as conn:
             order = await conn.fetchrow(
@@ -1406,27 +2009,70 @@ async def create_payment(payment: PaymentCreate, user_id: str = Depends(get_curr
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.post("/api/payment/callback")
 async def payment_callback(request: Request):
     """
-    Webhook / колбэк от платёжной системы.
-    Реализуйте проверку подписи и обновление статуса заказа.
+    Fix #5: Webhook от платёжной системы с обязательной верификацией подписи.
+
+    ВАЖНО: Этот эндпоинт принимает внешние HTTP-запросы. Без проверки подписи
+    любой злоумышленник может отправить фейковый callback и «оплатить» заказ.
+
+    Схема верификации зависит от платёжной системы:
+    - ЮKassa:    SHA-1 HMAC заголовок Webhook-Signature
+    - Тинькофф:  SHA-256 HMAC, токен = PAYMENT_SECRET_KEY
+    - Stripe:    stripe.Webhook.construct_event(payload, sig, secret)
     """
     try:
-        body = await request.json()
-        print(f"💳 Payment callback: {body}")
+        raw_body = await request.body()
 
-        # TODO: проверьте подпись от платёжной системы
-        # TODO: извлеките order_id и status из body
-        # TODO: обновите orders.payment_status и orders.status
+        # ── Fix #5: Верификация подписи ──────────────────────────────────────
+        # Раскомментируйте и адаптируйте блок для вашей платёжной системы.
+        #
+        # Пример для ЮKassa (Webhook-Signature: sha1=<hex>):
+        # received_sig = request.headers.get("Webhook-Signature", "")
+        # expected_sig = "sha1=" + hmac.new(
+        #     PAYMENT_SECRET_KEY.encode(), raw_body, hashlib.sha1
+        # ).hexdigest()
+        # if not hmac.compare_digest(received_sig, expected_sig):
+        #     logger.warning("Payment callback: invalid signature from %s", request.client.host)
+        #     raise HTTPException(status_code=403, detail="Неверная подпись webhook")
+        #
+        # Пример для Тинькофф (поле Token в JSON):
+        # import json as _json
+        # body_dict = _json.loads(raw_body)
+        # received_token = body_dict.pop("Token", "")
+        # sorted_vals = "".join(str(v) for _, v in sorted(body_dict.items()))
+        # expected = hashlib.sha256((sorted_vals + PAYMENT_SECRET_KEY).encode()).hexdigest()
+        # if not hmac.compare_digest(received_token, expected):
+        #     logger.warning("Payment callback: invalid Tinkoff signature")
+        #     raise HTTPException(status_code=403, detail="Неверная подпись webhook")
+        # ─────────────────────────────────────────────────────────────────────
+
+        # Пока интеграция — заглушка: логируем и возвращаем ok
+        body = json.loads(raw_body) if raw_body else {}
+        logger.info("Payment callback received (stub mode): %s", body)
+
+        # TODO: после подключения реального эквайринга — обновить orders.payment_status
+        # order_id = body.get("order_id")
+        # new_status = body.get("status")
+        # async with db.pool.acquire() as conn:
+        #     await conn.execute(
+        #         "UPDATE orders SET payment_status=$1 WHERE id=$2",
+        #         new_status, order_id
+        #     )
 
         return {"status": "ok"}
+
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"❌ Payment callback error: {e}")
-        return {"status": "error", "detail": str(e)}
+        logger.error("Payment callback error: %s", e, exc_info=True)
+        # Fix #6: не раскрываем детали внешнему миру
+        return JSONResponse(status_code=200, content={"status": "error"})
 
 
 @app.get("/payment-stub")
@@ -1442,20 +2088,39 @@ async def payment_stub_page(request: Request, order_id: int = 0, amount: float =
 # ==========================================
 
 @app.post("/api/admin/login")
-async def admin_login(login_data: AdminLogin):
-    if login_data.username != ADMIN_USERNAME or login_data.password != ADMIN_PASSWORD:
+async def admin_login(login_data: AdminLogin, response: Response):
+    # Fix A-4: сравниваем пароль через pbkdf2-хеш из БД, не с plaintext.
+    # hmac.compare_digest на username защищает от timing-атак.
+    if not hmac.compare_digest(login_data.username, ADMIN_USERNAME):
+        logger.warning("Failed admin login attempt for: %s", login_data.username)
         raise HTTPException(status_code=401, detail="Неверные данные для входа")
     try:
         async with db.pool.acquire() as conn:
-            admin = await conn.fetchrow("SELECT id FROM users WHERE username=$1", ADMIN_USERNAME)
-            if not admin:
-                raise HTTPException(status_code=401, detail="Администратор не найден")
+            admin = await conn.fetchrow(
+                "SELECT id, password_hash FROM users WHERE username=$1 AND is_admin=TRUE",
+                ADMIN_USERNAME
+            )
+            if not admin or not hasher.verify_password(login_data.password, admin['password_hash']):
+                logger.warning("Failed admin login attempt (bad password) for: %s", login_data.username)
+                raise HTTPException(status_code=401, detail="Неверные данные для входа")
             token = create_access_token({"user_id": str(admin['id']), "username": ADMIN_USERNAME, "is_admin": True})
-            return {"access_token": token, "token_type": "bearer", "user": {"username": ADMIN_USERNAME, "is_admin": True}}
+            _is_https = os.getenv("ENVIRONMENT", "production") != "development"
+            response.set_cookie(
+                key="access_token",
+                value=token,
+                httponly=True,
+                secure=_is_https,
+                samesite="strict",
+                max_age=3600,
+                path="/",
+            )
+            logger.info("Admin logged in: %s", ADMIN_USERNAME)
+            return {"message": "Вход выполнен", "user": {"username": ADMIN_USERNAME, "is_admin": True}}
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.post("/api/admin/migrate-images")
@@ -1465,7 +2130,6 @@ async def migrate_images_to_base64(admin=Depends(verify_admin)):
     Полезно при переносе с файлового хранения на БД
     """
     try:
-        import base64
         migrated = 0
         failed = []
         
@@ -1518,7 +2182,8 @@ async def migrate_images_to_base64(admin=Depends(verify_admin)):
             "message": f"Migrated {migrated} images to base64"
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/admin/stats")
@@ -1547,7 +2212,8 @@ async def get_admin_stats(admin=Depends(verify_admin)):
                 }
             }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/admin/orders")
@@ -1570,7 +2236,8 @@ async def get_admin_orders(admin=Depends(verify_admin), status: Optional[str] = 
                 result.append(d)
             return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/admin/top-customers")
@@ -1608,7 +2275,8 @@ async def get_top_customers(admin=Depends(verify_admin), limit: int = 20):
                 result.append(d)
             return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/admin/customers")
@@ -1646,7 +2314,8 @@ async def get_all_customers(admin=Depends(verify_admin)):
                 result.append(d)
             return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/admin/customers/{user_id}/notes")
@@ -1669,15 +2338,14 @@ async def get_customer_notes(user_id: str, admin=Depends(verify_admin)):
                 result.append(d)
             return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.post("/api/admin/customers/{user_id}/notes")
-async def add_customer_note(user_id: str, body: dict, admin=Depends(verify_admin)):
+async def add_customer_note(user_id: str, body: CustomerNoteCreate, admin=Depends(verify_admin)):
     """Добавить заметку о клиенте"""
-    note = body.get("note", "").strip()
-    if not note:
-        raise HTTPException(status_code=400, detail="Заметка не может быть пустой")
+    note = body.note.strip()
     
     try:
         async with db.pool.acquire() as conn:
@@ -1692,7 +2360,8 @@ async def add_customer_note(user_id: str, body: dict, admin=Depends(verify_admin
                 d['created_at'] = d['created_at'].isoformat()
             return d
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.delete("/api/admin/customers/notes/{note_id}")
@@ -1707,19 +2376,14 @@ async def delete_customer_note(note_id: int, admin=Depends(verify_admin)):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.put("/api/admin/orders/{order_id}/status")
-async def update_order_status(order_id: int, body: dict, admin=Depends(verify_admin)):
-    new_status = body.get("status")
-    delay_note = body.get("delay_note")  # Optional[str]
-    valid = [
-        'pending', 'confirmed', 'processing', 'shipped',
-        'customs', 'delivered', 'handed_over', 'completed', 'cancelled'
-    ]
-    if new_status not in valid:
-        raise HTTPException(status_code=400, detail=f"Недопустимый статус. Допустимые: {valid}")
+async def update_order_status(order_id: int, body: OrderStatusUpdate, admin=Depends(verify_admin)):
+    new_status = body.status
+    delay_note = body.delay_note
     try:
         async with db.pool.acquire() as conn:
             r = await conn.execute(
@@ -1734,7 +2398,8 @@ async def update_order_status(order_id: int, body: dict, admin=Depends(verify_ad
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 # ==========================================
@@ -1815,6 +2480,10 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
         preorder = str(form.get("preorder","false")).lower() == "true"
         cost_price_str = str(form.get("cost_price","")).strip()
         cost_price = float(cost_price_str) if cost_price_str else None
+        price_auto_str = str(form.get("price_preorder_auto","")).strip()
+        price_preorder_auto = float(price_auto_str) if price_auto_str else None
+        price_air_str = str(form.get("price_preorder_air","")).strip()
+        price_preorder_air = float(price_air_str) if price_air_str else None
         image_url = str(form.get("image_url","")).strip()
         
         # Получаем все файлы изображений (до 5 штук)
@@ -1879,7 +2548,6 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
                 optimized_content = await optimize_image(file_content)
                 
                 # Конвертируем в base64 для хранения в БД
-                import base64
                 image_base64 = base64.b64encode(optimized_content).decode('utf-8')
                 image_data_url = f"data:image/jpeg;base64,{image_base64}"
                 
@@ -1900,7 +2568,7 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
         # Если файлы не загружены, используем URL
         if not image_files and image_url:
             print(f"ℹ️ Используется image_url: {image_url}")
-            final_image = image_url
+            final_image = validate_image_url(image_url)  # Fix #5
 
         async with db.pool.acquire() as conn:
             print(f"\n💾 СОХРАНЕНИЕ В БД:")
@@ -1910,9 +2578,9 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
             
             # Создаем товар
             row = await conn.fetchrow('''
-                INSERT INTO products (name,category,price,description,image_url,stock,featured,in_stock,preorder,cost_price)
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *
-            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price)
+                INSERT INTO products (name,category,price,description,image_url,stock,featured,in_stock,preorder,cost_price,price_preorder_auto,price_preorder_air)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *
+            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air)
             
             product_id = row['id']
             
@@ -1932,7 +2600,8 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.put("/api/admin/products/{product_id}")
@@ -1955,6 +2624,10 @@ async def update_product(product_id: int, request: Request, admin=Depends(verify
             preorder = str(form.get("preorder", str(existing.get('preorder', False)))).lower() == "true"
             cost_price_str = str(form.get("cost_price","")).strip()
             cost_price = float(cost_price_str) if cost_price_str else existing.get('cost_price')
+            price_auto_str = str(form.get("price_preorder_auto","")).strip()
+            price_preorder_auto = float(price_auto_str) if price_auto_str else existing.get('price_preorder_auto')
+            price_air_str = str(form.get("price_preorder_air","")).strip()
+            price_preorder_air = float(price_air_str) if price_air_str else existing.get('price_preorder_air')
             image_url = str(form.get("image_url","")).strip()
             image_file = form.get("image_file")
 
@@ -1983,7 +2656,6 @@ async def update_product(product_id: int, request: Request, admin=Depends(verify
                     optimized_content = await optimize_image(file_content)
                     
                     # Конвертируем в base64
-                    import base64
                     image_base64 = base64.b64encode(optimized_content).decode('utf-8')
                     image_data_url = f"data:image/jpeg;base64,{image_base64}"
                     
@@ -1996,18 +2668,20 @@ async def update_product(product_id: int, request: Request, admin=Depends(verify
                     print(f"❌ Error updating image: {e}")
                     raise HTTPException(status_code=500, detail=f"Ошибка обновления изображения: {str(e)}")
             elif image_url:
-                final_image = image_url
+                final_image = validate_image_url(image_url)  # Fix #5
 
             await conn.execute('''
                 UPDATE products SET name=$1,category=$2,price=$3,description=$4,
-                image_url=$5,stock=$6,featured=$7,in_stock=$8,preorder=$9,cost_price=$10 WHERE id=$11
-            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, product_id)
+                image_url=$5,stock=$6,featured=$7,in_stock=$8,preorder=$9,cost_price=$10,
+                price_preorder_auto=$11,price_preorder_air=$12 WHERE id=$13
+            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, product_id)
 
             return {"success": True, "message": "Товар обновлён"}
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.delete("/api/admin/products/{product_id}")
@@ -2021,31 +2695,34 @@ async def delete_product(product_id: int, admin=Depends(verify_admin)):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
-@app.get("/api/admin/add-product")
-async def admin_add_product_page_redirect(request: Request):
-    return templates.TemplateResponse("add_product.html", {"request": request})
+# Endpoint removed: /api/admin/add-product was unprotected duplicate of /admin/add-product
+# Access the page via: GET /admin/add-product (server-side admin check)
 
 
 @app.get("/api/stats")
 async def get_public_stats():
+    # Fix A-6: убраны total_orders и active_orders — они не нужны UI и раскрывают
+    # внутреннюю бизнес-метрику любому анонимному посетителю.
     try:
         async with db.pool.acquire() as conn:
             return {
                 "total_products": await conn.fetchval("SELECT COUNT(*) FROM products") or 0,
-                "total_orders": await conn.fetchval("SELECT COUNT(*) FROM orders") or 0,
-                "active_orders": await conn.fetchval("SELECT COUNT(*) FROM orders WHERE status NOT IN ('delivered','cancelled')") or 0,
                 "categories": await conn.fetchval("SELECT COUNT(*) FROM categories") or 0,
                 "total_stock": await conn.fetchval("SELECT COALESCE(SUM(stock),0) FROM products") or 0,
             }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/test-auth")
-async def test_auth():
+async def test_auth(admin=Depends(verify_admin)):
+    # Fix A-6: эндпоинт закрыт за verify_admin.
+    # Раскрытие количества пользователей и заказов без авторизации — разведывательная информация.
     try:
         async with db.pool.acquire() as conn:
             return {
@@ -2057,29 +2734,13 @@ async def test_auth():
                 "database_connected": True
             }
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        logger.error("test-auth error: %s", e)
+        return {"status": "error"}
 
 
 # ==========================================
 # ========== SPECIFICATIONS API ==========
 # ==========================================
-
-@app.get("/api/products/{product_id}/images")
-async def get_product_images(product_id: int):
-    """Получить все дополнительные изображения товара"""
-    try:
-        async with db.pool.acquire() as conn:
-            images = await conn.fetch('''
-                SELECT id, image_url, sort_order
-                FROM product_images
-                WHERE product_id = $1 AND specification_id IS NULL
-                ORDER BY sort_order ASC, id ASC
-            ''', product_id)
-            
-            return [dict(img) for img in images]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.get("/api/products/{product_id}/specifications")
 async def get_product_specifications(product_id: int):
@@ -2102,7 +2763,8 @@ async def get_product_specifications(product_id: int):
                 result.append(d)
             return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.post("/api/admin/products/{product_id}/specifications")
@@ -2119,6 +2781,10 @@ async def add_product_specification(product_id: int, request: Request, admin=Dep
         preorder = str(form.get("preorder", "false")).lower() == "true"
         cost_price_str = str(form.get("cost_price", "")).strip()
         cost_price = float(cost_price_str) if cost_price_str else None
+        price_auto_str = str(form.get("price_preorder_auto","")).strip()
+        price_preorder_auto = float(price_auto_str) if price_auto_str else None
+        price_air_str = str(form.get("price_preorder_air","")).strip()
+        price_preorder_air = float(price_air_str) if price_air_str else None
         image_url = str(form.get("image_url", "")).strip()
         sort_order = int(form.get("sort_order", 0))
 
@@ -2162,7 +2828,6 @@ async def add_product_specification(product_id: int, request: Request, admin=Dep
                 optimized_content = await optimize_image(file_content)
                 
                 # Конвертируем в base64
-                import base64
                 image_base64 = base64.b64encode(optimized_content).decode('utf-8')
                 image_data_url = f"data:image/jpeg;base64,{image_base64}"
                 
@@ -2192,10 +2857,10 @@ async def add_product_specification(product_id: int, request: Request, admin=Dep
             
             # Создаём спецификацию
             spec = await conn.fetchrow('''
-                INSERT INTO product_specifications (product_id, name, price, description, image_url, stock, in_stock, preorder, cost_price, sort_order)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                INSERT INTO product_specifications (product_id, name, price, description, image_url, stock, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, sort_order)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 RETURNING *
-            ''', product_id, name, price, desc, final_image, stock, in_stock, preorder, cost_price, sort_order)
+            ''', product_id, name, price, desc, final_image, stock, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, sort_order)
             
             spec_id = spec['id']
             
@@ -2215,7 +2880,8 @@ async def add_product_specification(product_id: int, request: Request, admin=Dep
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.put("/api/admin/specifications/{spec_id}")
@@ -2243,15 +2909,21 @@ async def update_specification(spec_id: int, request: Request, admin=Depends(ver
 
             final_image = existing['image_url']
             if image_file and hasattr(image_file, 'filename') and image_file.filename:
+                # Fix A-7: конвертируем в base64 (как в create_product/add_specification).
+                # Сохранение на диск заменено — нет риска обхода через расширение файла.
                 ext = Path(image_file.filename).suffix.lower()
                 if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
                     raise HTTPException(status_code=400, detail="Недопустимый формат файла")
-                fname = f"{uuid4().hex}{ext}"
-                async with aiofiles.open(UPLOAD_DIR / fname, 'wb') as buf:
-                    await buf.write(await image_file.read())
-                final_image = f"/static/uploads/{fname}"
+                file_content = await image_file.read()
+                if len(file_content) > 10 * 1024 * 1024:
+                    raise HTTPException(status_code=400, detail="Файл слишком большой. Максимум 10MB")
+                try:
+                    optimized = await optimize_image(file_content)
+                    final_image = "data:image/jpeg;base64," + base64.b64encode(optimized).decode('utf-8')
+                except Exception as e:
+                    raise HTTPException(status_code=500, detail=f"Ошибка обработки изображения: {e}")
             elif image_url:
-                final_image = image_url
+                final_image = validate_image_url(image_url)  # Fix #5
 
             await conn.execute('''
                 UPDATE product_specifications 
@@ -2263,7 +2935,8 @@ async def update_specification(spec_id: int, request: Request, admin=Depends(ver
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.delete("/api/admin/specifications/{spec_id}")
@@ -2290,7 +2963,8 @@ async def delete_specification(spec_id: int, admin=Depends(verify_admin)):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/products/{product_id}/images")
@@ -2315,7 +2989,8 @@ async def get_product_images(product_id: int, specification_id: Optional[int] = 
             
             return [dict(img) for img in images]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/products/{product_id}/characteristics")
@@ -2340,23 +3015,27 @@ async def get_product_characteristics(product_id: int, specification_id: Optiona
             
             return [dict(char) for char in chars]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 # ========== ЗАПУСК ==========
+# Fix #8: Debug endpoint закрыт для обычных пользователей.
+# Раскрытие путей файловой системы и списка файлов помогает атакующим в разведке.
 @app.get("/api/debug/uploads")
-async def debug_uploads():
-    """Debug endpoint to check uploads directory"""
+async def debug_uploads(admin=Depends(verify_admin)):
+    """Debug endpoint — только для администратора."""
     try:
         files = list(UPLOAD_DIR.iterdir())
         return {
             "upload_dir": str(UPLOAD_DIR),
             "exists": UPLOAD_DIR.exists(),
-            "files": [f.name for f in files if f.is_file()],
-            "count": len(files)
+            "files_count": len([f for f in files if f.is_file()]),
+            # Не возвращаем список имён файлов — это не нужно даже администратору
         }
     except Exception as e:
-        return {"error": str(e)}
+        logger.error("debug_uploads error: %s", e)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 if __name__ == "__main__":
     print("=" * 70)

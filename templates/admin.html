@@ -13,7 +13,7 @@
   <meta name="theme-color" content="#080A0F">
   <title>Admin — IMPORT</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <style>
+  <style nonce="{{ request.state.csp_nonce }}">
     :root {
       --bg:#080A0F; --bg-2:#0D1017; --bg-3:#12161E;
       --surface:#161B24; --surface-2:#1E2533;
@@ -74,15 +74,22 @@
 
     /* Admin layout */
     .admin-panel{display:none;flex-direction:column;min-height:100vh}
-    .admin-header{background:rgba(8,10,15,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
-    .admin-header-inner{max-width:1400px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:62px;gap:1.5rem}
-    .admin-logo{display:flex;align-items:center;gap:.625rem;font-family:var(--font-d);font-size:1.125rem;font-weight:700}
-    .admin-logo-mark{width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:18px;position:relative}
-    .admin-logo-mark::after{content:'⚡';position:absolute;background:linear-gradient(135deg,#FFD700 0%,#FFA500 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 6px rgba(255,215,0,.3))}
+    .admin-header{background:rgba(8,10,15,.96);backdrop-filter:blur(24px) saturate(1.6);border-bottom:1px solid rgba(255,255,255,.06);position:sticky;top:0;z-index:100}
+    .admin-header-inner{max-width:1400px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:64px;gap:1.5rem}
+    .admin-logo{display:flex;align-items:center;gap:.625rem;font-family:var(--font-d);font-size:1.125rem;font-weight:700;text-decoration:none;color:var(--text)}
+    .admin-logo-mark{
+      width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+      font-size:22px;
+      background:linear-gradient(135deg,#FFD700,#FFA500);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+      background-clip:text;
+      filter:drop-shadow(0 0 8px rgba(255,190,0,.55));
+      flex-shrink:0;
+    }
     .admin-logo span{color:var(--accent)}
-    .admin-badge{font-size:.6875rem;font-weight:700;padding:.2rem .5rem;background:var(--amber-dim);color:var(--amber);border-radius:4px}
-    .admin-nav{display:flex;gap:.25rem;overflow-x:auto}
-    .admin-nav-btn{display:flex;align-items:center;gap:.5rem;padding:.5rem 1rem;background:transparent;border:none;border-radius:var(--radius);color:var(--text-2);cursor:pointer;font-family:var(--font-b);font-size:.8125rem;font-weight:600;transition:all .2s;white-space:nowrap}
+    .admin-badge{font-size:.6rem;font-weight:800;padding:.2rem .55rem;background:var(--amber-dim);color:var(--amber);border:1px solid rgba(255,176,32,.3);border-radius:4px;letter-spacing:.08em;text-transform:uppercase}
+    .admin-nav{display:flex;gap:.125rem;overflow-x:auto}
+    .admin-nav-btn{display:flex;align-items:center;gap:.5rem;padding:.45rem .875rem;background:transparent;border:none;border-radius:var(--radius);color:rgba(255,255,255,.45);cursor:pointer;font-family:var(--font-b);font-size:.8rem;font-weight:600;transition:all .2s;white-space:nowrap}
     .admin-nav-btn:hover{background:rgba(255,255,255,.06);color:var(--text)}
     .admin-nav-btn.active{background:var(--accent-dim);color:var(--accent)}
     .admin-actions{display:flex;align-items:center;gap:.75rem}
@@ -285,7 +292,21 @@
     }
 
 
+    /* ── Cookie Banner 152-ФЗ ─── */
+  .cookie-banner{position:fixed;bottom:0;left:0;right:0;background:rgba(8,10,15,.97);backdrop-filter:blur(16px);border-top:1px solid rgba(0,212,255,.15);padding:1.125rem 0;z-index:9900;transform:translateY(100%);transition:transform .35s cubic-bezier(.16,1,.3,1);}
+  .cookie-banner.show{transform:translateY(0);}
+  .cookie-inner{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;max-width:1200px;margin:0 auto;padding:0 2rem;}
+  .cookie-icon{font-size:1.375rem;flex-shrink:0;}.cookie-text{flex:1;min-width:220px;}
+  .cookie-text strong{font-size:.875rem;font-weight:700;display:block;margin-bottom:.2rem;color:#F0F4F8;}
+  .cookie-text p{font-size:.775rem;color:#7B8599;line-height:1.5;margin:0;}
+  .cookie-text a{color:#00D4FF;text-decoration:none;}.cookie-text a:hover{text-decoration:underline;}
+  .cookie-actions{display:flex;gap:.5rem;flex-shrink:0;flex-wrap:wrap;align-items:center;}
+  .btn-ca{background:#00D4FF;color:#080A0F;border:none;padding:.45rem 1.1rem;border-radius:6px;font-size:.8125rem;font-weight:700;cursor:pointer;}
+  .btn-cd{background:transparent;color:#7B8599;border:1px solid rgba(255,255,255,.12);padding:.45rem 1rem;border-radius:6px;font-size:.8125rem;cursor:pointer;}
+  .btn-cdet{background:transparent;color:#3E4560;border:none;padding:.4rem .75rem;font-size:.75rem;cursor:pointer;text-decoration:underline;}
+  @media(max-width:640px){.cookie-inner{flex-direction:column;align-items:flex-start;gap:1rem;}.cookie-actions{width:100%;}}
   </style>
+<script src="/static/csrf-init.js"></script>
 </head>
 <body>
 
@@ -326,7 +347,7 @@
         </button>
         <div class="admin-logo">
           <div class="admin-logo-mark">⚡</div>
-          <span>IM<span>PORT</span></span>
+          <span>Fast <span>HUB</span></span>
           <span class="admin-badge">ADMIN</span>
         </div>
       </div>
@@ -335,10 +356,10 @@
         <button class="admin-nav-btn" data-sec="products">📦 Товары</button>
         <button class="admin-nav-btn" data-sec="categories">🏷️ Категории</button>
         <button class="admin-nav-btn" data-sec="orders">🛒 Заказы</button>
-        <button class="admin-nav-btn" data-sec="top-clients">👥 Топ клиенты</button>
+        <button class="admin-nav-btn" data-sec="top-clients">👥 Клиенты</button>
         <button class="admin-nav-btn" data-sec="crm">📝 CRM</button>
-        <button class="admin-nav-btn" data-sec="add-product">➕ Обычный товар</button>
-        <button class="admin-nav-btn" data-sec="add-product-specs">🔧 Товар со спецификациями</button>
+        <button class="admin-nav-btn" data-sec="add-product">➕ Добавить товар</button>
+        <button class="admin-nav-btn" data-sec="add-product-specs">🔧 Со спецами</button>
       </nav>
       <div class="admin-actions">
         <a href="/" class="btn btn-ghost btn-sm">На сайт ↗</a>
@@ -357,10 +378,10 @@
         <button class="mobile-nav-item" data-sec="products">📦 Товары</button>
         <button class="mobile-nav-item" data-sec="categories">🏷️ Категории</button>
         <button class="mobile-nav-item" data-sec="orders">🛒 Заказы</button>
-        <button class="mobile-nav-item" data-sec="top-clients">👥 Топ клиенты</button>
+        <button class="mobile-nav-item" data-sec="top-clients">👥 Клиенты</button>
         <button class="mobile-nav-item" data-sec="crm">📝 CRM</button>
-        <button class="mobile-nav-item" data-sec="add-product">➕ Обычный товар</button>
-        <button class="mobile-nav-item" data-sec="add-product-specs">🔧 Товар со спецификациями</button>
+        <button class="mobile-nav-item" data-sec="add-product">➕ Добавить товар</button>
+        <button class="mobile-nav-item" data-sec="add-product-specs">🔧 Со спецами</button>
       </div>
     </div>
   </div>
@@ -382,7 +403,7 @@
     <div class="admin-section" id="sec-products">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
         <h2 class="section-title" style="margin-bottom:0">📦 Товары</h2>
-        <button class="btn btn-primary" onclick="switchSection('add-product')">➕ Добавить товар</button>
+        <button class="btn btn-primary" id="addProductBtn">➕ Добавить товар</button>
       </div>
       <div id="productsMsg"></div>
       <div class="table-wrap">
@@ -415,27 +436,27 @@
             <label class="form-label">Название (рус.)</label>
             <input type="text" class="form-input" id="newCatName" placeholder="Новая категория">
           </div>
-          <button class="btn btn-primary" onclick="createCategory()">Создать</button>
+          <button class="btn btn-primary" id="createCatBtn">Создать</button>
         </div>
         <div style="margin-top:1rem">
           <label class="form-label">Быстрый выбор Emoji</label>
           <div class="emoji-picker" id="emojiPicker">
-            <div class="emoji-opt" onclick="pickEmoji('📦')">📦</div>
-            <div class="emoji-opt" onclick="pickEmoji('🔋')">🔋</div>
-            <div class="emoji-opt" onclick="pickEmoji('⚙️')">⚙️</div>
-            <div class="emoji-opt" onclick="pickEmoji('📱')">📱</div>
-            <div class="emoji-opt" onclick="pickEmoji('🛑')">🛑</div>
-            <div class="emoji-opt" onclick="pickEmoji('🛞')">🛞</div>
-            <div class="emoji-opt" onclick="pickEmoji('🔧')">🔧</div>
-            <div class="emoji-opt" onclick="pickEmoji('💡')">💡</div>
-            <div class="emoji-opt" onclick="pickEmoji('🎛️')">🎛️</div>
-            <div class="emoji-opt" onclick="pickEmoji('🔌')">🔌</div>
-            <div class="emoji-opt" onclick="pickEmoji('🪛')">🪛</div>
-            <div class="emoji-opt" onclick="pickEmoji('⚡')">⚡</div>
-            <div class="emoji-opt" onclick="pickEmoji('🏍️')">🏍️</div>
-            <div class="emoji-opt" onclick="pickEmoji('🛹')">🛹</div>
-            <div class="emoji-opt" onclick="pickEmoji('🪜')">🪜</div>
-            <div class="emoji-opt" onclick="pickEmoji('🔩')">🔩</div>
+            <div class="emoji-opt" data-emoji="📦">📦</div>
+            <div class="emoji-opt" data-emoji="🔋">🔋</div>
+            <div class="emoji-opt" data-emoji="⚙️">⚙️</div>
+            <div class="emoji-opt" data-emoji="📱">📱</div>
+            <div class="emoji-opt" data-emoji="🛑">🛑</div>
+            <div class="emoji-opt" data-emoji="🛞">🛞</div>
+            <div class="emoji-opt" data-emoji="🔧">🔧</div>
+            <div class="emoji-opt" data-emoji="💡">💡</div>
+            <div class="emoji-opt" data-emoji="🎛️">🎛️</div>
+            <div class="emoji-opt" data-emoji="🔌">🔌</div>
+            <div class="emoji-opt" data-emoji="🪛">🪛</div>
+            <div class="emoji-opt" data-emoji="⚡">⚡</div>
+            <div class="emoji-opt" data-emoji="🏍️">🏍️</div>
+            <div class="emoji-opt" data-emoji="🛹">🛹</div>
+            <div class="emoji-opt" data-emoji="🪜">🪜</div>
+            <div class="emoji-opt" data-emoji="🔩">🔩</div>
           </div>
         </div>
       </div>
@@ -450,7 +471,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
         <h2 class="section-title" style="margin-bottom:0">🛒 Заказы</h2>
         <div style="display:flex;gap:.75rem;align-items:center">
-          <select class="form-select" id="orderStatusFilter" style="width:auto" onchange="loadOrders()">
+          <select class="form-select" id="orderStatusFilter" style="width:auto">
             <option value="">Все заказы</option>
             <option value="pending">📋 Создан</option>
             <option value="confirmed">✅ Подтверждён</option>
@@ -462,7 +483,7 @@
             <option value="completed">🏁 Завершён</option>
             <option value="cancelled">❌ Отменён</option>
           </select>
-          <button class="btn btn-ghost btn-sm" onclick="loadOrders()">🔄 Обновить</button>
+          <button class="btn btn-ghost btn-sm" id="reloadOrdersBtn">🔄 Обновить</button>
         </div>
       </div>
       <div id="ordersMsg"></div>
@@ -477,7 +498,7 @@
 
     <!-- ─── ORDER STATUS MODAL ─── -->
     <div class="modal-overlay" id="statusModal">
-      <div class="modal" style="max-width:500px">
+      <div class="modal-box" style="max-width:500px">
         <div class="modal-header">
           <h3 class="modal-title" id="statusModalTitle">🔄 Статус заказа</h3>
           <button class="modal-close" id="closeStatusModalBtn">✕</button>
@@ -563,16 +584,16 @@
 
     <!-- Notes Modal -->
     <div class="modal-overlay" id="notesModal">
-      <div class="modal" style="max-width:700px">
+      <div class="modal-box" style="max-width:700px">
         <div class="modal-header">
           <h3 class="modal-title">📝 Заметки о клиенте: <span id="notesCustomerName"></span></h3>
-          <button class="modal-close" onclick="closeModal('notesModal')">✕</button>
+          <button class="modal-close" id="closeNotesModalBtn">✕</button>
         </div>
         <div class="modal-body" style="max-height:500px;overflow-y:auto">
           <div id="notesList"></div>
           <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border)">
             <textarea id="newNoteText" placeholder="Добавить заметку о клиенте..." style="width:100%;padding:.875rem;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-b);font-size:.875rem;resize:vertical;min-height:80px;margin-bottom:.75rem"></textarea>
-            <button class="btn btn-primary" onclick="saveNote()">💾 Сохранить заметку</button>
+            <button class="btn btn-primary" id="saveNoteBtn">💾 Сохранить заметку</button>
           </div>
         </div>
       </div>
@@ -621,6 +642,22 @@
               </select>
             </div>
           </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <div class="form-group">
+              <label class="form-label">В наличии</label>
+              <select name="in_stock" class="form-select">
+                <option value="true">✓ Да</option>
+                <option value="false">Нет</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">По предзаказу</label>
+              <select name="preorder" class="form-select" id="regularPreorderSelect">
+                <option value="false">Нет</option>
+                <option value="true">📦 Да</option>
+              </select>
+            </div>
+          </div>
 
           <!-- Image section -->
           <div class="form-group">
@@ -628,8 +665,8 @@
             <div class="form-hint" style="margin-bottom:1rem">Первое фото будет основным. Можно загрузить до 5 изображений.</div>
             <div id="imageUploadsRegular">
               <div class="img-upload-item-regular" data-index="0">
-                <div class="img-upload-area" onclick="document.getElementById('imageFileRegular_0').click()">
-                  <input type="file" id="imageFileRegular_0" name="image_file_0" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewImageRegularMulti(event, 0)" style="display:none">
+                <div class="img-upload-area" data-trigger="imageFileRegular_0">
+                  <input type="file" id="imageFileRegular_0" name="image_file_0" accept=".jpg,.jpeg,.png,.gif,.webp" data-preview-regular="0" style="display:none">
                   <div class="upload-placeholder-multi">
                     <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
                     <div style="font-size:.875rem;color:var(--text-2)">Основное фото</div>
@@ -638,12 +675,12 @@
                   <div class="img-preview-multi" style="display:none">
                     <img class="preview-img-multi" src="" alt="Preview">
                     <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name-multi"></div>
-                    <button type="button" onclick="removeImageRegular(event, 0)" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
+                    <button type="button" data-remove-regular="0" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
                   </div>
                 </div>
               </div>
             </div>
-            <button type="button" id="addMoreBtnRegular" onclick="addImageUploadRegular()" class="btn btn-ghost" style="margin-top:1rem;width:100%">+ Добавить еще фото</button>
+            <button type="button" id="addMoreBtnRegular" class="btn btn-ghost" style="margin-top:1rem;width:100%">+ Добавить еще фото</button>
           </div>
 
           <div class="form-group">
@@ -652,9 +689,27 @@
             <div class="form-hint">Если выбраны файлы, URL игнорируется</div>
           </div>
 
+          <!-- Preorder delivery pricing -->
+          <div class="form-group" id="regularPreorderPricesBlock" style="display:none">
+            <label class="form-label" style="color:var(--amber)">🚚 Цены доставки по предзаказу</label>
+            <div class="form-hint" style="margin-bottom:.875rem">Заполните, если товар доступен по предзаказу. Будут показаны покупателю при выборе доставки.</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">🚗 Авто-доставка (₽)</label>
+                <input type="number" name="price_preorder_auto" class="form-input" id="regularPriceAuto" placeholder="0" min="0" step="0.01">
+                <div class="form-hint">Более долгий, обычно дешевле</div>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">✈️ Авиа-доставка (₽)</label>
+                <input type="number" name="price_preorder_air" class="form-input" id="regularPriceAir" placeholder="0" min="0" step="0.01">
+                <div class="form-hint">Быстрее, обычно дороже</div>
+              </div>
+            </div>
+          </div>
+
           <div style="display:flex;gap:.75rem;flex-wrap:wrap">
             <button type="submit" class="btn btn-primary">💾 Сохранить товар</button>
-            <button type="reset" class="btn btn-ghost" onclick="clearPreview()">Очистить</button>
+            <button type="reset" class="btn btn-ghost" id="clearRegularFormBtn">Очистить</button>
           </div>
         </form>
       </div>
@@ -705,8 +760,8 @@
             <div class="form-hint" style="margin-bottom:1rem">Первое фото будет основным. Можно загрузить до 5 изображений.</div>
             <div id="imageUploadsSpecs">
               <div class="img-upload-item-specs" data-index="0">
-                <div class="img-upload-area" onclick="document.getElementById('imageFileSpecs_0').click()">
-                  <input type="file" id="imageFileSpecs_0" name="image_file_0" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewImageSpecsMulti(event, 0)" style="display:none">
+                <div class="img-upload-area" data-trigger="imageFileSpecs_0">
+                  <input type="file" id="imageFileSpecs_0" name="image_file_0" accept=".jpg,.jpeg,.png,.gif,.webp" data-preview-specs="0" style="display:none">
                   <div class="upload-placeholder-multi">
                     <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
                     <div style="font-size:.875rem;color:var(--text-2)">Основное фото</div>
@@ -715,12 +770,12 @@
                   <div class="img-preview-multi" style="display:none">
                     <img class="preview-img-multi" src="" alt="Preview">
                     <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name-multi"></div>
-                    <button type="button" onclick="removeImageSpecs(event, 0)" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
+                    <button type="button" data-remove-specs="0" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
                   </div>
                 </div>
               </div>
             </div>
-            <button type="button" id="addMoreBtnSpecs" onclick="addImageUploadSpecs()" class="btn btn-ghost" style="margin-top:1rem;width:100%">+ Добавить еще фото</button>
+            <button type="button" id="addMoreBtnSpecs" class="btn btn-ghost" style="margin-top:1rem;width:100%">+ Добавить еще фото</button>
           </div>
 
           <div class="form-group">
@@ -735,7 +790,7 @@
 
           <div style="display:flex;gap:.75rem;flex-wrap:wrap">
             <button type="submit" class="btn btn-primary">💾 Создать основной товар</button>
-            <button type="reset" class="btn btn-ghost" onclick="clearPreviewSpecs()">Очистить</button>
+            <button type="reset" class="btn btn-ghost" id="clearSpecsFormBtn">Очистить</button>
           </div>
         </form>
       </div>
@@ -796,8 +851,8 @@
             <div class="form-hint" style="margin-bottom:1rem">Первое фото будет основным для этой версии. Если не загружено, используется фото основного товара.</div>
             <div id="imageUploadsSpec">
               <div class="img-upload-item-spec" data-index="0">
-                <div class="img-upload-area" onclick="document.getElementById('imageFileSpec_0').click()">
-                  <input type="file" id="imageFileSpec_0" name="image_file_0" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewImageSpecMulti(event, 0)" style="display:none">
+                <div class="img-upload-area" data-trigger="imageFileSpec_0">
+                  <input type="file" id="imageFileSpec_0" name="image_file_0" accept=".jpg,.jpeg,.png,.gif,.webp" data-preview-spec="0" style="display:none">
                   <div class="upload-placeholder-multi">
                     <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
                     <div style="font-size:.875rem;color:var(--text-2)">Основное фото версии</div>
@@ -806,12 +861,12 @@
                   <div class="img-preview-multi" style="display:none">
                     <img class="preview-img-multi" src="" alt="Preview">
                     <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name-multi"></div>
-                    <button type="button" onclick="removeImageSpec(event, 0)" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
+                    <button type="button" data-remove-spec="0" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
                   </div>
                 </div>
               </div>
             </div>
-            <button type="button" id="addMoreBtnSpec" onclick="addImageUploadSpec()" class="btn btn-ghost" style="margin-top:1rem;width:100%">+ Добавить еще фото</button>
+            <button type="button" id="addMoreBtnSpec" class="btn btn-ghost" style="margin-top:1rem;width:100%">+ Добавить еще фото</button>
           </div>
 
           <div class="form-group">
@@ -820,9 +875,24 @@
             <div class="form-hint">Если выбраны файлы, URL игнорируется</div>
           </div>
 
+          <!-- Preorder delivery pricing for spec -->
+          <div class="form-group" id="specPreorderPricesBlock" style="display:none">
+            <label class="form-label" style="color:var(--amber)">🚚 Цены доставки по предзаказу</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">🚗 Авто (₽)</label>
+                <input type="number" name="price_preorder_auto" class="form-input" placeholder="0" min="0" step="0.01">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">✈️ Самолёт (₽)</label>
+                <input type="number" name="price_preorder_air" class="form-input" placeholder="0" min="0" step="0.01">
+              </div>
+            </div>
+          </div>
+
           <div style="display:flex;gap:.75rem;margin-top:1.25rem">
             <button type="submit" class="btn btn-primary">➕ Добавить спецификацию</button>
-            <button type="button" class="btn btn-ghost" onclick="finishAddingSpecs()">✓ Завершить</button>
+            <button type="button" id="finishAddingSpecsBtn" class="btn btn-ghost">✓ Завершить</button>
           </div>
         </form>
 
@@ -843,7 +913,7 @@
   <div class="modal-box">
     <div class="modal-header">
       <span class="modal-title">✏️ Редактировать категорию</span>
-      <button class="modal-close" onclick="closeModal('editCatModal')">✕</button>
+      <button class="modal-close" id="closeEditCatModalBtn">✕</button>
     </div>
     <div id="editCatMsg"></div>
     <div class="form-group">
@@ -860,8 +930,8 @@
     </div>
     <input type="hidden" id="editCatSlug">
     <div style="display:flex;gap:.75rem;margin-top:1rem">
-      <button class="btn btn-primary" style="flex:1" onclick="saveCategory()">Сохранить</button>
-      <button class="btn btn-ghost" onclick="closeModal('editCatModal')">Отмена</button>
+      <button class="btn btn-primary" style="flex:1" id="saveCategoryBtn">Сохранить</button>
+      <button class="btn btn-ghost" id="cancelEditCatBtn">Отмена</button>
     </div>
   </div>
 </div>
@@ -871,7 +941,7 @@
   <div class="modal-box" style="max-width:600px">
     <div class="modal-header">
       <span class="modal-title">✏️ Редактировать товар</span>
-      <button class="modal-close" onclick="closeModal('editProductModal')">✕</button>
+      <button class="modal-close" id="closeEditProductModalBtn">✕</button>
     </div>
     <div id="editProductMsg"></div>
     <form id="editProductForm" enctype="multipart/form-data">
@@ -899,6 +969,19 @@
           <option value="false">Нет</option><option value="true">📦 Да</option>
         </select>
       </div>
+      <div class="form-group" id="editPreorderPricesBlock">
+        <label class="form-label" style="color:var(--amber)">🚚 Цены доставки по предзаказу</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">🚗 Авто (₽)</label>
+            <input type="number" name="price_preorder_auto" class="form-input" id="editPriceAuto" placeholder="0" min="0" step="0.01">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">✈️ Самолёт (₽)</label>
+            <input type="number" name="price_preorder_air" class="form-input" id="editPriceAir" placeholder="0" min="0" step="0.01">
+          </div>
+        </div>
+      </div>
       <div class="form-group">
         <label class="form-label">Новое изображение (файл)</label>
         <input type="file" name="image_file" class="form-input" accept=".jpg,.jpeg,.png,.gif,.webp">
@@ -906,7 +989,7 @@
       <div class="form-group"><label class="form-label">— или URL</label><input type="url" name="image_url" class="form-input" id="editProductImgUrl" placeholder="https://…"></div>
       <div style="display:flex;gap:.75rem;margin-top:1rem">
         <button type="submit" class="btn btn-primary" style="flex:1">Сохранить</button>
-        <button type="button" class="btn btn-ghost" onclick="closeModal('editProductModal')">Отмена</button>
+        <button type="button" id="cancelEditProductBtn" class="btn btn-ghost">Отмена</button>
       </div>
     </form>
   </div>
@@ -914,8 +997,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script>
-  let adminToken = null;
+<script nonce="{{ request.state.csp_nonce }}">
   let categories = [];
 
   const toast = document.getElementById('toast');
@@ -939,15 +1021,14 @@
     const username = document.getElementById('loginUser').value;
     const password = document.getElementById('loginPass').value;
     try {
-      const r = await fetch('/api/admin/login', {
+      const r = await fetch('/api/admin/login', {credentials:'include', 
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
       const data = await r.json();
       if (r.ok) {
-        adminToken = data.access_token;
-        sessionStorage.setItem('adminToken', adminToken);
         showAdminPanel();
       } else {
         document.getElementById('loginMsg').innerHTML = `<div class="msg msg-error">${data.detail}</div>`;
@@ -972,14 +1053,19 @@
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
-    adminToken = null; sessionStorage.removeItem('adminToken');
-    document.getElementById('loginScreen').style.display = 'flex';
-    document.getElementById('adminPanel').style.display = 'none';
+    fetch('/api/logout', {method:'POST', credentials:'include'}).finally(() => {
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('adminPanel').style.display = 'none';
+    });
   });
 
-  // Auto-restore session
-  const saved = sessionStorage.getItem('adminToken');
-  if (saved) { adminToken = saved; showAdminPanel(); }
+  // Auto-restore session — проверяем cookie через /api/me
+  (async () => {
+    try {
+      const r = await fetch('/api/admin/stats', {credentials:'include'});
+      if (r.ok) { showAdminPanel(); }
+    } catch {}
+  })();
 
   // ── Navigation ──
   function switchSection(name) {
@@ -1015,7 +1101,7 @@
     
     try {
       console.log('🔄 Загрузка статистики...');
-      const r = await fetch('/api/admin/stats', { headers: { Authorization: `Bearer ${adminToken}` } });
+      const r = await fetch('/api/admin/stats', {credentials:'include',  headers: { 'Content-Type': 'application/json' } });
       
       if (!r.ok) {
         console.error(`❌ Ошибка загрузки статистики: HTTP ${r.status} ${r.statusText}`);
@@ -1065,8 +1151,8 @@
           <div class="cat-meta">slug: ${c.slug} · ${c.count} товар(ов)</div>
         </div>
         <div class="cat-actions">
-          <button class="btn btn-xs btn-secondary" onclick="openEditCat('${c.slug}','${c.name}','${c.emoji}','${(c.description||'').replace(/'/g,"\\'")}')">✏️</button>
-          <button class="btn btn-xs btn-danger" onclick="deleteCategory('${c.slug}','${c.count}')">🗑</button>
+          <button class="btn btn-xs btn-secondary" data-edit-cat-slug="${c.slug}" data-edit-cat-name="${c.name}" data-edit-cat-emoji="${c.emoji}" data-edit-cat-desc="${(c.description||'').replace(/"/g,'&quot;')}">✏️</button>
+          <button class="btn btn-xs btn-danger" data-del-cat-slug="${c.slug}" data-del-cat-count="${c.count}">🗑</button>
         </div>
       </div>
     `).join('');
@@ -1084,9 +1170,9 @@
     if (!slug || !name) { showMsg('catMsg','error','Заполните slug и название'); return; }
     if (!/^[a-z0-9_]+$/.test(slug)) { showMsg('catMsg','error','Slug: только латиница, цифры и _'); return; }
     try {
-      const r = await fetch('/api/admin/categories', {
+      const r = await fetch('/api/admin/categories', {credentials:'include', 
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug, name, emoji })
       });
       const d = await r.json();
@@ -1109,9 +1195,9 @@
     const emoji = document.getElementById('editCatEmoji').value.trim();
     const description = document.getElementById('editCatDesc').value.trim();
     try {
-      const r = await fetch(`/api/admin/categories/${slug}`, {
+      const r = await fetch(`/api/admin/categories/${slug}`, {credentials:'include', 
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, emoji, description })
       });
       const d = await r.json();
@@ -1124,7 +1210,7 @@
     if (count > 0) { alert(`Нельзя удалить: в категории ${count} товар(ов). Сначала переместите их.`); return; }
     if (!confirm(`Удалить категорию "${slug}"?`)) return;
     try {
-      const r = await fetch(`/api/admin/categories/${slug}`, { method:'DELETE', headers:{Authorization:`Bearer ${adminToken}`} });
+      const r = await fetch(`/api/admin/categories/${slug}`, {credentials:'include',  method:'DELETE', headers:{ 'Content-Type': 'application/json' } });
       const d = await r.json();
       if (r.ok) { showToast('success','Категория удалена'); loadCategories(); }
       else showToast('error', d.detail||'Ошибка');
@@ -1148,7 +1234,7 @@
     
     try {
       console.log('🔄 Загрузка товаров...');
-      const r = await fetch('/api/products', { headers: { Authorization: `Bearer ${adminToken}` } });
+      const r = await fetch('/api/products', {credentials:'include',  headers: { 'Content-Type': 'application/json' } });
       
       if (!r.ok) {
         console.error(`❌ Ошибка загрузки товаров: HTTP ${r.status} ${r.statusText}`);
@@ -1187,15 +1273,15 @@
           <td>${imgCell}</td>
           <td style="max-width:200px"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div></td>
           <td>${catMap[p.category] || p.category}</td>
-          <td class="editable-cell" onclick="editPrice(${p.id}, ${p.price})">${fmt(p.price)} ₽</td>
-          <td class="editable-cell" onclick="editStock(${p.id}, ${p.stock})"><span style="color:${p.stock>0?'var(--green)':'var(--red)'}">${p.stock}</span></td>
-          <td class="editable-cell" onclick="editCostPrice(${p.id}, ${p.cost_price || 0})">${p.cost_price ? fmt(p.cost_price) + ' ₽' : '—'}</td>
-          <td><input type="checkbox" ${p.in_stock?'checked':''} onchange="toggleInStock(${p.id}, this.checked)" style="width:18px;height:18px;cursor:pointer"></td>
-          <td><input type="checkbox" ${p.preorder?'checked':''} onchange="togglePreorder(${p.id}, this.checked)" style="width:18px;height:18px;cursor:pointer"></td>
+          <td class="editable-cell" data-edit-price="${p.id}|${p.price}">${fmt(p.price)} ₽</td>
+          <td class="editable-cell" data-edit-stock="${p.id}|${p.stock}"><span style="color:${p.stock>0?'var(--green)':'var(--red)'}">${p.stock}</span></td>
+          <td class="editable-cell" data-edit-cost="${p.id}|${p.cost_price || 0}">${p.cost_price ? fmt(p.cost_price) + ' ₽' : '—'}</td>
+          <td><input type="checkbox" ${p.in_stock?'checked':''} data-toggle-stock="${p.id}" style="width:18px;height:18px;cursor:pointer"></td>
+          <td><input type="checkbox" ${p.preorder?'checked':''} data-toggle-preorder="${p.id}" style="width:18px;height:18px;cursor:pointer"></td>
           <td>${p.featured ? '⭐' : '—'}</td>
           <td><div style="display:flex;gap:.375rem">
-            <button class="btn btn-xs btn-secondary" onclick="openEditProduct(${JSON.stringify(p).replace(/"/g,'&quot;')})">✏️</button>
-            <button class="btn btn-xs btn-danger" onclick="deleteProduct(${p.id},'${p.name.replace(/'/g,"\\'")}')">🗑</button>
+            <button class="btn btn-xs btn-secondary" data-edit-product='${JSON.stringify(p).replace(/'/g,"&#39;")}'>✏️</button>
+            <button class="btn btn-xs btn-danger" data-del-product-id="${p.id}" data-del-product-name="${p.name.replace(/"/g,'&quot;')}">🗑</button>
           </div></td>
         </tr>`;
       }).join('');
@@ -1236,9 +1322,8 @@
     const formData = new FormData();
     formData.append(field, value);
     try {
-      const r = await fetch(`/api/admin/products/${productId}`, {
+      const r = await fetch(`/api/admin/products/${productId}`, {credentials:'include', 
         method: 'PUT',
-        headers: { Authorization: `Bearer ${adminToken}` },
         body: formData
       });
       if (r.ok) {
@@ -1326,8 +1411,8 @@
     itemDiv.style.marginTop = '1rem';
     
     itemDiv.innerHTML = `
-      <div class="img-upload-area" onclick="document.getElementById('imageFileRegular_${newIndex}').click()">
-        <input type="file" id="imageFileRegular_${newIndex}" name="image_file_${newIndex}" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewImageRegularMulti(event, ${newIndex})" style="display:none">
+      <div class="img-upload-area" data-trigger="imageFileRegular_${newIndex}">
+        <input type="file" id="imageFileRegular_${newIndex}" name="image_file_${newIndex}" accept=".jpg,.jpeg,.png,.gif,.webp" data-preview-regular="${newIndex}" style="display:none">
         <div class="upload-placeholder-multi">
           <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
           <div style="font-size:.875rem;color:var(--text-2)">Доп. фото ${newIndex + 1}</div>
@@ -1336,7 +1421,7 @@
         <div class="img-preview-multi" style="display:none">
           <img class="preview-img-multi" src="" alt="Preview">
           <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name-multi"></div>
-          <button type="button" onclick="removeImageRegular(event, ${newIndex})" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
+          <button type="button" data-remove-regular="${newIndex}" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
         </div>
       </div>
     `;
@@ -1422,9 +1507,8 @@
     
     const msgEl = document.getElementById('addProductMsg');
     try {
-      const r = await fetch('/api/admin/products', {
+      const r = await fetch('/api/admin/products', {credentials:'include', 
         method: 'POST',
-        headers: { Authorization: `Bearer ${adminToken}` },
         body: formData
       });
       const d = await r.json();
@@ -1506,8 +1590,8 @@
     itemDiv.style.marginTop = '1rem';
     
     itemDiv.innerHTML = `
-      <div class="img-upload-area" onclick="document.getElementById('imageFileSpecs_${newIndex}').click()">
-        <input type="file" id="imageFileSpecs_${newIndex}" name="image_file_${newIndex}" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewImageSpecsMulti(event, ${newIndex})" style="display:none">
+      <div class="img-upload-area" data-trigger="imageFileSpecs_${newIndex}">
+        <input type="file" id="imageFileSpecs_${newIndex}" name="image_file_${newIndex}" accept=".jpg,.jpeg,.png,.gif,.webp" data-preview-specs="${newIndex}" style="display:none">
         <div class="upload-placeholder-multi">
           <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
           <div style="font-size:.875rem;color:var(--text-2)">Доп. фото ${newIndex + 1}</div>
@@ -1516,7 +1600,7 @@
         <div class="img-preview-multi" style="display:none">
           <img class="preview-img-multi" src="" alt="Preview">
           <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name-multi"></div>
-          <button type="button" onclick="removeImageSpecs(event, ${newIndex})" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
+          <button type="button" data-remove-specs="${newIndex}" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
         </div>
       </div>
     `;
@@ -1568,9 +1652,8 @@
     e.preventDefault();
     const formData = new FormData(e.target);
     try {
-      const r = await fetch('/api/admin/products', {
+      const r = await fetch('/api/admin/products', {credentials:'include', 
         method: 'POST',
-        headers: { Authorization: `Bearer ${adminToken}` },
         body: formData
       });
       const d = await r.json();
@@ -1661,8 +1744,8 @@
     itemDiv.style.marginTop = '1rem';
     
     itemDiv.innerHTML = `
-      <div class="img-upload-area" onclick="document.getElementById('imageFileSpec_${newIndex}').click()">
-        <input type="file" id="imageFileSpec_${newIndex}" name="image_file_${newIndex}" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewImageSpecMulti(event, ${newIndex})" style="display:none">
+      <div class="img-upload-area" data-trigger="imageFileSpec_${newIndex}">
+        <input type="file" id="imageFileSpec_${newIndex}" name="image_file_${newIndex}" accept=".jpg,.jpeg,.png,.gif,.webp" data-preview-spec="${newIndex}" style="display:none">
         <div class="upload-placeholder-multi">
           <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
           <div style="font-size:.875rem;color:var(--text-2)">Доп. фото ${newIndex + 1}</div>
@@ -1671,7 +1754,7 @@
         <div class="img-preview-multi" style="display:none">
           <img class="preview-img-multi" src="" alt="Preview">
           <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name-multi"></div>
-          <button type="button" onclick="removeImageSpec(event, ${newIndex})" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
+          <button type="button" data-remove-spec="${newIndex}" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
         </div>
       </div>
     `;
@@ -1715,9 +1798,8 @@
     const productId = document.getElementById('specProductId').value;
     
     try {
-      const r = await fetch(`/api/admin/products/${productId}/specifications`, {
+      const r = await fetch(`/api/admin/products/${productId}/specifications`, {credentials:'include', 
         method: 'POST',
-        headers: { Authorization: `Bearer ${adminToken}` },
         body: formData
       });
       const d = await r.json();
@@ -1788,11 +1870,20 @@
     document.getElementById('editProductFeatured').value = product.featured ? 'true' : 'false';
     document.getElementById('editProductPreorder').value = product.preorder ? 'true' : 'false';
     document.getElementById('editProductImgUrl').value = product.image_url || '';
+    document.getElementById('editPriceAuto').value = product.price_preorder_auto || '';
+    document.getElementById('editPriceAir').value = product.price_preorder_air || '';
+    // Show/hide preorder price block based on current value
+    document.getElementById('editPreorderPricesBlock').style.display = product.preorder ? '' : 'none';
     // Populate category select
     const sel = document.getElementById('editProductCategory');
     sel.innerHTML = categories.map(c => `<option value="${c.slug}" ${c.slug===product.category?'selected':''}>${c.emoji} ${c.name}</option>`).join('');
     document.getElementById('editProductModal').classList.add('active');
   }
+
+  // Toggle preorder price blocks on select change
+  document.getElementById('editProductPreorder').addEventListener('change', function() {
+    document.getElementById('editPreorderPricesBlock').style.display = this.value === 'true' ? '' : 'none';
+  });
 
   document.getElementById('editProductForm').addEventListener('submit', async e => {
     e.preventDefault();
@@ -1800,9 +1891,8 @@
     const formData = new FormData(e.target);
     formData.delete('product_id');
     try {
-      const r = await fetch(`/api/admin/products/${productId}`, {
+      const r = await fetch(`/api/admin/products/${productId}`, {credentials:'include', 
         method: 'PUT',
-        headers: { Authorization: `Bearer ${adminToken}` },
         body: formData
       });
       const d = await r.json();
@@ -1814,7 +1904,7 @@
   async function deleteProduct(id, name) {
     if (!confirm(`Удалить товар "${name}"?`)) return;
     try {
-      const r = await fetch(`/api/admin/products/${id}`, { method:'DELETE', headers:{Authorization:`Bearer ${adminToken}`} });
+      const r = await fetch(`/api/admin/products/${id}`, {credentials:'include',  method:'DELETE', headers:{ 'Content-Type': 'application/json' } });
       const d = await r.json();
       if (r.ok) { showToast('success','Товар удалён'); loadProducts(); }
       else showToast('error', d.detail||'Ошибка');
@@ -1857,7 +1947,7 @@
     if (statusFilter) url += '&status=' + encodeURIComponent(statusFilter);
 
     try {
-      const r = await fetch(url, { headers: { Authorization: 'Bearer ' + adminToken } });
+      const r = await fetch(url, { credentials: 'include' });
       if (!r.ok) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--red)">Ошибка загрузки: ' + r.status + '</td></tr>';
         return;
@@ -1888,7 +1978,7 @@
           + '<td><span class="order-status ' + statusCls + '">' + statusLabel + '</span>' + delayBadge + '</td>'
           + '<td><span style="font-size:.8125rem;color:' + payColor + '">' + payText + '</span></td>'
           + '<td style="font-size:.8125rem;color:var(--text-3)">' + dateStr + '</td>'
-          + '<td><button class="btn btn-ghost btn-xs" data-order-id="' + orderId + '" data-order-status="' + safeStatus + '" data-order-delay="' + safeDelay + '" onclick="openStatusModal(this)">🔄 Статус</button></td>'
+          + '<td><button class="btn btn-ghost btn-xs" data-order-id="' + orderId + '" data-order-status="' + safeStatus + '" data-order-delay="' + safeDelay + '" data-action="open-status">🔄 Статус</button></td>'
           + '</tr>';
       });
       tbody.innerHTML = rows.join('');
@@ -1922,9 +2012,9 @@
     btn.disabled = true;
     btn.textContent = 'Сохраняю…';
     try {
-      const r = await fetch('/api/admin/orders/' + _currentOrderId + '/status', {
+      const r = await fetch('/api/admin/orders/' + _currentOrderId + '/status', {credentials:'include', 
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminToken },
+        headers: { 'Content-Type': 'application/json',  },
         body: JSON.stringify({ status: newStatus, delay_note: delayNote || null })
       });
       const d = await r.json();
@@ -1946,9 +2036,9 @@
   async function updateOrderStatus(orderId, newStatus) {
     if (!newStatus) return;
     try {
-      const r = await fetch('/api/admin/orders/' + orderId + '/status', {
+      const r = await fetch('/api/admin/orders/' + orderId + '/status', {credentials:'include', 
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminToken },
+        headers: { 'Content-Type': 'application/json',  },
         body: JSON.stringify({ status: newStatus })
       });
       const d = await r.json();
@@ -1964,8 +2054,8 @@
     const tbody = document.getElementById('topClientsTableBody');
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка...</td></tr>';
     try {
-      const r = await fetch('/api/admin/top-customers?limit=50', {
-        headers: { Authorization: `Bearer ${adminToken}` }
+      const r = await fetch('/api/admin/top-customers?limit=50', {credentials:'include', 
+        headers: { 'Content-Type': 'application/json' }
       });
       
       if (!r.ok) {
@@ -2013,8 +2103,8 @@
     const tbody = document.getElementById('crmTableBody');
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка...</td></tr>';
     try {
-      const r = await fetch('/api/admin/customers', {
-        headers: { Authorization: `Bearer ${adminToken}` }
+      const r = await fetch('/api/admin/customers', {credentials:'include', 
+        headers: { 'Content-Type': 'application/json' }
       });
       
       if (!r.ok) {
@@ -2046,7 +2136,7 @@
             <td style="color:var(--text-2);font-size:.8125rem">${lastOrder}</td>
             <td><span class="badge badge-success">${c.notes_count || 0}</span></td>
             <td>
-              <button class="btn btn-xs btn-secondary" onclick="openNotes('${c.id}', '${c.full_name || c.username}')">📝 Заметки</button>
+              <button class="btn btn-xs btn-secondary" data-open-notes-id="${c.id}" data-open-notes-name="${(c.full_name || c.username).replace(/"/g,'&quot;')}">📝 Заметки</button>
             </td>
           </tr>
         `;
@@ -2069,8 +2159,8 @@
     notesList.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка...</div>';
     
     try {
-      const r = await fetch(`/api/admin/customers/${userId}/notes`, {
-        headers: { Authorization: `Bearer ${adminToken}` }
+      const r = await fetch(`/api/admin/customers/${userId}/notes`, {credentials:'include', 
+        headers: { 'Content-Type': 'application/json' }
       });
       const notes = await r.json();
       
@@ -2085,7 +2175,7 @@
           <div style="background:var(--bg-2);padding:1rem;border-radius:12px;margin-bottom:.75rem;border:1px solid var(--border)">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;font-size:.75rem;color:var(--text-3)">
               <span>${n.created_by} • ${date}</span>
-              <button class="btn btn-xs btn-danger" onclick="deleteNote(${n.id})">Удалить</button>
+              <button class="btn btn-xs btn-danger" data-del-note="${n.id}">Удалить</button>
             </div>
             <div style="color:var(--text-2);line-height:1.6">${n.note}</div>
           </div>
@@ -2104,11 +2194,10 @@
     }
     
     try {
-      const r = await fetch(`/api/admin/customers/${currentCustomerId}/notes`, {
+      const r = await fetch(`/api/admin/customers/${currentCustomerId}/notes`, {credentials:'include', 
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${adminToken}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ note: noteText })
       });
@@ -2131,9 +2220,9 @@
     if (!confirm('Удалить эту заметку?')) return;
     
     try {
-      const r = await fetch(`/api/admin/customers/notes/${noteId}`, {
+      const r = await fetch(`/api/admin/customers/notes/${noteId}`, {credentials:'include', 
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${adminToken}` }
+        headers: { 'Content-Type': 'application/json' }
       });
       
       if (r.ok) {
@@ -2218,6 +2307,160 @@
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('active'); });
   });
+
+  /* ════════════════════════════════════════════════════════════
+     CSP-SAFE EVENT BINDINGS — replacing all inline onclick/onchange
+  ════════════════════════════════════════════════════════════ */
+  document.addEventListener('DOMContentLoaded', function() {
+
+    // ── Static buttons ──
+    document.getElementById('addProductBtn')?.addEventListener('click', () => switchSection('add-product'));
+    document.getElementById('createCatBtn')?.addEventListener('click', createCategory);
+    document.getElementById('reloadOrdersBtn')?.addEventListener('click', loadOrders);
+    document.getElementById('orderStatusFilter')?.addEventListener('change', loadOrders);
+    document.getElementById('closeNotesModalBtn')?.addEventListener('click', () => closeModal('notesModal'));
+    document.getElementById('saveNoteBtn')?.addEventListener('click', saveNote);
+    document.getElementById('addMoreBtnRegular')?.addEventListener('click', addImageUploadRegular);
+    document.getElementById('clearRegularFormBtn')?.addEventListener('click', clearPreview);
+    document.getElementById('addMoreBtnSpecs')?.addEventListener('click', addImageUploadSpecs);
+    document.getElementById('clearSpecsFormBtn')?.addEventListener('click', clearPreviewSpecs);
+    document.getElementById('addMoreBtnSpec')?.addEventListener('click', addImageUploadSpec);
+    document.getElementById('finishAddingSpecsBtn')?.addEventListener('click', finishAddingSpecs);
+    document.getElementById('closeEditCatModalBtn')?.addEventListener('click', () => closeModal('editCatModal'));
+    document.getElementById('saveCategoryBtn')?.addEventListener('click', saveCategory);
+    document.getElementById('cancelEditCatBtn')?.addEventListener('click', () => closeModal('editCatModal'));
+    document.getElementById('closeEditProductModalBtn')?.addEventListener('click', () => closeModal('editProductModal'));
+    document.getElementById('cancelEditProductBtn')?.addEventListener('click', () => closeModal('editProductModal'));
+
+    // ── Emoji picker delegation ──
+    document.getElementById('emojiPicker')?.addEventListener('click', function(e) {
+      const opt = e.target.closest('[data-emoji]');
+      if (opt) pickEmoji(opt.dataset.emoji);
+    });
+
+    // ── img-upload-area delegation (trigger file input) ──
+    document.addEventListener('click', function(e) {
+      const area = e.target.closest('.img-upload-area[data-trigger]');
+      if (area) {
+        const fileInput = document.getElementById(area.dataset.trigger);
+        if (fileInput) fileInput.click();
+        return;
+      }
+      // ── Remove image buttons ──
+      const removeRegular = e.target.closest('[data-remove-regular]');
+      if (removeRegular) { removeImageRegular(e, parseInt(removeRegular.dataset.removeRegular)); return; }
+      const removeSpecs = e.target.closest('[data-remove-specs]');
+      if (removeSpecs) { removeImageSpecs(e, parseInt(removeSpecs.dataset.removeSpecs)); return; }
+      const removeSpec = e.target.closest('[data-remove-spec]');
+      if (removeSpec) { removeImageSpec(e, parseInt(removeSpec.dataset.removeSpec)); return; }
+    });
+
+    // ── File input change delegation (image preview) ──
+    document.addEventListener('change', function(e) {
+      const input = e.target;
+      if (input.type !== 'file') return;
+      const pr = input.dataset.previewRegular;
+      if (pr !== undefined) { previewImageRegularMulti(e, parseInt(pr)); return; }
+      const ps = input.dataset.previewSpecs;
+      if (ps !== undefined) { previewImageSpecsMulti(e, parseInt(ps)); return; }
+      const psp = input.dataset.previewSpec;
+      if (psp !== undefined) { previewImageSpecMulti(e, parseInt(psp)); return; }
+    });
+
+    // ── Category grid delegation ──
+    document.getElementById('catGrid')?.addEventListener('click', function(e) {
+      const editBtn = e.target.closest('[data-edit-cat-slug]');
+      if (editBtn) {
+        openEditCat(editBtn.dataset.editCatSlug, editBtn.dataset.editCatName, editBtn.dataset.editCatEmoji, editBtn.dataset.editCatDesc);
+        return;
+      }
+      const delBtn = e.target.closest('[data-del-cat-slug]');
+      if (delBtn) { deleteCategory(delBtn.dataset.delCatSlug, delBtn.dataset.delCatCount); return; }
+    });
+
+    // ── Products table delegation ──
+    document.getElementById('productsTableBody')?.addEventListener('click', function(e) {
+      const priceCell = e.target.closest('[data-edit-price]');
+      if (priceCell) { const [id,price]=priceCell.dataset.editPrice.split('|'); editPrice(parseInt(id),parseFloat(price)); return; }
+      const stockCell = e.target.closest('[data-edit-stock]');
+      if (stockCell) { const [id,stock]=stockCell.dataset.editStock.split('|'); editStock(parseInt(id),parseInt(stock)); return; }
+      const costCell = e.target.closest('[data-edit-cost]');
+      if (costCell) { const [id,cost]=costCell.dataset.editCost.split('|'); editCostPrice(parseInt(id),parseFloat(cost)); return; }
+      const editBtn = e.target.closest('[data-edit-product]');
+      if (editBtn) { try { openEditProduct(JSON.parse(editBtn.dataset.editProduct)); } catch(err) { console.error('Parse error:',err); } return; }
+      const delBtn = e.target.closest('[data-del-product-id]');
+      if (delBtn) { deleteProduct(parseInt(delBtn.dataset.delProductId), delBtn.dataset.delProductName); return; }
+    });
+
+    // ── Products table checkbox delegation ──
+    document.getElementById('productsTableBody')?.addEventListener('change', function(e) {
+      const stockChk = e.target.closest('[data-toggle-stock]');
+      if (stockChk) { toggleInStock(parseInt(stockChk.dataset.toggleStock), stockChk.checked); return; }
+      const preorderChk = e.target.closest('[data-toggle-preorder]');
+      if (preorderChk) { togglePreorder(parseInt(preorderChk.dataset.togglePreorder), preorderChk.checked); return; }
+    });
+
+    // ── Orders table delegation ──
+    document.getElementById('ordersTableBody')?.addEventListener('click', function(e) {
+      const btn = e.target.closest('[data-action="open-status"]');
+      if (btn) openStatusModal(btn);
+    });
+
+    // ── CRM table delegation ──
+    document.getElementById('crmTableBody')?.addEventListener('click', function(e) {
+      const notesBtn = e.target.closest('[data-open-notes-id]');
+      if (notesBtn) { openNotes(notesBtn.dataset.openNotesId, notesBtn.dataset.openNotesName); return; }
+    });
+
+    // ── Notes list delegation ──
+    document.getElementById('notesList')?.addEventListener('click', function(e) {
+      const delBtn = e.target.closest('[data-del-note]');
+      if (delBtn) deleteNote(parseInt(delBtn.dataset.delNote));
+    });
+
+    // ── Show/hide preorder delivery prices in add-regular form ──
+    (function() {
+      const preorderSel = document.getElementById('regularPreorderSelect');
+      const block = document.getElementById('regularPreorderPricesBlock');
+      if (!preorderSel || !block) return;
+      preorderSel.addEventListener('change', function() {
+        block.style.display = this.value === 'true' ? '' : 'none';
+        if (this.value !== 'true') {
+          document.getElementById('regularPriceAuto').value = '';
+          document.getElementById('regularPriceAir').value = '';
+        }
+      });
+    })();
+
+    // ── Show/hide preorder delivery prices in add-spec form ──
+    (function() {
+      const specForm = document.getElementById('addSpecificationForm');
+      if (!specForm) return;
+      const preorderSel = specForm.querySelector('select[name="preorder"]');
+      const block = document.getElementById('specPreorderPricesBlock');
+      if (!preorderSel || !block) return;
+      preorderSel.addEventListener('change', function() {
+        block.style.display = this.value === 'true' ? '' : 'none';
+      });
+    })();
+
+  }); // end DOMContentLoaded
 </script>
+
+<div class="cookie-banner" id="cookieBanner" role="dialog" aria-label="Уведомление об использовании Cookie" aria-live="polite">
+  <div class="cookie-inner">
+    <div class="cookie-icon" aria-hidden="true">&#127850;</div>
+    <div class="cookie-text">
+      <strong>Мы используем Cookie-файлы</strong>
+      <p>Необходимые Cookie обеспечивают работу сайта. С вашего согласия — аналитические. <a href="/privacy-policy#cookies" target="_blank">Подробнее</a>.</p>
+    </div>
+    <div class="cookie-actions">
+      <button class="btn-ca" id="cookieAccept">Принять все</button>
+      <button class="btn-cd" id="cookieDecline">Только необходимые</button>
+      <button class="btn-cdet" id="cookieDetails">Политика</button>
+    </div>
+  </div>
+</div>
+<script src="/static/cookie-consent.js" defer></script>
 </body>
 </html>

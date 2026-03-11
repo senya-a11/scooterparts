@@ -8,9 +8,10 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png?v=5">
   <link rel="shortcut icon" href="/static/favicon/favicon.ico?v=5">
   <meta name="theme-color" content="#000000">
-  <title>Корзина — Fast HUB</title>
+  <title>Корзина — Fm TuN</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script src="/static/csrf-init.js"></script>
   <style nonce="{{ request.state.csp_nonce }}">
     /* ── PP Neue Corp Tight (для меню) ── */
     @font-face {
@@ -151,7 +152,7 @@
     .header{
       position:fixed;top:0;left:0;right:0;
       background:rgba(0,0,0,0.75);
-      backdrop-filter:blur(24px) saturate(1.6);
+      backdrop-filter:blur(12px);
       border-bottom:1px solid var(--border);
       z-index:200;padding-top:0;
     }
@@ -534,7 +535,12 @@
     /* ── Performance: GPU compositing for animated elements ── */
     .nav-bg-panel,.nav-overlay,.menu-button-icon{will-change:transform,opacity;}
     #starfield{will-change:transform;}
-  </style>
+  
+    @media(prefers-reduced-motion:reduce){
+      *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}
+      #starfield{display:none!important;}
+    }
+</style>
 </head>
 <body>
 
@@ -549,7 +555,7 @@
     <div class="header-inner">
       <a href="/" class="logo">
         <div class="logo-bolt">&#9889;</div>
-        <span class="logo-text">Fast <span>HUB</span></span>
+        <span class="logo-text">Fm <span>TuN</span></span>
       </a>
       <div class="header-actions">
         <a href="/cart" class="cart-btn" id="cartBtn" aria-label="Корзина">
@@ -632,8 +638,8 @@
       <p class="nav-footer-label" id="navFadeItem1">Контакты</p>
       <div class="nav-socials" id="navFadeItem2">
         <a href="tel:+78001234567" class="nav-social-link">+7 (800) 123-45-67</a>
-        <a href="mailto:info@import.ru" class="nav-social-link">info@import.ru</a>
-        <a href="https://t.me/import_scooter" class="nav-social-link">Telegram</a>
+        <a href="mailto:info@fmtun.ru">info@fmtun.ru</a>
+        <a href="https://t.me/fmtun" class="nav-social-link">Telegram</a>
       </div>
     </div>
   </div>
@@ -727,7 +733,7 @@
       <div>
         <a href="/" class="logo" style="font-size:1.1rem;letter-spacing:0.08em">
           <div class="logo-bolt">&#9889;</div>
-          <span class="logo-text">Fast <span>HUB</span></span>
+          <span class="logo-text">Fm <span>TuN</span></span>
         </a>
         <p class="footer-brand-desc">Премиум запчасти для электросамокатов. Оригинальные комплектующие с гарантией качества.</p>
       </div>
@@ -750,13 +756,13 @@
         <div class="footer-col-title">Контакты</div>
         <div style="font-family:var(--font-raj);font-size:.875rem;color:var(--text2);line-height:2;letter-spacing:.04em">
           <div>📞 8 (800) 123-45-67</div>
-          <div>✉️ info@import.ru</div>
+          <div>✉️ <a href="mailto:info@fmtun.ru">info@fmtun.ru</a></div>
           <div>🕐 Ежедневно 9:00–21:00</div>
         </div>
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2025 Fast HUB. Все права защищены.</span>
+      <span>© 2025 Fm TuN. Все права защищены.</span>
       <div class="footer-legal">
         <a href="/terms">Соглашение</a>
         <a href="/privacy-policy">Конфиденциальность</a>
@@ -768,7 +774,6 @@
 </footer>
 
 <div class="toast" id="toast"></div>
-<script src="/static/csrf-init.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/CustomEase.min.js" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous"></script>
 <script nonce="{{ request.state.csp_nonce }}">
@@ -777,10 +782,10 @@
 ════════════════════════════════════════ */
 (function(){
   var c=document.getElementById("starfield"),ctx=c.getContext("2d");
-  var W,H,stars=[],COUNT=160,TRAIL=30;
+  var W,H,stars=[],COUNT = window.innerWidth < 768 ? 40 : 60,TRAIL=18;
   function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
   function make(){
-    var a=Math.random()*Math.PI*2,spd=Math.random()*.45+.08;
+    var a=Math.random()*Math.PI*2,spd=Math.random()*.3+.05;
     return{x:Math.random()*W,y:Math.random()*H,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:Math.random()*1.1+.35,alpha:Math.random()*.5+.3,tw:Math.random()*Math.PI*2,tws:Math.random()*.01+.005,trail:[]};
   }
   function init(){resize();stars=Array.from({length:COUNT},make);}
@@ -801,17 +806,22 @@
         ctx.fillStyle=isLight?'rgba(180,70,0,'+(p2*s.alpha*.4)+')':'rgba(110,205,255,'+(p2*s.alpha*.5)+')';ctx.fill();
       }
       var pulse=Math.sin(s.tw)*.2+.8,a=s.alpha*pulse;
-      var g=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*4);
-      g.addColorStop(0,isLight?'rgba(232,88,10,'+(a*.25)+')':'rgba(0,212,255,'+(a*.3)+')');
-      g.addColorStop(1,isLight?'rgba(232,88,10,0)':'rgba(0,212,255,0)');
-      ctx.beginPath();ctx.arc(s.x,s.y,s.r*4,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r*2.5,0,Math.PI*2);
+      ctx.fillStyle=isLight?'rgba(232,88,10,'+(a*.12)+')':'rgba(0,212,255,'+(a*.15)+')';ctx.fill();
       ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
       ctx.fillStyle=isLight?'rgba(200,80,0,'+a+')':'rgba(215,248,255,'+a+')';ctx.fill();
     }
     requestAnimationFrame(draw);
   }
+  // Fix ЗАМ-01: пауза при скрытой вкладке
+  var _sfId=null,_sfStop=false;
+  function draw2(){if(!_sfStop)_sfId=requestAnimationFrame(draw2);draw();}
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden){_sfStop=true;if(_sfId){cancelAnimationFrame(_sfId);_sfId=null;}}
+    else{_sfStop=false;_sfId=requestAnimationFrame(draw2);}
+  });
   window.addEventListener("resize",resize);
-  init();draw();
+  init();_sfId=requestAnimationFrame(draw2);
 })();
 /* ════════════════════════════════════════
    NAV DRAWER — GSAP (точно как products.html)
@@ -964,6 +974,15 @@ function updateAuthUI() {
 /* ════════════════════════════════════════
    CART LOAD & RENDER
 ════════════════════════════════════════ */
+let deliverySettings = {};
+
+async function loadDeliverySettings() {
+  try {
+    const r = await fetch('/api/delivery-settings');
+    if (r.ok) deliverySettings = await r.json();
+  } catch {}
+}
+
 async function loadCart() {
   try {
     const r = await fetch('/api/cart', { credentials: 'include' });
@@ -1024,11 +1043,13 @@ function renderCart() {
             <div class="del-opt-icon">🚗</div>
             <div class="del-opt-name">Авто</div>
             <div class="del-opt-price">${priceAuto ? fmt(priceAuto)+' ₽' : 'Уточняйте'}</div>
+            ${(()=>{ const mn=deliverySettings.auto_days_min?.value, mx=deliverySettings.auto_days_max?.value; return (mn||mx)?`<div style="font-size:.68rem;color:var(--text3);margin-top:.15rem">${mn&&mx?mn+'–'+mx+' дн':mn?'от '+mn+' дн':mx?'до '+mx+' дн':''}</div>`:''; })()}
           </button>
           <button class="delivery-opt${item.delivery_type==='air'?' selected':''}" data-delivery-pid="${p.id}" data-delivery-spec="${specId}" data-delivery-type="air">
             <div class="del-opt-icon">✈️</div>
             <div class="del-opt-name">Самолёт</div>
             <div class="del-opt-price">${priceAir ? fmt(priceAir)+' ₽' : 'Уточняйте'}</div>
+            ${(()=>{ const mn=deliverySettings.air_days_min?.value, mx=deliverySettings.air_days_max?.value; return (mn||mx)?`<div style="font-size:.68rem;color:var(--text3);margin-top:.15rem">${mn&&mx?mn+'–'+mx+' дн':mn?'от '+mn+' дн':mx?'до '+mx+' дн':''}</div>`:''; })()}
           </button>
         </div>
       </div>` : '';
@@ -1039,6 +1060,10 @@ function renderCart() {
         <div class="item-cat">${catNames[p.category]||p.category}</div>
         <div class="item-name" title="${p.name}">${p.name}</div>
         ${badge}
+        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.375rem">
+          <span style="font-size:.7rem;padding:.15rem .45rem;border-radius:5px;font-family:var(--font-raj);font-weight:700;${isPreorder?'background:rgba(255,184,48,.1);color:var(--amber)':'background:rgba(0,214,143,.1);color:var(--green)'}">${isPreorder?'⏳ Предзаказ':'✓ В наличии'}</span>
+          ${p.weight_kg?`<span style="font-size:.7rem;color:var(--text3)">⚖️ ${(parseFloat(p.weight_kg)*item.quantity).toFixed(2)} кг</span>`:''}
+        </div>
         <div class="item-qty-row">
           <button class="qty-btn" data-qty-btn="minus" data-pid="${p.id}" data-spec="${specId}" data-max="${maxStock}" ${item.quantity<=1?'disabled':''}>−</button>
           <span class="qty-val">${item.quantity}</span>
@@ -1048,7 +1073,7 @@ function renderCart() {
       </div>
       <div class="item-right">
         <div class="item-total">${fmt(item.item_total)} ₽</div>
-        <div class="item-unit-price">${fmt(p.price)} ₽ × ${item.quantity}</div>
+        <div class="item-unit-price">${fmt(p.base_price || p.price)} ₽ × ${item.quantity}</div>
         <button class="item-remove" data-remove-pid="${p.id}" data-remove-spec="${specId}" title="Удалить">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
         </button>
@@ -1234,11 +1259,47 @@ document.getElementById('checkoutBtn').addEventListener('click', async function(
   }
 });
 
+
 /* ════════════════════════════════════════
-   INIT
+   THEME SYSTEM
 ════════════════════════════════════════ */
-checkAuth();
+(function(){
+  var KEY='import_theme';
+  function applyTheme(t){
+    document.documentElement.setAttribute('data-theme',t);
+    localStorage.setItem(KEY,t);
+    document.querySelectorAll('.theme-seg-btn').forEach(function(b){
+      b.classList.toggle('seg-active', b.getAttribute('data-seg')===t);
+    });
+  }
+  applyTheme(localStorage.getItem(KEY)||'dark');
+  window.importToggleTheme=function(forced){
+    applyTheme(forced||(document.documentElement.getAttribute('data-theme')==='light'?'dark':'light'));
+  };
+  document.addEventListener('DOMContentLoaded',function(){
+    applyTheme(localStorage.getItem(KEY)||'dark');
+    document.querySelectorAll('.theme-seg-btn').forEach(function(b){
+      b.addEventListener('click',function(){ window.importToggleTheme(b.getAttribute('data-seg')); });
+    });
+    document.querySelectorAll('.theme-pill').forEach(function(p){ p.addEventListener('click',window.importToggleTheme); });
+    // ← ГЛАВНЫЙ FIX: запускаем авторизацию и загрузку корзины
+    checkAuth();
+  });
+})();
 </script>
+<div class="cookie-banner" id="cookieBanner" role="dialog" aria-label="Cookie" aria-live="polite">
+  <div class="cookie-inner">
+    <div class="cookie-icon" aria-hidden="true">🍪</div>
+    <div class="cookie-text">
+      <strong>Мы используем Cookie-файлы</strong>
+      <p>Необходимые Cookie обеспечивают работу сайта. С вашего согласия мы также используем аналитические Cookie.</p>
+    </div>
+    <div class="cookie-actions">
+      <button class="btn-ca" id="cookieAccept">Принять все</button>
+      <button class="btn-cd" id="cookieDecline">Только необходимые</button>
+    </div>
+  </div>
+</div>
 <script src="/static/cookie-consent.js" defer></script>
 </body>
 </html>

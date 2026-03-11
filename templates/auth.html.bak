@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="next-url" content="{{ next_url|default('/') }}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fast HUB — Авторизация</title>
+  <title>Fm TuN — Авторизация</title>
   <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png?v=6">
   <link rel="icon" type="image/svg+xml" href="/static/favicon/favicon.svg?v=6">
   <link rel="icon" type="image/png" sizes="512x512" href="/static/favicon/favicon-512x512.png?v=6">
@@ -230,7 +230,7 @@
 <canvas id="starfield"></canvas>
 <header class="header">
   <div class="header-inner">
-    <a href="/" class="logo"><div class="logo-bolt">&#9889;</div><span class="logo-text">Fast <span>HUB</span></span></a>
+    <a href="/" class="logo"><div class="logo-bolt">&#9889;</div><span class="logo-text">Fm <span>TuN</span></span></a>
     <a href="{{ next_url|default('/') }}" class="header-back">← Назад</a>
 
   </div>
@@ -238,7 +238,7 @@
 <div class="auth-page">
   <div class="auth-left">
     <div class="auth-left-inner">
-      <h1 class="auth-heading" data-tabs-fade>Вход в <span class="accent">Fast HUB</span></h1>
+      <h1 class="auth-heading" data-tabs-fade>Вход в <span class="accent">Fm TuN</span></h1>
       <nav class="tabs-nav" data-flip-button="wrap">
         <div data-flip-button="bg"></div>
         <button class="active" data-flip-button="button" data-tabs="button">Вход</button>
@@ -291,7 +291,7 @@
             <div class="lw-item"><span class="lw-text" id="alw0">Качество</span></div>
             <div class="lw-item"><span class="lw-text" id="alw1">Скорость</span></div>
             <div class="lw-item"><span class="lw-text" id="alw2">Гарантия</span></div>
-            <div class="lw-item"><span class="lw-text" id="alw3">Fast HUB</span></div>
+            <div class="lw-item"><span class="lw-text" id="alw3">Fm TuN</span></div>
           </div>
         </div>
         <div id="auth-lw-selector">
@@ -323,7 +323,14 @@ gsap.registerPlugin(Flip, CustomEase);
     }
     requestAnimationFrame(draw);
   }
-  window.addEventListener('resize',resize);init();draw();
+  // Fix ЗАМ-01: пауза starfield при скрытой вкладке
+  var _sfId=null,_sfStop=false;
+  function draw2(){if(!_sfStop)_sfId=requestAnimationFrame(draw2);draw();}
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden){_sfStop=true;if(_sfId){cancelAnimationFrame(_sfId);_sfId=null;}}
+    else{_sfStop=false;_sfId=requestAnimationFrame(draw2);}
+  });
+  window.addEventListener('resize',resize);init();_sfId=requestAnimationFrame(draw2);
 })();
 
 function initFlipButtons(){
@@ -522,7 +529,7 @@ document.addEventListener('DOMContentLoaded',function(){
 </script>
 
 <footer class="auth-footer">
-  <span>&copy; 2025 Fast HUB.</span>
+  <span>&copy; 2025 Fm TuN.</span>
   <div class="auth-footer-links">
     <a href="/terms">Соглашение</a>
     <a href="/privacy-policy">Конфиденциальность</a>

@@ -7,7 +7,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png?v=5">
   <link rel="shortcut icon" href="/static/favicon/favicon.ico?v=5">
   <meta name="theme-color" content="#000000">
-  <title>Документы — Fast HUB</title>
+  <title>Документы — Fm TuN</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style nonce="{{ request.state.csp_nonce }}">
@@ -518,7 +518,7 @@
     <div class="header-inner">
       <a href="/" class="logo">
         <div class="logo-bolt">&#9889;</div>
-        <span class="logo-text">Fast <span>HUB</span></span>
+        <span class="logo-text">Fm <span>TuN</span></span>
       </a>
       <div class="header-actions">
         <a href="/" class="back-btn">← На главную</a>
@@ -583,8 +583,8 @@
       <p class="nav-footer-label" id="navFadeItem1">Контакты</p>
       <div class="nav-socials" id="navFadeItem2">
         <a href="tel:+78001234567" class="nav-social-link">+7 (800) 123-45-67</a>
-        <a href="mailto:info@import.ru" class="nav-social-link">info@import.ru</a>
-        <a href="https://t.me/import_scooter" class="nav-social-link">Telegram</a>
+        <a href="mailto:info@fmtun.ru">info@fmtun.ru</a>
+        <a href="https://t.me/fmtun" class="nav-social-link">Telegram</a>
       </div>
     </div>
   </div>
@@ -660,7 +660,7 @@
             <div class="doc-body">
               <div class="doc-content">
                 <h2>Общие положения</h2>
-                <p>Настоящее Пользовательское соглашение (далее — «Соглашение») регулирует отношения между ИП / ООО «Fast HUB» (далее — «Продавец») и физическим лицом (далее — «Пользователь»), использующим веб-сайт import.ru (далее — «Сайт»).</p>
+                <p>Настоящее Пользовательское соглашение (далее — «Соглашение») регулирует отношения между ИП / ООО «Fm TuN» (далее — «Продавец») и физическим лицом (далее — «Пользователь»), использующим веб-сайт fmtun.ru (далее — «Сайт»).</p>
                 <p>Используя Сайт, вы подтверждаете, что ознакомились с настоящим Соглашением и принимаете его условия в полном объёме.</p>
                 <h2>Предмет соглашения</h2>
                 <p>Продавец предоставляет Пользователю доступ к информационно-торговому сервису, позволяющему просматривать каталог товаров, оформлять заказы и совершать покупки запчастей для электросамокатов.</p>
@@ -676,10 +676,10 @@
                 <h2>Ответственность</h2>
                 <p>Продавец не несёт ответственности за технические перебои, вызванные действиями третьих лиц или обстоятельствами непреодолимой силы. Максимальная ответственность Продавца ограничена суммой конкретного заказа.</p>
                 <h2>Изменение условий</h2>
-                <p>Продавец вправе в одностороннем порядке изменять настоящее Соглашение. Актуальная редакция всегда доступна по адресу: <a href="/terms">import.ru/terms</a>.</p>
+                <p>Продавец вправе в одностороннем порядке изменять настоящее Соглашение. Актуальная редакция всегда доступна по адресу: <a href="/terms">fmtun.ru/terms</a>.</p>
                 <h2>Контакты</h2>
                 <div class="highlight-box">
-                  По вопросам, связанным с настоящим Соглашением: <strong>info@import.ru</strong>
+                  По вопросам, связанным с настоящим Соглашением: <strong><a href="mailto:info@fmtun.ru">info@fmtun.ru</a></strong>
                 </div>
               </div>
             </div>
@@ -699,11 +699,11 @@
 
                 <h2>1. Оператор персональных данных</h2>
                 <p>Оператором персональных данных является:<br>
-                <strong>ИП / ООО «Fast HUB»</strong><br>
+                <strong>ИП / ООО «Fm TuN»</strong><br>
                 Юридический адрес: <mark style="background:rgba(255,200,0,.15);color:#FFD700;padding:.1rem .3rem;border-radius:3px;">[ЮРИДИЧЕСКИЙ АДРЕС]</mark><br>
                 ОГРН / ОГРНИП: <mark style="background:rgba(255,200,0,.15);color:#FFD700;padding:.1rem .3rem;border-radius:3px;">[ОГРН/ОГРНИП]</mark><br>
                 ИНН: <mark style="background:rgba(255,200,0,.15);color:#FFD700;padding:.1rem .3rem;border-radius:3px;">[ИНН]</mark><br>
-                Email: <strong>privacy@import.ru</strong><br>
+                Email: <strong><a href="mailto:privacy@fmtun.ru">privacy@fmtun.ru</a></strong><br>
                 Телефон: <strong>8 (800) 123-45-67</strong></p>
                 <p><mark style="background:rgba(255,200,0,.15);color:#FFD700;padding:.1rem .3rem;border-radius:3px;font-size:.85em;">⚠️ ЗАПОЛНИТЕ ПЕРЕД ЗАПУСКОМ:</mark> Оператор зарегистрирован в реестре операторов персональных данных Роскомнадзора (уведомление № <strong>[НОМЕР УВЕДОМЛЕНИЯ РКН]</strong> от <strong>[ДАТА]</strong>). <em style="font-size:.8em;color:#9AA3B8;">Подайте уведомление на <a href="https://pd.rkn.gov.ru" target="_blank" rel="noopener" style="color:#00D4FF;">pd.rkn.gov.ru</a> до начала обработки данных.</em></p>
 
@@ -754,9 +754,9 @@
                     <em>Срок хранения:</em> до 6 месяцев.
                   </li>
                 </ul>
-                <p><strong>Управление согласием на Cookie:</strong> при первом посещении Сайта отображается баннер с выбором. Вы можете в любой момент отозвать согласие или изменить настройки, нажав кнопку ниже или обратившись по адресу privacy@import.ru.</p>
+                <p><strong>Управление согласием на Cookie:</strong> при первом посещении Сайта отображается баннер с выбором. Вы можете в любой момент отозвать согласие или изменить настройки, нажав кнопку ниже или обратившись по адресу <a href="mailto:privacy@fmtun.ru">privacy@fmtun.ru</a>.</p>
                 <p style="margin-top:.75rem;">
-                  <button onclick="window.cookieConsent && window.cookieConsent.reset()" style="background:rgba(0,212,255,.1);color:#00D4FF;border:1px solid rgba(0,212,255,.3);padding:.5rem 1.25rem;border-radius:6px;cursor:pointer;font-size:.875rem;">
+                  <button id="cookieResetBtn" style="background:rgba(0,212,255,.1);color:#00D4FF;border:1px solid rgba(0,212,255,.3);padding:.5rem 1.25rem;border-radius:6px;cursor:pointer;font-size:.875rem;">
                     ⚙ Изменить настройки Cookie
                   </button>
                 </p>
@@ -792,7 +792,7 @@
                   <li>Обжаловать действия Оператора в Роскомнадзоре (rkn.gov.ru) или в суде.</li>
                 </ul>
                 <div class="highlight-box">
-                  Для реализации своих прав направьте запрос на <strong>privacy@import.ru</strong>. Срок ответа — 10 рабочих дней (ст. 20 ФЗ-152). Запрос должен содержать ФИО, контактные данные и суть обращения.
+                  Для реализации своих прав направьте запрос на <strong><a href="mailto:privacy@fmtun.ru">privacy@fmtun.ru</a></strong>. Срок ответа — 10 рабочих дней (ст. 20 ФЗ-152). Запрос должен содержать ФИО, контактные данные и суть обращения.
                 </div>
 
                 <h2>9. Изменение политики</h2>
@@ -814,8 +814,8 @@
             <div class="doc-body">
               <div class="doc-content">
                 <h2>Общие положения</h2>
-                <p>Настоящий документ является публичной офертой ИП / ООО «Fast HUB» и содержит все существенные условия договора купли-продажи товаров дистанционным способом.</p>
-                <p>Оформление заказа на сайте import.ru является безоговорочным акцептом настоящей оферты.</p>
+                <p>Настоящий документ является публичной офертой ИП / ООО «Fm TuN» и содержит все существенные условия договора купли-продажи товаров дистанционным способом.</p>
+                <p>Оформление заказа на сайте fmtun.ru является безоговорочным акцептом настоящей оферты.</p>
                 <h2>Предмет договора</h2>
                 <p>Продавец обязуется передать Покупателю товар надлежащего качества, а Покупатель — принять и оплатить его на условиях настоящей оферты.</p>
                 <h2>Цены и оплата</h2>
@@ -870,7 +870,7 @@
                 <p>Деньги возвращаются на банковскую карту в течение <strong>10 рабочих дней</strong> с момента получения возвращённого товара и подтверждения его соответствия условиям возврата.</p>
                 <h2>Как оформить возврат</h2>
                 <ol>
-                  <li>Свяжитесь с нами по email: <strong>returns@import.ru</strong></li>
+                  <li>Свяжитесь с нами по email: <strong><a href="mailto:returns@fmtun.ru">returns@fmtun.ru</a></strong></li>
                   <li>Укажите номер заказа и причину возврата.</li>
                   <li>Мы вышлем инструкцию по отправке товара.</li>
                   <li>Отправьте товар на указанный адрес.</li>
@@ -897,7 +897,7 @@
       <div>
         <a href="/" class="logo" style="font-size:1.1rem;letter-spacing:0.08em">
           <div class="logo-bolt">&#9889;</div>
-          <span class="logo-text">Fast <span>HUB</span></span>
+          <span class="logo-text">Fm <span>TuN</span></span>
         </a>
         <p class="footer-brand-desc">Премиум запчасти для электросамокатов. Оригинальные комплектующие с гарантией качества.</p>
       </div>
@@ -923,13 +923,13 @@
         <div class="footer-col-title">Контакты</div>
         <div style="font-family:var(--font-raj);font-size:.875rem;color:var(--text2);line-height:2;letter-spacing:.04em">
           <div>📞 8 (800) 123-45-67</div>
-          <div>✉️ info@import.ru</div>
+          <div>✉️ <a href="mailto:info@fmtun.ru">info@fmtun.ru</a></div>
           <div>🕐 Ежедневно 9:00–21:00</div>
         </div>
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2025 Fast HUB. Все права защищены.</span>
+      <span>© 2025 Fm TuN. Все права защищены.</span>
       <div class="footer-legal">
         <a href="/terms">Соглашение</a>
         <a href="/privacy-policy">Конфиденциальность</a>
@@ -1028,10 +1028,10 @@
     returns: '/returns',
   };
   const pageTitles = {
-    terms:   'Пользовательское соглашение — Fast HUB',
-    privacy: 'Политика конфиденциальности — Fast HUB',
-    offer:   'Договор оферты — Fast HUB',
-    returns: 'Возврат и обмен — Fast HUB',
+    terms:   'Пользовательское соглашение — Fm TuN',
+    privacy: 'Политика конфиденциальности — Fm TuN',
+    offer:   'Договор оферты — Fm TuN',
+    returns: 'Возврат и обмен — Fm TuN',
   };
 
   function activate(docType) {
@@ -1041,7 +1041,7 @@
     const sec = document.getElementById('doc-' + docType);
     if (tab) tab.classList.add('active');
     if (sec) sec.classList.add('active');
-    document.title = pageTitles[docType] || 'Документы — Fast HUB';
+    document.title = pageTitles[docType] || 'Документы — Fm TuN';
   }
 
   tabs.forEach(function(tab) {
@@ -1095,6 +1095,9 @@
     });
     // legacy pill
     document.querySelectorAll('.theme-pill').forEach(function(p){ p.addEventListener('click',window.importToggleTheme); });
+    // Cookie reset button (CSP-safe replacement for inline onclick)
+    var cookieResetBtn = document.getElementById('cookieResetBtn');
+    if (cookieResetBtn) cookieResetBtn.addEventListener('click', function() { if (window.cookieConsent) window.cookieConsent.reset(); });
   });
 })();
 </script>

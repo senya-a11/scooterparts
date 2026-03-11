@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-IMPORT — Генератор SRI-хешей (Fix A-9)
+Fm TuN — Генератор SRI-хешей (Fix A-9)
 =======================================
 Запустите ОДИН РАЗ на машине с доступом в интернет:
 
@@ -76,7 +76,7 @@ def compute_sri(data: bytes, algorithm: str = "sha384") -> str:
 
 def main():
     print("=" * 70)
-    print("IMPORT — SRI Hash Generator")
+    print("Fm TuN — SRI Hash Generator")
     print("=" * 70)
     print()
 

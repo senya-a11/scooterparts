@@ -10,7 +10,7 @@
   <meta name="theme-color" content="#080A0F">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#080A0F">
-  <title>Fast HUB — Премиум запчасти для электросамокатов</title>
+  <title>Fm TuN — Премиум запчасти для электросамокатов</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style nonce="{{ request.state.csp_nonce }}">
@@ -120,7 +120,7 @@
 
     #starfield{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;image-rendering:pixelated}
 
-    .header{position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,.78);backdrop-filter:blur(24px) saturate(1.6);border-bottom:1px solid var(--border);z-index:200}
+    .header{position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,.78);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);z-index:200}
     .header-inner{display:flex;align-items:center;justify-content:space-between;height:64px;gap:1rem}
     .logo{display:flex;align-items:center;gap:10px;font-family:var(--fd);font-size:1.25rem;font-weight:800;color:var(--text);text-decoration:none;letter-spacing:.08em;flex-shrink:0}
     .logo-bolt{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:22px;background:linear-gradient(135deg,#FFD700,#FFA500);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 8px rgba(255,190,0,.55))}
@@ -181,16 +181,15 @@
     /* ── HERO ── */
     .hero{padding-top:9rem;padding-bottom:6rem;position:relative;z-index:1;overflow:hidden}
     .hero-content{text-align:center;max-width:860px;margin:0 auto;position:relative;z-index:1}
-    .hero-orb{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);width:700px;height:500px;background:radial-gradient(ellipse,rgba(0,212,255,.06) 0%,transparent 70%);pointer-events:none;animation:orbPulse 4s ease-in-out infinite}
-    @keyframes orbPulse{0%,100%{opacity:.6;transform:translate(-50%,-55%) scale(1)}50%{opacity:1;transform:translate(-50%,-55%) scale(1.08)}}
+    .hero-orb{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);width:700px;height:500px;background:radial-gradient(ellipse,rgba(0,212,255,.06) 0%,transparent 70%);pointer-events:none;animation:orbPulse 5s ease-in-out infinite;will-change:opacity;}
+    @keyframes orbPulse{0%,100%{opacity:.5}50%{opacity:.9}}
     .hero-eyebrow{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--fr);font-size:.75rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--blue);margin-bottom:1.75rem;padding:.375rem 1.125rem;background:var(--blue-dim);border:1px solid rgba(0,212,255,.2);border-radius:100px;animation:fadeUp .7s var(--ease) both}
     .eyebrow-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue);animation:dotBlink 1.5s ease-in-out infinite}
     @keyframes dotBlink{0%,100%{opacity:1}50%{opacity:.3}}
     .hero-title{font-family:var(--fd);font-size:clamp(2.8rem,6.5vw,5rem);font-weight:800;letter-spacing:-.04em;line-height:1.05;margin-bottom:1.75rem;animation:fadeUp .7s .1s var(--ease) both}
     .hero-title .line{display:block}
-    .hero-title .accent{color:transparent;background:linear-gradient(135deg,#00D4FF 0%,#7ff3ff 50%,#00D4FF 100%);background-size:200% auto;-webkit-background-clip:text;background-clip:text;animation:gradShift 3s ease-in-out infinite}
+    .hero-title .accent{color:transparent;background:linear-gradient(135deg,#00D4FF 0%,#7ff3ff 50%,#00D4FF 100%);-webkit-background-clip:text;background-clip:text;}
     [data-theme="light"] .hero-title .accent{background:linear-gradient(135deg,#E8580A 0%,#ff8c42 50%,#E8580A 100%);-webkit-background-clip:text;background-clip:text;}
-    @keyframes gradShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
     .hero-desc{font-size:1.0625rem;color:var(--text2);max-width:540px;margin:0 auto 2.75rem;line-height:1.75;animation:fadeUp .7s .2s var(--ease) both}
     .hero-actions{display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;animation:fadeUp .7s .3s var(--ease) both}
     .hero-stats{display:flex;align-items:center;justify-content:center;gap:0;margin-top:5rem;padding-top:3rem;border-top:1px solid var(--border);animation:fadeUp .7s .45s var(--ease) both;flex-wrap:wrap}
@@ -409,13 +408,18 @@
     .nav-bg-panel,.nav-overlay,.nav-menu,.menu-button-icon{will-change:transform,opacity;}
     #starfield canvas,.parallax__layer-img{will-change:transform;}
     .hero-title .line,.hero-subtitle,.hero-cta{will-change:transform,opacity;}
+
+    @media(prefers-reduced-motion:reduce){
+      *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}
+      #starfield{display:none!important;}
+    }
 </style>
 <script src="/static/csrf-init.js"></script>
 </head>
 <body>
 <!-- ═══════════════ PRELOADER (once per session) ═══════════════ -->
 <style nonce="{{ request.state.csp_nonce }}">
-  @font-face{font-family:'PP Neue Corp';src:url('https://cdn.prod.website-files.com/6717aac16c9ea22eeef1e79e/6717de2d56e40b921572d2d9_PPNeueCorp-TightUltrabold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:block;}
+  @font-face{font-family:'PP Neue Corp';src:url('https://cdn.prod.website-files.com/6717aac16c9ea22eeef1e79e/6717de2d56e40b921572d2d9_PPNeueCorp-TightUltrabold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
   #import-preloader{position:fixed;inset:0;z-index:99999;background:#080A0F;display:flex;align-items:center;justify-content:center;clip-path:inset(0 0 0 0);}
   #import-preloader::before{content:'';position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px);background-size:60px 60px;}
   .lw-wrap{position:relative;font-size:clamp(38px,9.5vw,120px);height:2.7em;line-height:.9;}
@@ -439,7 +443,7 @@
         <div class="lw-item"><span class="lw-text" id="lw1">Качество</span></div>
         <div class="lw-item"><span class="lw-text" id="lw2">Скорость</span></div>
         <div class="lw-item"><span class="lw-text" id="lw3">Гарантия</span></div>
-        <div class="lw-item"><span class="lw-text" id="lw4">Fast HUB</span></div>
+        <div class="lw-item"><span class="lw-text" id="lw4">Fm TuN</span></div>
       </div>
     </div>
     <div class="lw-fade"></div>
@@ -492,7 +496,15 @@
       });});
     });
   }
-  document.fonts.ready.then(runLoader);
+  var _runLoaderDone=false;
+  function _hideLoaderFallback(){
+    if(_runLoaderDone)return; _runLoaderDone=true;
+    var l=document.getElementById('import-preloader');
+    if(l){l.style.transition='opacity .3s';l.style.opacity='0';setTimeout(function(){l.style.display='none';},320);}
+  }
+  Promise.race([document.fonts.ready, new Promise(function(r){setTimeout(r,400);})])
+    .then(function(){if(!_runLoaderDone){_runLoaderDone=true;runLoader();}});
+  setTimeout(_hideLoaderFallback, 4000);
 })();
 </script>
 <!-- ═══════════════ END PRELOADER ═══════════════ -->
@@ -518,7 +530,7 @@
 
 <header class="header">
   <div class="container"><div class="header-inner">
-    <a href="/" class="logo"><div class="logo-bolt">&#9889;</div><span class="logo-text">Fast <span>HUB</span></span></a>
+    <a href="/" class="logo"><div class="logo-bolt">&#9889;</div><span class="logo-text">Fm <span>TuN</span></span></a>
     <div class="header-actions">
       <!-- Корзина: ведёт на страницу /cart -->
       <a href="/cart" class="btn btn-ghost btn-sm cart-btn-header" id="cartBtn" style="position:relative">&#128722; Корзина<span class="cart-count" id="cartCount">0</span></a>
@@ -628,15 +640,67 @@
   </div>
 </section>
 
+<!-- ── OFFICIAL SUPPLIER BLOCK ── -->
+<section class="section" style="background:rgba(0,212,255,.03);border-top:1px solid rgba(0,212,255,.08);border-bottom:1px solid rgba(0,212,255,.08)">
+  <div class="container">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;max-width:900px;margin:0 auto">
+      <div>
+        <div class="section-tag">Партнёрство</div>
+        <h2 class="section-title" style="margin-bottom:1rem">Официальный поставщик</h2>
+        <p style="font-size:.9375rem;color:var(--text2);line-height:1.75;margin-bottom:1.5rem">
+          Fm TuN — официальный партнёр ведущих производителей запчастей для электросамокатов. Все товары поставляются напрямую с заводов с сертификатами качества и гарантийными документами.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:.75rem">
+          <div style="display:flex;align-items:center;gap:.75rem;font-size:.875rem;color:var(--text2)">
+            <span style="width:28px;height:28px;background:rgba(0,212,255,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.875rem">✓</span>
+            Прямые поставки с производства
+          </div>
+          <div style="display:flex;align-items:center;gap:.75rem;font-size:.875rem;color:var(--text2)">
+            <span style="width:28px;height:28px;background:rgba(0,212,255,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.875rem">✓</span>
+            Сертифицированная продукция
+          </div>
+          <div style="display:flex;align-items:center;gap:.75rem;font-size:.875rem;color:var(--text2)">
+            <span style="width:28px;height:28px;background:rgba(0,212,255,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.875rem">✓</span>
+            Официальная гарантия производителя
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.875rem" id="supplierDocs">
+        <!-- Documents will be added here by admin. Placeholder: -->
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:12px;padding:1.25rem;text-align:center">
+          <div style="font-size:2rem;margin-bottom:.5rem">📋</div>
+          <div style="font-size:.78rem;font-weight:700;color:var(--text)">Сертификат ISO</div>
+          <div style="font-size:.7rem;color:var(--text3);margin-top:.25rem">Документ будет добавлен</div>
+        </div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:12px;padding:1.25rem;text-align:center">
+          <div style="font-size:2rem;margin-bottom:.5rem">🏭</div>
+          <div style="font-size:.78rem;font-weight:700;color:var(--text)">Партнёрский договор</div>
+          <div style="font-size:.7rem;color:var(--text3);margin-top:.25rem">Документ будет добавлен</div>
+        </div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:12px;padding:1.25rem;text-align:center">
+          <div style="font-size:2rem;margin-bottom:.5rem">🛡️</div>
+          <div style="font-size:.78rem;font-weight:700;color:var(--text)">Гарантийные условия</div>
+          <div style="font-size:.7rem;color:var(--text3);margin-top:.25rem">Документ будет добавлен</div>
+        </div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:12px;padding:1.25rem;text-align:center">
+          <div style="font-size:2rem;margin-bottom:.5rem">📦</div>
+          <div style="font-size:.78rem;font-weight:700;color:var(--text)">Лицензия дистрибьютора</div>
+          <div style="font-size:.7rem;color:var(--text3);margin-top:.25rem">Документ будет добавлен</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <footer class="footer">
   <div class="container">
     <div class="footer-grid">
-      <div><a href="/" class="logo" style="font-size:1.1rem"><div class="logo-bolt">&#9889;</div><span class="logo-text">Fast <span>HUB</span></span></a><p class="footer-brand-desc">Премиум запчасти для электросамокатов с гарантией качества.</p></div>
+      <div><a href="/" class="logo" style="font-size:1.1rem"><div class="logo-bolt">&#9889;</div><span class="logo-text">Fm <span>TuN</span></span></a><p class="footer-brand-desc">Премиум запчасти для электросамокатов с гарантией качества.</p></div>
       <div><div class="footer-col-title">Каталог</div><ul class="footer-links"><li><a href="/products">Все товары</a></li><li><a href="/products?category=batteries">Аккумуляторы</a></li><li><a href="/products?category=motors">Моторы</a></li><li><a href="/products?category=electronics">Электроника</a></li></ul></div>
       <div><div class="footer-col-title">Документы</div><ul class="footer-links"><li><a href="/terms">Соглашение</a></li><li><a href="/privacy-policy">Конфиденциальность</a></li><li><a href="/offer">Оферта</a></li><li><a href="/returns">Возврат</a></li></ul></div>
-      <div><div class="footer-col-title">Контакты</div><div class="footer-contact-item">&#128205; <span>Москва</span></div><div class="footer-contact-item">&#128222; <a href="tel:+78001234567">8 (800) 123-45-67</a></div><div class="footer-contact-item">&#9993; <a href="mailto:info@import.ru">info@import.ru</a></div></div>
+      <div><div class="footer-col-title">Контакты</div><div class="footer-contact-item">&#128205; <span>Москва</span></div><div class="footer-contact-item">&#128222; <a href="tel:+78001234567">8 (800) 123-45-67</a></div><div class="footer-contact-item">&#9993; <a href="mailto:info@fmtun.ru">info@fmtun.ru</a></div></div>
     </div>
-    <div class="footer-bottom"><span>&copy; 2025 Fast HUB.</span><div class="footer-legal-links"><a href="/terms">Соглашение</a><a href="/privacy-policy">Конфиденциальность</a></div></div>
+    <div class="footer-bottom"><span>&copy; 2025 Fm TuN.</span><div class="footer-legal-links"><a href="/terms">Соглашение</a><a href="/privacy-policy">Конфиденциальность</a></div></div>
   </div>
 </footer>
 
@@ -689,10 +753,11 @@
 ========================================================= */
 (function(){
   var c=document.getElementById('starfield'),ctx=c.getContext('2d');
-  var W,H,stars=[],COUNT=160,TRAIL=30;
+  // Адаптивное количество звёзд: на мобильных меньше для производительности
+  var COUNT = window.innerWidth < 768 ? 40 : 60, TRAIL = 18;
   function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
   function make(){
-    var a=Math.random()*Math.PI*2,spd=Math.random()*.45+.08;
+    var a=Math.random()*Math.PI*2,spd=Math.random()*.3+.05;
     return{x:Math.random()*W,y:Math.random()*H,
       vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
       r:Math.random()*1.1+.35,alpha:Math.random()*.5+.3,
@@ -717,17 +782,23 @@
         ctx.fillStyle=isLight?'rgba(180,70,0,'+(p2*s.alpha*.4)+')':'rgba(110,205,255,'+(p2*s.alpha*.5)+')';ctx.fill();
       }
       var pulse=Math.sin(s.tw)*.2+.8,al=s.alpha*pulse;
-      var g=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*4);
-      g.addColorStop(0,isLight?'rgba(232,88,10,'+(al*.25)+')':'rgba(0,212,255,'+(al*.3)+')');
-      g.addColorStop(1,isLight?'rgba(232,88,10,0)':'rgba(0,212,255,0)');
-      ctx.beginPath();ctx.arc(s.x,s.y,s.r*4,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+      // Убираем radialGradient — дорогой вызов, заменяем на простой arc
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r*2.5,0,Math.PI*2);
+      ctx.fillStyle=isLight?'rgba(232,88,10,'+(al*.12)+')':'rgba(0,212,255,'+(al*.15)+')';ctx.fill();
       ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
       ctx.fillStyle=isLight?'rgba(200,80,0,'+al+')':'rgba(215,248,255,'+al+')';ctx.fill();
     }
     requestAnimationFrame(draw);
   }
+  // Fix ЗАМ-01: пауза при скрытой вкладке
+  var _sfId=null,_sfStop=false;
+  function draw2(){if(!_sfStop)_sfId=requestAnimationFrame(draw2);draw();}
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden){_sfStop=true;if(_sfId){cancelAnimationFrame(_sfId);_sfId=null;}}
+    else{_sfStop=false;_sfId=requestAnimationFrame(draw2);}
+  });
   window.addEventListener('resize',resize);
-  init();draw();
+  init();_sfId=requestAnimationFrame(draw2);
 })();
 
 /* =========================================================
@@ -1235,10 +1306,10 @@ detModal.onclick=function(e){if(e.target===detModal)detModal.classList.remove('a
     document.querySelectorAll('.theme-seg-btn').forEach(function(b){
       b.addEventListener('click',function(){ window.importToggleTheme(b.getAttribute('data-seg')); });
     });
-    // legacy pill
     document.querySelectorAll('.theme-pill').forEach(function(p){ p.addEventListener('click',window.importToggleTheme); });
   });
 })();
 </script>
+<script src="/static/cookie-consent.js" defer></script>
 </body>
 </html>

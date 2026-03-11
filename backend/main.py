@@ -1,7 +1,7 @@
-# backend/main.py  ·  IMPORT v9.0_SECURED
+# backend/main.py  ·  Fm TuN v18
 import logging
 import re
-from fastapi import FastAPI, HTTPException, Depends, status, Request, Response, UploadFile, File, Form, Query
+from fastapi import FastAPI, HTTPException, Depends, status, Request, Response, UploadFile, File, Form, Query, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -44,6 +44,7 @@ from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response as StarletteResponse
 import time
+from collections import defaultdict
 
 # ========== НАСТРОЙКА ПУТЕЙ ==========
 BASE_DIR = Path(__file__).parent.parent
@@ -176,10 +177,20 @@ class CustomerNoteCreate(BaseModel):
 
 class OrderStatusUpdate(BaseModel):
     status: Literal[
-        'pending', 'confirmed', 'processing', 'shipped',
-        'customs', 'delivered', 'handed_over', 'completed', 'cancelled'
+        'created', 'processing', 'confirmed', 'in_transit',
+        'customs', 'warehouse', 'delivery', 'completed', 'cancelled'
     ]
     delay_note: Optional[str] = Field(None, max_length=500)
+    payment_status: Optional[Literal['pending', 'waiting', 'paid', 'failed', 'not_paid']] = None
+    payment_status: Optional[Literal['not_paid', 'pending', 'waiting', 'paid', 'failed']] = None
+
+
+class TrackNumberUpdate(BaseModel):
+    track_number: Optional[str] = Field(None, max_length=100)
+
+
+class PaymentStatusUpdate(BaseModel):
+    payment_status: Literal['pending', 'waiting', 'paid', 'failed']
 
 
 class ProductCreate(BaseModel):
@@ -446,6 +457,8 @@ class Database:
                     price_preorder_air DECIMAL(10,2),
                     has_specifications BOOLEAN DEFAULT FALSE,
                     specifications_data TEXT,
+                    discount_percent INTEGER DEFAULT 0,
+                    weight_kg DECIMAL(8,3) DEFAULT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
@@ -511,6 +524,107 @@ class Database:
             except Exception as e:
                 print(f"⚠️ Миграция: {e}")
                 pass  # Columns already exist
+
+            # Миграция v18: поле скидки
+            try:
+                await conn.execute('''
+                    ALTER TABLE products ADD COLUMN IF NOT EXISTS discount_percent INTEGER DEFAULT 0
+                ''')
+                await conn.execute('''
+                    ALTER TABLE product_specifications ADD COLUMN IF NOT EXISTS discount_percent INTEGER DEFAULT 0
+                ''')
+                print("✅ Миграция v18: поле discount_percent добавлено")
+            except Exception as e:
+                print(f"⚠️ Миграция v18 (discount_percent): {e}")
+
+            # Миграция v18: поле веса товара
+            try:
+                await conn.execute('''
+                    ALTER TABLE products ADD COLUMN IF NOT EXISTS weight_kg DECIMAL(8,3) DEFAULT NULL
+                ''')
+                await conn.execute('''
+                    ALTER TABLE product_specifications ADD COLUMN IF NOT EXISTS weight_kg DECIMAL(8,3) DEFAULT NULL
+                ''')
+                print("✅ Миграция v18: поле weight_kg добавлено")
+            except Exception as e:
+                print(f"⚠️ Миграция v18 (weight_kg): {e}")
+
+            # Таблица настроек доставки
+            await conn.execute('''
+                CREATE TABLE IF NOT EXISTS delivery_settings (
+                    id SERIAL PRIMARY KEY,
+                    key VARCHAR(100) UNIQUE NOT NULL,
+                    value TEXT,
+                    label VARCHAR(200),
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            # Заполняем дефолтные настройки если их нет
+            default_settings = [
+                ('auto_rate_per_kg', None, 'Авто: ставка за 1 кг (₽)'),
+                ('auto_min_price',   None, 'Авто: минимальная стоимость доставки (₽)'),
+                ('auto_days_min',    None, 'Авто: срок доставки от (дней)'),
+                ('auto_days_max',    None, 'Авто: срок доставки до (дней)'),
+                ('air_rate_per_kg',  None, 'Самолёт: ставка за 1 кг (¥)'),
+                ('air_min_weight',   '1',  'Самолёт: минимальный вес (кг)'),
+                ('air_cny_to_rub',   None, 'Курс ¥ → ₽'),
+                ('air_days_min',     None, 'Самолёт: срок доставки от (дней)'),
+                ('air_days_max',     None, 'Самолёт: срок доставки до (дней)'),
+            ]
+            for key, val, label in default_settings:
+                await conn.execute('''
+                    INSERT INTO delivery_settings (key, value, label)
+                    VALUES ($1, $2, $3)
+                    ON CONFLICT (key) DO NOTHING
+                ''', key, val, label)
+            print("✅ Таблица delivery_settings готова")
+
+            # Миграции v18.2: новые поля заказов
+            try:
+                await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS track_number VARCHAR(100) DEFAULT NULL")
+                await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS delay_note TEXT DEFAULT NULL")
+                print("✅ Миграция v18.2: track_number, delay_note в orders")
+            except Exception as e:
+                print(f"⚠️ Миграция v18.2 (orders): {e}")
+
+            try:
+                await conn.execute("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS order_type VARCHAR(20) DEFAULT 'in_stock'")
+                await conn.execute("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS delivery_type VARCHAR(20) DEFAULT NULL")
+                await conn.execute("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS weight_kg DECIMAL(8,3) DEFAULT NULL")
+                await conn.execute("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS specification_id INTEGER DEFAULT NULL")
+                await conn.execute("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS specification_name VARCHAR(200) DEFAULT NULL")
+                print("✅ Миграция v18.2: поля order_items")
+            except Exception as e:
+                print(f"⚠️ Миграция v18.2 (order_items): {e}")
+
+            try:
+                await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS personal_discount INTEGER DEFAULT 0")
+                await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_manager BOOLEAN DEFAULT FALSE")
+                print("✅ Миграция v18.2: personal_discount, is_manager в users")
+            except Exception as e:
+                print(f"⚠️ Миграция v18.2 (users): {e}")
+
+            # Таблица заявок на установку (ТЗ 15)
+            await conn.execute('''
+                CREATE TABLE IF NOT EXISTS installation_requests (
+                    id SERIAL PRIMARY KEY,
+                    user_id UUID,
+                    product_id INTEGER,
+                    product_name VARCHAR(200),
+                    scooter_model VARCHAR(200),
+                    battery_type VARCHAR(200),
+                    motor_type VARCHAR(200),
+                    other_info TEXT,
+                    full_name VARCHAR(200),
+                    phone VARCHAR(50),
+                    telegram VARCHAR(100),
+                    status VARCHAR(30) DEFAULT 'new',
+                    admin_comment TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            print("✅ Таблица installation_requests готова")
             
             # Спецификации товаров (версии/поколения)
             await conn.execute('''
@@ -527,6 +641,8 @@ class Database:
                     cost_price DECIMAL(10,2),
                     price_preorder_auto DECIMAL(10,2),
                     price_preorder_air DECIMAL(10,2),
+                    discount_percent INTEGER DEFAULT 0,
+                    weight_kg DECIMAL(8,3) DEFAULT NULL,
                     sort_order INTEGER DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
@@ -584,22 +700,31 @@ class Database:
                     ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS specification_id INTEGER
                 ''')
                 # Удаляем старые ограничения уникальности (могут конфликтовать)
+                # Три возможных имени в зависимости от версии схемы
                 await conn.execute('''
                     ALTER TABLE cart_items DROP CONSTRAINT IF EXISTS cart_items_user_id_product_id_key
                 ''')
                 await conn.execute('''
                     ALTER TABLE cart_items DROP CONSTRAINT IF EXISTS cart_items_unique
                 ''')
-                # Fix cart: В PostgreSQL UNIQUE-индекс с NULL не работает через ON CONFLICT.
-                # Решение: два частичных (partial) индекса — один для NULL, другой для NOT NULL.
+                await conn.execute('''
+                    ALTER TABLE cart_items DROP CONSTRAINT IF EXISTS cart_items_user_id_product_id_specification_id_key
+                ''')
+                # Fix БАГ-02 (Вариант C): старый индекс (user_id, product_id) без order_type
+                # не позволяет двум строкам одного товара с разным order_type существовать одновременно.
+                # Новый индекс включает order_type — один товар может быть в корзине и как in_stock,
+                # и как preorder одновременно (две отдельные строки).
+                await conn.execute('''
+                    DROP INDEX IF EXISTS cart_items_uniq_no_spec
+                ''')
                 await conn.execute('''
                     CREATE UNIQUE INDEX IF NOT EXISTS cart_items_uniq_no_spec
-                    ON cart_items(user_id, product_id)
+                    ON cart_items(user_id, product_id, COALESCE(order_type, ''))
                     WHERE specification_id IS NULL
                 ''')
                 await conn.execute('''
                     CREATE UNIQUE INDEX IF NOT EXISTS cart_items_uniq_with_spec
-                    ON cart_items(user_id, product_id, specification_id)
+                    ON cart_items(user_id, product_id, specification_id, COALESCE(order_type, ''))
                     WHERE specification_id IS NOT NULL
                 ''')
             except Exception as e:
@@ -618,7 +743,7 @@ class Database:
             await conn.execute('''
                 CREATE TABLE IF NOT EXISTS orders (
                     id SERIAL PRIMARY KEY,
-                    user_id UUID NOT NULL,
+                    user_id UUID,
                     status VARCHAR(30) DEFAULT 'pending',
                     total_amount DECIMAL(12,2) NOT NULL,
                     delivery_address TEXT,
@@ -684,7 +809,7 @@ class Database:
                 if not await conn.fetchval("SELECT EXISTS(SELECT 1 FROM users WHERE username='demo')"):
                     await conn.execute(
                         "INSERT INTO users (id,username,email,full_name,phone,password_hash,privacy_accepted) VALUES ($1,$2,$3,$4,$5,$6,$7)",
-                        str(uuid4()), 'demo', 'demo@scooterparts.ru', 'Демо Пользователь',
+                        str(uuid4()), 'demo', 'demo@fmtun.ru', 'Демо Пользователь',
                         '+79991234567', hasher.get_password_hash("demo123"), True
                     )
 
@@ -692,7 +817,7 @@ class Database:
             if not await conn.fetchval("SELECT EXISTS(SELECT 1 FROM users WHERE username='admin')"):
                 await conn.execute(
                     "INSERT INTO users (id,username,email,full_name,password_hash,is_admin,privacy_accepted) VALUES ($1,$2,$3,$4,$5,$6,$7)",
-                    str(uuid4()), 'admin', 'admin@scooterparts.ru', 'Администратор',
+                    str(uuid4()), 'admin', 'admin@fmtun.ru', 'Администратор',
                     hasher.get_password_hash(ADMIN_PASSWORD), True, True
                 )
 
@@ -749,7 +874,7 @@ _redoc_url   = "/redoc"  if _environment == "development" else None
 
 # Fix #11: OpenAPI /docs и /redoc закрыты в production
 app = FastAPI(
-    title="IMPORT API v9.0 Secured",
+    title="Fm TuN API v18",
     docs_url=_docs_url,
     redoc_url=_redoc_url,
     openapi_url="/openapi.json" if _environment == "development" else None,
@@ -757,58 +882,92 @@ app = FastAPI(
 )
 
 # ========== SECURITY MIDDLEWARE ==========
+# ВАЖНО: Все 4 middleware объединены в один класс.
+# Несколько стеков BaseHTTPMiddleware вызывали anyio.WouldBlock → anyio.EndOfStream
+# при обращении к любой HTML-странице (GET /cart, /products и т.д.) — ошибка 500.
+# Причина: каждый BaseHTTPMiddleware создаёт внутренний anyio-поток для receive/send,
+# и при вложении они конфликтуют между собой начиная со Starlette 0.21+.
+# Решение: единственный BaseHTTPMiddleware, содержащий всю логику.
 
-class BodySizeLimitMiddleware(BaseHTTPMiddleware):
+class AppMiddleware(BaseHTTPMiddleware):
     """
-    Fix A-8: Ограничение размера тела запроса для JSON-эндпоинтов.
-    Защита от DoS-атак через отправку огромных JSON-тел.
-    Multipart/form-data (загрузка файлов) не ограничивается здесь —
-    для неё ограничение стоит через validate в эндпоинте.
+    Единый middleware, объединяющий:
+      1. Body size limit (защита от DoS через огромные JSON-тела)
+      2. Rate limiting (auth: 10 req/min, global: 120 req/min)
+      3. CSRF validation (X-CSRF-Token для мутирующих /api/* запросов)
+      4. Security headers + CSP nonce (защита от XSS, clickjacking, MIME sniffing)
     """
-    JSON_LIMIT = 512 * 1024  # 512 KB для JSON
+    JSON_LIMIT    = 512 * 1024
+    CSRF_EXEMPT   = {"/api/payment/callback"}
+    AUTH_PATHS    = {"/api/login", "/api/register", "/api/admin/login"}
+    MAX_TRACKED   = 10_000
+
+    def __init__(self, app):
+        super().__init__(app)
+        self.window       = 60
+        self.auth_limit   = int(os.getenv("AUTH_RATE_LIMIT",   "10"))
+        self.global_limit = int(os.getenv("GLOBAL_RATE_LIMIT", "120"))
+        self._buckets: dict = defaultdict(lambda: {"auth": [], "global": []})
+
+    def _clean(self, ts: list, now: float) -> list:
+        return [t for t in ts if now - t < self.window]
 
     async def dispatch(self, request: Request, call_next):
+        # ── 1. Body size limit ──────────────────────────────────────────────
         ct = request.headers.get("content-type", "")
-        if "multipart/form-data" in ct or "application/octet-stream" in ct:
-            return await call_next(request)
-        cl = request.headers.get("content-length")
-        if cl and int(cl) > self.JSON_LIMIT:
-            return JSONResponse(
-                status_code=413,
-                content={"detail": "Тело запроса слишком большое."}
-            )
-        return await call_next(request)
+        if "multipart/form-data" not in ct and "application/octet-stream" not in ct:
+            cl = request.headers.get("content-length")
+            if cl and int(cl) > self.JSON_LIMIT:
+                return JSONResponse(status_code=413, content={"detail": "Тело запроса слишком большое."})
 
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """
-    Fix #10: Заголовки безопасности с nonce-based CSP.
-    Убраны 'unsafe-inline' и 'unsafe-eval' — они фактически отменяли защиту от XSS.
-    Nonce генерируется для каждого запроса и передаётся в шаблоны через request.state.
-    """
-    async def dispatch(self, request: Request, call_next):
-        # Генерируем уникальный nonce для каждого запроса
+        # ── 2. Rate limiting ─────────────────────────────────────────────────
+        if not request.url.path.startswith("/static"):
+            ip  = getattr(request.client, "host", "unknown")
+            now = time.time()
+            if len(self._buckets) > self.MAX_TRACKED:
+                self._buckets.clear()
+            bucket = self._buckets[ip]
+            if request.url.path in self.AUTH_PATHS:
+                bucket["auth"] = self._clean(bucket["auth"], now)
+                if len(bucket["auth"]) >= self.auth_limit:
+                    return JSONResponse(status_code=429,
+                        content={"detail": f"Слишком много попыток входа. Подождите {self.window} секунд."},
+                        headers={"Retry-After": str(self.window)})
+                bucket["auth"].append(now)
+            else:
+                bucket["global"] = self._clean(bucket["global"], now)
+                if len(bucket["global"]) >= self.global_limit:
+                    return JSONResponse(status_code=429,
+                        content={"detail": "Слишком много запросов. Попробуйте позже."},
+                        headers={"Retry-After": str(self.window)})
+                bucket["global"].append(now)
+
+        # ── 3. CSRF validation ───────────────────────────────────────────────
+        if (
+            request.method in ("POST", "PUT", "DELETE", "PATCH")
+            and request.url.path.startswith("/api/")
+            and request.url.path not in self.CSRF_EXEMPT
+        ):
+            cookie_tok  = request.cookies.get("csrf_token")
+            header_tok  = request.headers.get("X-CSRF-Token")
+            if not cookie_tok or not header_tok:
+                return JSONResponse(status_code=403, content={"detail": "CSRF токен отсутствует"})
+            if not hmac.compare_digest(cookie_tok, header_tok):
+                return JSONResponse(status_code=403, content={"detail": "Недействительный CSRF токен"})
+
+        # ── 4. CSP nonce (передаётся в шаблоны через request.state) ─────────
         nonce = secrets.token_urlsafe(16)
-        request.state.csp_nonce = nonce  # Доступен в Jinja2 шаблонах как request.state.csp_nonce
+        request.state.csp_nonce = nonce
 
         response = await call_next(request)
 
-        # CSP: nonce для inline-скриптов/стилей + белый список CDN.
-        # <script nonce="{{ request.state.csp_nonce }}"> — inline
-        # <script src="https://cdnjs..."> — разрешён через домен, nonce не нужен
-        csp_policy = (
+        # ── 5. Security headers ──────────────────────────────────────────────
+        csp = (
             f"default-src 'self'; "
             f"script-src 'self' 'nonce-{nonce}' "
-            f"https://cdnjs.cloudflare.com "
-            f"https://cdn.jsdelivr.net "
-            f"https://unpkg.com; "
-            # 'unsafe-inline' для style-src: inline-стили не выполняют JS, XSS-риска нет.
-            # Нужно для style='' атрибутов и element.style.* (GSAP, карточки, модальные окна).
-            # script-src остаётся строгим (nonce-only) — главная защита от XSS.
-            f"style-src 'self' 'unsafe-inline' "
-            f"https://fonts.googleapis.com; "
-            f"font-src 'self' "
-            f"https://fonts.gstatic.com "
-            f"https://cdn.prod.website-files.com; "
+            f"https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; "
+            f"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            f"font-src 'self' https://fonts.gstatic.com https://cdn.prod.website-files.com; "
             f"img-src 'self' data: https:; "
             f"connect-src 'self'; "
             f"frame-ancestors 'none'; "
@@ -816,137 +975,18 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             f"form-action 'self'; "
             f"object-src 'none';"
         )
-        response.headers["Content-Security-Policy"] = csp_policy
-
-        # X-Frame-Options — защита от clickjacking
-        response.headers["X-Frame-Options"] = "DENY"
-
-        # X-Content-Type-Options — защита от MIME sniffing
-        response.headers["X-Content-Type-Options"] = "nosniff"
-
-        # X-XSS-Protection — для старых браузеров
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-
-        # Referrer-Policy — не передаём путь при переходе на внешние сайты
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-
-        # Permissions-Policy — отключаем ненужные API браузера
-        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=(), payment=()"
-
-        # HSTS — только для HTTPS (продакшн)
+        response.headers["Content-Security-Policy"]   = csp
+        response.headers["X-Frame-Options"]           = "DENY"
+        response.headers["X-Content-Type-Options"]    = "nosniff"
+        response.headers["X-XSS-Protection"]          = "1; mode=block"
+        response.headers["Referrer-Policy"]           = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"]        = "geolocation=(), microphone=(), camera=(), payment=()"
         if request.url.scheme == "https":
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
 
         return response
 
-app.add_middleware(BodySizeLimitMiddleware)
-app.add_middleware(SecurityHeadersMiddleware)
-
-# Fix #7: CSRF Middleware — проверяет токен для всех мутирующих API-запросов.
-# Фронтенд должен: 1) Получить токен GET /api/csrf-token
-#                  2) Отправлять его в заголовке X-CSRF-Token при POST/PUT/DELETE
-class CSRFMiddleware(BaseHTTPMiddleware):
-    """
-    Проверяет CSRF-токен для мутирующих запросов к /api/*.
-    Статические файлы и GET-запросы пропускаются.
-    """
-    EXEMPT_PATHS = {"/api/payment/callback"}  # Webhook от платёжных систем — без CSRF
-
-    async def dispatch(self, request: Request, call_next):
-        if (
-            request.method in ("POST", "PUT", "DELETE", "PATCH")
-            and request.url.path.startswith("/api/")
-            and request.url.path not in self.EXEMPT_PATHS
-        ):
-            cookie_token = request.cookies.get("csrf_token")
-            header_token = request.headers.get("X-CSRF-Token")
-
-            if not cookie_token or not header_token:
-                return JSONResponse(
-                    status_code=403,
-                    content={"detail": "CSRF токен отсутствует"}
-                )
-
-            if not hmac.compare_digest(cookie_token, header_token):
-                return JSONResponse(
-                    status_code=403,
-                    content={"detail": "Недействительный CSRF токен"}
-                )
-
-        return await call_next(request)
-
-app.add_middleware(CSRFMiddleware)
-
-# Fix #9: Улучшенный Rate Limiter с разными лимитами для разных эндпоинтов.
-# Прежняя реализация: общий лимит 100 req/min, не масштабировалась на несколько воркеров,
-# словарь рос без ограничений при большом числе уникальных IP (OOM-риск).
-#
-# Текущая реализация: in-process с ограниченным размером кэша и чёткими лимитами.
-# Для продакшна с несколькими воркерами — замените на slowapi + Redis:
-#   pip install slowapi redis
-#   from slowapi import Limiter; limiter = Limiter(key_func=..., storage_uri="redis://...")
-
-from collections import defaultdict
-
-class RateLimitMiddleware(BaseHTTPMiddleware):
-    """
-    Rate limiter с разными лимитами для auth и прочих эндпоинтов.
-    Автоматически очищает устаревшие записи, не допускает OOM.
-
-    Лимиты (настраиваемые через env):
-      AUTH_RATE_LIMIT   — запросов/мин для /api/login, /api/register (default: 10)
-      GLOBAL_RATE_LIMIT — запросов/мин для остальных эндпоинтов (default: 120)
-    """
-    AUTH_PATHS = {"/api/login", "/api/register", "/api/admin/login"}
-    MAX_TRACKED_IPS = 10_000  # защита от OOM при DDoS
-
-    def __init__(self, app):
-        super().__init__(app)
-        self.window = 60
-        self.auth_limit   = int(os.getenv("AUTH_RATE_LIMIT", "10"))
-        self.global_limit = int(os.getenv("GLOBAL_RATE_LIMIT", "120"))
-        # {ip: {path_type: [timestamps]}}
-        self._buckets: dict = defaultdict(lambda: {"auth": [], "global": []})
-
-    def _clean_old(self, timestamps: list, now: float) -> list:
-        return [t for t in timestamps if now - t < self.window]
-
-    async def dispatch(self, request: Request, call_next):
-        client_ip = getattr(request.client, "host", "unknown")
-        now = time.time()
-
-        # Не отслеживаем статику
-        if request.url.path.startswith("/static"):
-            return await call_next(request)
-
-        # Защита от OOM: если кэш переполнен, сбрасываем старые записи
-        if len(self._buckets) > self.MAX_TRACKED_IPS:
-            self._buckets.clear()
-
-        bucket = self._buckets[client_ip]
-
-        if request.url.path in self.AUTH_PATHS:
-            bucket["auth"] = self._clean_old(bucket["auth"], now)
-            if len(bucket["auth"]) >= self.auth_limit:
-                return JSONResponse(
-                    status_code=429,
-                    content={"detail": f"Слишком много попыток входа. Подождите {self.window} секунд."},
-                    headers={"Retry-After": str(self.window)}
-                )
-            bucket["auth"].append(now)
-        else:
-            bucket["global"] = self._clean_old(bucket["global"], now)
-            if len(bucket["global"]) >= self.global_limit:
-                return JSONResponse(
-                    status_code=429,
-                    content={"detail": "Слишком много запросов. Попробуйте позже."},
-                    headers={"Retry-After": str(self.window)}
-                )
-            bucket["global"].append(now)
-
-        return await call_next(request)
-
-app.add_middleware(RateLimitMiddleware)
+app.add_middleware(AppMiddleware)
 
 # Fix #2: CORS — конкретный список доменов вместо wildcard.
 # Wildcard "*" + credentials=True запрещена по спецификации W3C и создаёт CSRF-риски.
@@ -1244,6 +1284,75 @@ async def get_me(user_id: str = Depends(get_current_user)):
 
 
 # ==========================================
+# ========== DELIVERY SETTINGS API ==========
+# ==========================================
+
+@app.get("/api/delivery-settings")
+async def get_delivery_settings():
+    """Получить все настройки доставки"""
+    try:
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch("SELECT key, value, label FROM delivery_settings ORDER BY id")
+            return {r['key']: {'value': r['value'], 'label': r['label']} for r in rows}
+    except Exception as e:
+        logger.error("Delivery settings error: %s", e)
+        return {}
+
+@app.post("/api/delivery-settings")
+async def update_delivery_settings(request: Request, admin=Depends(verify_admin)):
+    """Обновить настройки доставки (только для admin). При изменении ставок — пересчёт цен по весу (ТЗ §3)."""
+    try:
+        data = await request.json()
+        async with db.pool.acquire() as conn:
+            for key, value in data.items():
+                val = str(value).strip() if value is not None and str(value).strip() else None
+                await conn.execute(
+                    "UPDATE delivery_settings SET value=$1, updated_at=NOW() WHERE key=$2",
+                    val, key
+                )
+
+            # Fix БАГ-07: при изменении ставок — пересчитываем цены предзаказа по весу
+            settings_rows = await conn.fetch("SELECT key, value FROM delivery_settings")
+            settings = {r['key']: r['value'] for r in settings_rows}
+
+            auto_rate = float(settings.get('auto_rate_per_kg') or 0)
+            air_rate  = float(settings.get('air_rate_per_kg') or 0)
+            cny_to_rub = float(settings.get('air_cny_to_rub') or 0)
+
+            if 'auto_rate_per_kg' in data and auto_rate > 0:
+                await conn.execute('''
+                    UPDATE products
+                    SET price_preorder_auto = ROUND(weight_kg * $1)
+                    WHERE weight_kg IS NOT NULL AND weight_kg > 0
+                ''', auto_rate)
+                await conn.execute('''
+                    UPDATE product_specifications ps
+                    SET price_preorder_auto = ROUND(ps.weight_kg * $1)
+                    FROM products p WHERE ps.product_id = p.id
+                    AND ps.weight_kg IS NOT NULL AND ps.weight_kg > 0
+                ''', auto_rate)
+
+            if 'air_rate_per_kg' in data or 'air_cny_to_rub' in data:
+                if air_rate > 0 and cny_to_rub > 0:
+                    await conn.execute('''
+                        UPDATE products
+                        SET price_preorder_air = ROUND(weight_kg * $1 * $2)
+                        WHERE weight_kg IS NOT NULL AND weight_kg > 0
+                    ''', air_rate, cny_to_rub)
+                    await conn.execute('''
+                        UPDATE product_specifications ps
+                        SET price_preorder_air = ROUND(ps.weight_kg * $1 * $2)
+                        FROM products p WHERE ps.product_id = p.id
+                        AND ps.weight_kg IS NOT NULL AND ps.weight_kg > 0
+                    ''', air_rate, cny_to_rub)
+
+        return {"success": True}
+    except Exception as e:
+        logger.error("Update delivery settings error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==========================================
 # ========== CATEGORIES API ==========
 # ==========================================
 
@@ -1380,7 +1489,7 @@ async def get_products(
     try:
         async with db.pool.acquire() as conn:
             # Fix #12: исключаем cost_price из публичного ответа
-            query  = "SELECT id,name,category,price,description,image_url,stock,featured,in_stock,preorder,price_preorder_auto,price_preorder_air,has_specifications,created_at FROM products WHERE 1=1"
+            query  = "SELECT id,name,category,price,description,image_url,stock,featured,in_stock,preorder,price_preorder_auto,price_preorder_air,has_specifications,discount_percent,weight_kg,created_at FROM products WHERE 1=1"
             params = []
             i = 1
             if category:
@@ -1423,7 +1532,7 @@ async def get_product(product_id: int):
             # Если товар имеет спецификации, загружаем их
             if d.get('has_specifications'):
                 specs = await conn.fetch('''
-                    SELECT id, name, price, description, image_url, stock, in_stock, preorder, cost_price, sort_order
+                    SELECT id, name, price, description, image_url, stock, in_stock, preorder, cost_price, discount_percent, sort_order
                     FROM product_specifications
                     WHERE product_id = $1
                     ORDER BY sort_order ASC, id ASC
@@ -1498,10 +1607,12 @@ async def get_cart(user_id: str = Depends(get_current_user)):
                        p.name, p.category, p.price, p.description, p.image_url, p.stock,
                        p.preorder as p_preorder, p.in_stock as p_in_stock,
                        p.price_preorder_auto as p_price_auto, p.price_preorder_air as p_price_air,
+                       p.weight_kg as p_weight_kg,
                        ps.name as spec_name, ps.price as spec_price, ps.stock as spec_stock,
                        ps.image_url as spec_image_url, ps.description as spec_description,
                        ps.preorder as ps_preorder, ps.in_stock as ps_in_stock,
-                       ps.price_preorder_auto as ps_price_auto, ps.price_preorder_air as ps_price_air
+                       ps.price_preorder_auto as ps_price_auto, ps.price_preorder_air as ps_price_air,
+                       ps.weight_kg as ps_weight_kg
                 FROM cart_items ci 
                 JOIN products p ON ci.product_id = p.id
                 LEFT JOIN product_specifications ps ON ci.specification_id = ps.id
@@ -1521,6 +1632,8 @@ async def get_cart(user_id: str = Depends(get_current_user)):
                     is_in_stock = item['ps_in_stock']
                     price_auto = float(item['ps_price_auto']) if item['ps_price_auto'] else None
                     price_air = float(item['ps_price_air']) if item['ps_price_air'] else None
+                    # Fix БАГ-01: вес — сначала у спецификации, потом у товара
+                    weight_kg = float(item['ps_weight_kg']) if item['ps_weight_kg'] else (float(item['p_weight_kg']) if item['p_weight_kg'] else None)
                 else:
                     base_price = float(item['price'])
                     stock = item['stock']
@@ -1531,6 +1644,7 @@ async def get_cart(user_id: str = Depends(get_current_user)):
                     is_in_stock = item['p_in_stock']
                     price_auto = float(item['p_price_auto']) if item['p_price_auto'] else None
                     price_air = float(item['p_price_air']) if item['p_price_air'] else None
+                    weight_kg = float(item['p_weight_kg']) if item['p_weight_kg'] else None
 
                 order_type = item['order_type']
                 delivery_type = item['delivery_type']
@@ -1563,6 +1677,7 @@ async def get_cart(user_id: str = Depends(get_current_user)):
                         "in_stock": is_in_stock,
                         "price_preorder_auto": price_auto,
                         "price_preorder_air": price_air,
+                        "weight_kg": weight_kg,  # Fix БАГ-01
                     },
                     "item_total": item_total
                 })
@@ -1628,24 +1743,47 @@ async def add_to_cart(cart_item: CartUpdate, user_id: str = Depends(get_current_
             order_type = cart_item.order_type if is_preorder else ("in_stock" if is_in_stock else None)
             delivery_type = cart_item.delivery_type if (order_type == "preorder") else None
 
-            # Fix cart NULL: PostgreSQL ON CONFLICT не работает с NULL через обычный индекс.
-            # Используем два частичных индекса (cart_items_uniq_no_spec / cart_items_uniq_with_spec).
+            # Fix БАГ-02/ON CONFLICT: manual upsert — не зависит от наличия индексов на старой БД
             if cart_item.specification_id is not None:
-                await conn.execute('''
-                    INSERT INTO cart_items (user_id, product_id, specification_id, quantity, order_type, delivery_type)
-                    VALUES ($1, $2, $3, $4, $5, $6)
-                    ON CONFLICT (user_id, product_id, specification_id)
-                    WHERE specification_id IS NOT NULL
-                    DO UPDATE SET quantity = EXCLUDED.quantity, order_type = EXCLUDED.order_type, delivery_type = EXCLUDED.delivery_type
-                ''', user_id, cart_item.product_id, cart_item.specification_id, cart_item.quantity, order_type, delivery_type)
+                existing = await conn.fetchrow(
+                    '''SELECT id FROM cart_items
+                       WHERE user_id=$1 AND product_id=$2 AND specification_id=$3
+                       AND COALESCE(order_type,'') = COALESCE($4,'')''',
+                    user_id, cart_item.product_id, cart_item.specification_id, order_type
+                )
+                if existing:
+                    await conn.execute(
+                        'UPDATE cart_items SET quantity=$1, delivery_type=$2 WHERE id=$3',
+                        cart_item.quantity, delivery_type, existing['id']
+                    )
+                else:
+                    await conn.execute(
+                        '''INSERT INTO cart_items
+                           (user_id, product_id, specification_id, quantity, order_type, delivery_type)
+                           VALUES ($1,$2,$3,$4,$5,$6)''',
+                        user_id, cart_item.product_id, cart_item.specification_id,
+                        cart_item.quantity, order_type, delivery_type
+                    )
             else:
-                await conn.execute('''
-                    INSERT INTO cart_items (user_id, product_id, specification_id, quantity, order_type, delivery_type)
-                    VALUES ($1, $2, NULL, $3, $4, $5)
-                    ON CONFLICT (user_id, product_id)
-                    WHERE specification_id IS NULL
-                    DO UPDATE SET quantity = EXCLUDED.quantity, order_type = EXCLUDED.order_type, delivery_type = EXCLUDED.delivery_type
-                ''', user_id, cart_item.product_id, cart_item.quantity, order_type, delivery_type)
+                existing = await conn.fetchrow(
+                    '''SELECT id FROM cart_items
+                       WHERE user_id=$1 AND product_id=$2 AND specification_id IS NULL
+                       AND COALESCE(order_type,'') = COALESCE($3,'')''',
+                    user_id, cart_item.product_id, order_type
+                )
+                if existing:
+                    await conn.execute(
+                        'UPDATE cart_items SET quantity=$1, delivery_type=$2 WHERE id=$3',
+                        cart_item.quantity, delivery_type, existing['id']
+                    )
+                else:
+                    await conn.execute(
+                        '''INSERT INTO cart_items
+                           (user_id, product_id, specification_id, quantity, order_type, delivery_type)
+                           VALUES ($1,$2,NULL,$3,$4,$5)''',
+                        user_id, cart_item.product_id,
+                        cart_item.quantity, order_type, delivery_type
+                    )
             return {"message": "Товар добавлен в корзину"}
     except HTTPException:
         raise
@@ -1755,7 +1893,7 @@ async def clear_cart(user_id: str = Depends(get_current_user)):
 @app.patch("/api/cart/{product_id}/delivery")
 async def update_cart_delivery(
     product_id: int,
-    payload: dict,
+    payload: dict = Body(...),
     user_id: str = Depends(get_current_user)
 ):
     """Изменить тип доставки для товара в корзине (только предзаказ)."""
@@ -1807,9 +1945,12 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(get_curre
     try:
         async with db.pool.acquire() as conn:
             cart_items = await conn.fetch('''
-                SELECT ci.product_id, ci.specification_id, ci.quantity, 
-                       p.name, p.price, p.stock,
-                       ps.name as spec_name, ps.price as spec_price, ps.stock as spec_stock
+                SELECT ci.product_id, ci.specification_id, ci.quantity,
+                       ci.order_type, ci.delivery_type,
+                       p.name, p.price, p.stock, p.preorder as p_preorder,
+                       p.weight_kg as p_weight_kg,
+                       ps.name as spec_name, ps.price as spec_price, ps.stock as spec_stock,
+                       ps.preorder as ps_preorder, ps.weight_kg as ps_weight_kg
                 FROM cart_items ci 
                 JOIN products p ON ci.product_id = p.id
                 LEFT JOIN product_specifications ps ON ci.specification_id = ps.id
@@ -1827,7 +1968,7 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(get_curre
 
             order_id = await conn.fetchval('''
                 INSERT INTO orders (user_id, total_amount, delivery_address, comment, status, payment_status)
-                VALUES ($1, $2, $3, $4, 'pending', 'pending')
+                VALUES ($1, $2, $3, $4, 'created', 'pending')
                 RETURNING id
             ''', user_id, total, order_data.delivery_address, order_data.comment)
 
@@ -1839,36 +1980,46 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(get_curre
                     stock_column = 'product_specifications'
                     stock_id = item['specification_id']
                     current_stock = item['spec_stock']
+                    # Fix БАГ 8: вес — сначала у спецификации, потом у товара
+                    item_weight = item['ps_weight_kg'] or item['p_weight_kg']
                 else:
                     product_name = item['name']
                     price = float(item['price'])
                     stock_column = 'products'
                     stock_id = item['product_id']
                     current_stock = item['stock']
+                    item_weight = item['p_weight_kg']
                 
-                # Проверяем наличие
-                if current_stock < item['quantity']:
+                # Проверяем наличие (пропускаем для предзаказов — stock=0 это норма)
+                is_preorder_item = item['order_type'] == 'preorder'
+                if not is_preorder_item and current_stock < item['quantity']:
                     raise HTTPException(
                         status_code=400, 
                         detail=f"Недостаточно товара '{product_name}' на складе"
                     )
                 
+                # Fix БАГ 8: сохраняем order_type, delivery_type, weight_kg, specification_id
                 await conn.execute('''
-                    INSERT INTO order_items (order_id, product_id, product_name, price, quantity)
-                    VALUES ($1, $2, $3, $4, $5)
-                ''', order_id, item['product_id'], product_name, price, item['quantity'])
+                    INSERT INTO order_items (order_id, product_id, product_name, price, quantity,
+                                            order_type, delivery_type, weight_kg, specification_id)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                ''', order_id, item['product_id'], product_name, price, item['quantity'],
+                     item['order_type'], item['delivery_type'],
+                     float(item_weight) if item_weight else None,
+                     item['specification_id'])
                 
-                # Обновляем остатки
-                if item['specification_id']:
-                    await conn.execute(
-                        "UPDATE product_specifications SET stock = stock - $1 WHERE id = $2",
-                        item['quantity'], item['specification_id']
-                    )
-                else:
-                    await conn.execute(
-                        "UPDATE products SET stock = stock - $1 WHERE id = $2",
-                        item['quantity'], item['product_id']
-                    )
+                # Обновляем остатки (только для товаров в наличии)
+                if not is_preorder_item:
+                    if item['specification_id']:
+                        await conn.execute(
+                            "UPDATE product_specifications SET stock = stock - $1 WHERE id = $2",
+                            item['quantity'], item['specification_id']
+                        )
+                    else:
+                        await conn.execute(
+                            "UPDATE products SET stock = stock - $1 WHERE id = $2",
+                            item['quantity'], item['product_id']
+                        )
 
             await conn.execute("DELETE FROM cart_items WHERE user_id=$1", user_id)
 
@@ -1876,7 +2027,7 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(get_curre
                 "message": "Заказ создан",
                 "order_id": order_id,
                 "total": total,
-                "status": "pending"
+                "status": "created"
             }
     except HTTPException:
         raise
@@ -1937,11 +2088,43 @@ async def get_active_orders_count():
     try:
         async with db.pool.acquire() as conn:
             count = await conn.fetchval(
-                "SELECT COUNT(*) FROM orders WHERE status NOT IN ('delivered','cancelled')"
+                "SELECT COUNT(*) FROM orders WHERE status NOT IN ('completed','cancelled')"
             )
             return {"count": count or 0}
     except Exception as e:
         logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.get("/api/orders/{order_id}/items")
+async def get_user_order_items(order_id: int, user_id: str = Depends(get_current_user)):
+    """Получить позиции заказа пользователя (для tracking.html)"""
+    try:
+        async with db.pool.acquire() as conn:
+            # Убеждаемся что заказ принадлежит текущему пользователю
+            order = await conn.fetchrow(
+                "SELECT id FROM orders WHERE id=$1 AND user_id=$2", order_id, user_id
+            )
+            if not order:
+                raise HTTPException(status_code=404, detail="Заказ не найден")
+            rows = await conn.fetch(
+                """SELECT product_name, quantity, price, order_type, delivery_type,
+                          specification_name, weight_kg
+                   FROM order_items WHERE order_id=$1 ORDER BY id""",
+                order_id
+            )
+            result = []
+            for r in rows:
+                d = dict(r)
+                d['price'] = float(d['price']) if d.get('price') else 0.0
+                if d.get('weight_kg'):
+                    d['weight_kg'] = float(d['weight_kg'])
+                result.append(d)
+            return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Order items error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
@@ -2203,7 +2386,7 @@ async def get_admin_stats(admin=Depends(verify_admin)):
                 },
                 "orders": {
                     "total": await conn.fetchval("SELECT COUNT(*) FROM orders"),
-                    "active": await conn.fetchval("SELECT COUNT(*) FROM orders WHERE status NOT IN ('delivered','cancelled')"),
+                    "active": await conn.fetchval("SELECT COUNT(*) FROM orders WHERE status NOT IN ('completed','cancelled')"),
                     "pending_payment": await conn.fetchval("SELECT COUNT(*) FROM orders WHERE payment_status='pending'"),
                     "revenue": float(await conn.fetchval("SELECT COALESCE(SUM(total_amount),0) FROM orders WHERE payment_status='paid'") or 0),
                 },
@@ -2217,13 +2400,15 @@ async def get_admin_stats(admin=Depends(verify_admin)):
 
 
 @app.get("/api/admin/orders")
-async def get_admin_orders(admin=Depends(verify_admin), status: Optional[str] = None, limit: int = 50):
+async def get_admin_orders(admin=Depends(verify_admin), status: Optional[str] = None, track: Optional[str] = None, limit: int = 50):
     try:
         async with db.pool.acquire() as conn:
-            q = "SELECT o.*, u.username, u.email FROM orders o LEFT JOIN users u ON o.user_id=u.id WHERE 1=1"
+            q = "SELECT o.*, u.username, u.email, u.full_name, u.phone FROM orders o LEFT JOIN users u ON o.user_id=u.id WHERE 1=1"
             params = []
             if status:
                 q += f" AND o.status = ${len(params)+1}"; params.append(status)
+            if track:
+                q += f" AND o.track_number ILIKE ${len(params)+1}"; params.append(f"%{track}%")
             q += f" ORDER BY o.created_at DESC LIMIT ${len(params)+1}"; params.append(limit)
             rows = await conn.fetch(q, *params)
             result = []
@@ -2252,6 +2437,7 @@ async def get_top_customers(admin=Depends(verify_admin), limit: int = 20):
                     u.email,
                     u.full_name,
                     u.phone,
+                    u.personal_discount,
                     COUNT(o.id) as order_count,
                     COALESCE(SUM(o.total_amount), 0) as total_spent,
                     MAX(o.created_at) as last_order_date,
@@ -2259,7 +2445,7 @@ async def get_top_customers(admin=Depends(verify_admin), limit: int = 20):
                 FROM users u
                 LEFT JOIN orders o ON u.id = o.user_id
                 WHERE u.is_admin = FALSE
-                GROUP BY u.id, u.username, u.email, u.full_name, u.phone
+                GROUP BY u.id, u.username, u.email, u.full_name, u.phone, u.personal_discount
                 HAVING COUNT(o.id) > 0
                 ORDER BY total_spent DESC
                 LIMIT $1
@@ -2299,7 +2485,7 @@ async def get_all_customers(admin=Depends(verify_admin)):
                 LEFT JOIN orders o ON u.id = o.user_id
                 LEFT JOIN customer_notes n ON u.id = n.user_id
                 WHERE u.is_admin = FALSE
-                GROUP BY u.id, u.username, u.email, u.full_name, u.phone
+                GROUP BY u.id, u.username, u.email, u.full_name, u.phone, u.personal_discount
                 HAVING COUNT(DISTINCT o.id) > 0
                 ORDER BY total_spent DESC
             ''')
@@ -2386,20 +2572,309 @@ async def update_order_status(order_id: int, body: OrderStatusUpdate, admin=Depe
     delay_note = body.delay_note
     try:
         async with db.pool.acquire() as conn:
-            r = await conn.execute(
-                "UPDATE orders SET status=$1, delay_note=$2, updated_at=NOW() WHERE id=$3",
-                new_status,
-                delay_note if delay_note else None,
-                order_id
-            )
+            if body.payment_status:
+                r = await conn.execute(
+                    "UPDATE orders SET status=$1, delay_note=$2, payment_status=$3, updated_at=NOW() WHERE id=$4",
+                    new_status,
+                    delay_note if delay_note else None,
+                    body.payment_status,
+                    order_id
+                )
+            else:
+                r = await conn.execute(
+                    "UPDATE orders SET status=$1, delay_note=$2, updated_at=NOW() WHERE id=$3",
+                    new_status,
+                    delay_note if delay_note else None,
+                    order_id
+                )
             if r == "UPDATE 0":
                 raise HTTPException(status_code=404, detail="Заказ не найден")
-            return {"message": "Статус обновлён", "status": new_status, "delay_note": delay_note}
+            return {"message": "Статус обновлён", "status": new_status, "delay_note": delay_note, "payment_status": body.payment_status}
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Internal error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.put("/api/admin/orders/{order_id}/track")
+async def update_order_track(order_id: int, body: TrackNumberUpdate, admin=Depends(verify_admin)):
+    """Установить трек-номер заказа"""
+    try:
+        async with db.pool.acquire() as conn:
+            r = await conn.execute(
+                "UPDATE orders SET track_number=$1, updated_at=NOW() WHERE id=$2",
+                body.track_number, order_id
+            )
+            if r == "UPDATE 0":
+                raise HTTPException(status_code=404, detail="Заказ не найден")
+            return {"message": "Трек-номер обновлён", "track_number": body.track_number}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Track update error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/admin/orders/{order_id}/payment-status")
+async def update_order_payment_status(order_id: int, body: PaymentStatusUpdate, admin=Depends(verify_admin)):
+    """Обновить статус оплаты заказа (ЗАМ-05, ТЗ §9.1)"""
+    try:
+        async with db.pool.acquire() as conn:
+            r = await conn.execute(
+                "UPDATE orders SET payment_status=$1, updated_at=NOW() WHERE id=$2",
+                body.payment_status, order_id
+            )
+            if r == "UPDATE 0":
+                raise HTTPException(status_code=404, detail="Заказ не найден")
+            return {"message": "Статус оплаты обновлён", "payment_status": body.payment_status}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Payment status update error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/admin/orders/{order_id}/items")
+async def get_order_items(order_id: int, admin=Depends(verify_admin)):
+    """Получить позиции заказа (для аккордеона)"""
+    try:
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch(
+                """SELECT oi.*, p.weight_kg as product_weight
+                   FROM order_items oi
+                   LEFT JOIN products p ON oi.product_id = p.id
+                   WHERE oi.order_id = $1 ORDER BY oi.id""",
+                order_id
+            )
+            items = []
+            for r in rows:
+                d = dict(r)
+                d['price'] = float(d['price'])
+                if d.get('product_weight'): d['product_weight'] = float(d['product_weight'])
+                if d.get('weight_kg'): d['weight_kg'] = float(d['weight_kg'])
+                items.append(d)
+            return items
+    except Exception as e:
+        logger.error("Order items error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/admin/orders")
+async def create_order_manual(request: Request, admin=Depends(verify_admin)):
+    """Создать заказ вручную в админке (ТЗ 17)"""
+    try:
+        data = await request.json()
+        user_id = data.get('user_id')
+        items = data.get('items', [])
+        comment = data.get('comment', '')
+        address = data.get('address', '')
+        if not items:
+            raise HTTPException(status_code=400, detail="Нет позиций")
+        total = sum(float(i.get('price', 0)) * int(i.get('quantity', 1)) for i in items)
+        async with db.pool.acquire() as conn:
+            order_id = await conn.fetchval(
+                """INSERT INTO orders (user_id, status, total_amount, delivery_address, comment, payment_status)
+                   VALUES ($1, 'created', $2, $3, $4, 'pending') RETURNING id""",
+                user_id, total, address, comment
+            )
+            for item in items:
+                await conn.execute(
+                    """INSERT INTO order_items (order_id, product_id, product_name, price, quantity, order_type, delivery_type, weight_kg)
+                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)""",
+                    order_id,
+                    item.get('product_id') or 0,
+                    item.get('product_name', 'Позиция'),
+                    float(item.get('price', 0)),
+                    int(item.get('quantity', 1)),
+                    item.get('order_type', 'in_stock'),
+                    item.get('delivery_type'),
+                    float(item['weight_kg']) if item.get('weight_kg') else None
+                )
+            return {"success": True, "order_id": order_id, "total": total}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Manual order error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/admin/customers/{user_id}/discount")
+async def set_customer_discount(user_id: str, request: Request, admin=Depends(verify_admin)):
+    """Установить персональную скидку клиенту (ТЗ 16)"""
+    try:
+        data = await request.json()
+        discount = max(0, min(99, int(data.get('discount', 0))))
+        async with db.pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE users SET personal_discount=$1 WHERE id=$2",
+                discount, user_id
+            )
+        return {"success": True, "discount": discount}
+    except Exception as e:
+        logger.error("Discount set error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/admin/users/create")
+async def create_user_manual(request: Request, admin=Depends(verify_admin)):
+    """Создать аккаунт вручную (ТЗ 10.1)"""
+    try:
+        data = await request.json()
+        username = data.get('username', '').strip()
+        email    = data.get('email', '').strip()
+        full_name = data.get('full_name', '').strip()
+        phone    = data.get('phone', '').strip() or None
+        password = data.get('password') or secrets.token_urlsafe(12)
+        if not username or not email:
+            raise HTTPException(status_code=400, detail="Логин и email обязательны")
+        pw_hash = hasher.get_password_hash(password)
+        user_id = str(uuid4())
+        async with db.pool.acquire() as conn:
+            await conn.execute(
+                "INSERT INTO users (id,username,email,full_name,phone,password_hash,privacy_accepted) VALUES ($1,$2,$3,$4,$5,$6,TRUE)",
+                user_id, username, email, full_name or username, phone, pw_hash
+            )
+        return {"success": True, "user_id": user_id, "password": password}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Create user error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Installation Requests (ТЗ 15) ──
+
+@app.post("/api/installation-requests")
+async def create_installation_request(request: Request, user_id: str = Depends(get_current_user)):
+    """Создать заявку на установку"""
+    try:
+        data = await request.json()
+        async with db.pool.acquire() as conn:
+            req_id = await conn.fetchval(
+                """INSERT INTO installation_requests
+                   (user_id, product_id, product_name, scooter_model, battery_type, motor_type, other_info, full_name, phone, telegram)
+                   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id""",
+                user_id,
+                data.get('product_id'),
+                data.get('product_name', ''),
+                data.get('scooter_model', ''),
+                data.get('battery_type', ''),
+                data.get('motor_type', ''),
+                data.get('other_info', ''),
+                data.get('full_name', ''),
+                data.get('phone', ''),
+                data.get('telegram', '')
+            )
+        return {"success": True, "id": req_id}
+    except Exception as e:
+        logger.error("Installation request error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/admin/installation-requests")
+async def get_installation_requests(admin=Depends(verify_admin), status: Optional[str] = None):
+    """Получить заявки на установку"""
+    try:
+        async with db.pool.acquire() as conn:
+            q = """SELECT ir.*, u.username, u.email
+                   FROM installation_requests ir
+                   LEFT JOIN users u ON ir.user_id = u.id
+                   WHERE 1=1"""
+            params = []
+            if status:
+                q += f" AND ir.status = ${len(params)+1}"; params.append(status)
+            q += " ORDER BY ir.created_at DESC"
+            rows = await conn.fetch(q, *params)
+            result = []
+            for r in rows:
+                d = dict(r)
+                if d.get('user_id'): d['user_id'] = str(d['user_id'])
+                if isinstance(d.get('created_at'), datetime): d['created_at'] = d['created_at'].isoformat()
+                result.append(d)
+            return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/admin/installation-requests/{req_id}")
+async def update_installation_request(req_id: int, request: Request, admin=Depends(verify_admin)):
+    """Обновить статус заявки на установку"""
+    try:
+        data = await request.json()
+        async with db.pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE installation_requests SET status=$1, admin_comment=$2, updated_at=NOW() WHERE id=$3",
+                data.get('status', 'new'), data.get('admin_comment'), req_id
+            )
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/admin/crm/export-csv")
+async def export_crm_csv(admin=Depends(verify_admin)):
+    """Экспорт CRM в Excel XLSX (ТЗ §21)"""
+    import io
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+    except ImportError:
+        raise HTTPException(status_code=500, detail="openpyxl не установлен. Выполните: pip install openpyxl")
+    try:
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch('''
+                SELECT u.username, u.email, u.full_name, u.phone,
+                       u.personal_discount,
+                       COUNT(o.id) as order_count,
+                       COALESCE(SUM(o.total_amount), 0) as total_spent,
+                       MAX(o.created_at) as last_order_date
+                FROM users u
+                LEFT JOIN orders o ON u.id = o.user_id
+                WHERE u.is_admin = FALSE
+                GROUP BY u.id, u.username, u.email, u.full_name, u.phone, u.personal_discount
+                ORDER BY total_spent DESC
+            ''')
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "CRM"
+
+        headers = ['Логин','Email','Имя','Телефон','Скидка %','Заказов','Сумма (₽)','Последний заказ']
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="1A1F2E", end_color="1A1F2E", fill_type="solid")
+        for col_idx, h in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_idx, value=h)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal='center')
+
+        for r in rows:
+            last = r['last_order_date']
+            if isinstance(last, datetime): last = last.strftime('%Y-%m-%d')
+            ws.append([
+                r['username'], r['email'], r['full_name'] or '', r['phone'] or '',
+                float(r['personal_discount'] or 0), int(r['order_count']),
+                float(r['total_spent']), last or ''
+            ])
+
+        # Авто-ширина колонок
+        for col in ws.columns:
+            max_len = max((len(str(c.value)) for c in col if c.value), default=10)
+            ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 40)
+
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+
+        from fastapi.responses import Response
+        return Response(
+            content=buf.getvalue(),
+            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            headers={'Content-Disposition': 'attachment; filename="crm_export.xlsx"'}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ==========================================
@@ -2408,55 +2883,30 @@ async def update_order_status(order_id: int, body: OrderStatusUpdate, admin=Depe
 
 async def optimize_image(image_data: bytes, max_size: tuple = (800, 800), quality: int = 75) -> bytes:
     """
-    Оптимизирует изображение для хранения в базе данных (base64)
-    
-    Агрессивная оптимизация:
-    - Уменьшение до 800x800 (вместо 1200x1200)
-    - Качество 75% (вместо 85%)
-    - Это уменьшает размер на ~60-70%
-    
-    Args:
-        image_data: Байты исходного изображения
-        max_size: Максимальный размер (ширина, высота)
-        quality: Качество сжатия JPEG (1-100)
-    
-    Returns:
-        Оптимизированные байты изображения
+    Оптимизирует изображение для хранения в базе данных (base64).
+    PIL-операции выполняются в thread-pool executor — не блокируют event loop.
     """
-    try:
-        # Открываем изображение
-        img = Image.open(io.BytesIO(image_data))
-        
-        # Логируем исходный размер
-        print(f"📸 Original size: {img.size} ({len(image_data)} bytes)")
-        
-        # Конвертируем в RGB если необходимо (для PNG с прозрачностью)
-        if img.mode in ('RGBA', 'LA', 'P'):
-            # Создаем белый фон для прозрачных изображений
-            background = Image.new('RGB', img.size, (255, 255, 255))
-            if img.mode == 'P':
-                img = img.convert('RGBA')
-            background.paste(img, mask=img.split()[-1] if img.mode in ('RGBA', 'LA') else None)
-            img = background
-        elif img.mode != 'RGB':
-            img = img.convert('RGB')
-        
-        # Изменяем размер, сохраняя пропорции
-        img.thumbnail(max_size, Image.Resampling.LANCZOS)
-        print(f"📸 Resized to: {img.size}")
-        
-        # Сохраняем оптимизированное изображение
-        output = io.BytesIO()
-        img.save(output, format='JPEG', quality=quality, optimize=True)
-        optimized_data = output.getvalue()
-        
-        print(f"📸 Optimized size: {len(optimized_data)} bytes (compression: {100 - int(len(optimized_data)/len(image_data)*100)}%)")
-        
-        return optimized_data
-    except Exception as e:
-        # Если оптимизация не удалась, возвращаем оригинал
-        print(f"⚠️ Image optimization failed: {e}, using original")
-        return image_data
+    def _sync_optimize(data: bytes) -> bytes:
+        try:
+            img = Image.open(io.BytesIO(data))
+            if img.mode in ('RGBA', 'LA', 'P'):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                background.paste(img, mask=img.split()[-1] if img.mode in ('RGBA', 'LA') else None)
+                img = background
+            elif img.mode != 'RGB':
+                img = img.convert('RGB')
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            output = io.BytesIO()
+            img.save(output, format='JPEG', quality=quality, optimize=True)
+            return output.getvalue()
+        except Exception as e:
+            logger.warning("Image optimization failed: %s, using original", e)
+            return data
+
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _sync_optimize, image_data)
 
 
 @app.post("/api/admin/products")
@@ -2480,6 +2930,11 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
         preorder = str(form.get("preorder","false")).lower() == "true"
         cost_price_str = str(form.get("cost_price","")).strip()
         cost_price = float(cost_price_str) if cost_price_str else None
+        discount_percent_str = str(form.get("discount_percent","0")).strip()
+        discount_percent = int(float(discount_percent_str)) if discount_percent_str else 0
+        discount_percent = max(0, min(99, discount_percent))
+        weight_kg_str = str(form.get("weight_kg","")).strip()
+        weight_kg = float(weight_kg_str) if weight_kg_str else None
         price_auto_str = str(form.get("price_preorder_auto","")).strip()
         price_preorder_auto = float(price_auto_str) if price_auto_str else None
         price_air_str = str(form.get("price_preorder_air","")).strip()
@@ -2578,9 +3033,9 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
             
             # Создаем товар
             row = await conn.fetchrow('''
-                INSERT INTO products (name,category,price,description,image_url,stock,featured,in_stock,preorder,cost_price,price_preorder_auto,price_preorder_air)
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *
-            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air)
+                INSERT INTO products (name,category,price,description,image_url,stock,featured,in_stock,preorder,cost_price,price_preorder_auto,price_preorder_air,discount_percent,weight_kg)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *
+            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, discount_percent, weight_kg)
             
             product_id = row['id']
             
@@ -2624,10 +3079,15 @@ async def update_product(product_id: int, request: Request, admin=Depends(verify
             preorder = str(form.get("preorder", str(existing.get('preorder', False)))).lower() == "true"
             cost_price_str = str(form.get("cost_price","")).strip()
             cost_price = float(cost_price_str) if cost_price_str else existing.get('cost_price')
+            discount_percent_str = str(form.get("discount_percent","")).strip()
+            discount_percent = int(float(discount_percent_str)) if discount_percent_str else (existing.get('discount_percent') or 0)
+            discount_percent = max(0, min(99, discount_percent))
             price_auto_str = str(form.get("price_preorder_auto","")).strip()
             price_preorder_auto = float(price_auto_str) if price_auto_str else existing.get('price_preorder_auto')
             price_air_str = str(form.get("price_preorder_air","")).strip()
             price_preorder_air = float(price_air_str) if price_air_str else existing.get('price_preorder_air')
+            weight_kg_str = str(form.get("weight_kg","")).strip()
+            weight_kg = float(weight_kg_str) if weight_kg_str else existing.get('weight_kg')
             image_url = str(form.get("image_url","")).strip()
             image_file = form.get("image_file")
 
@@ -2673,8 +3133,8 @@ async def update_product(product_id: int, request: Request, admin=Depends(verify
             await conn.execute('''
                 UPDATE products SET name=$1,category=$2,price=$3,description=$4,
                 image_url=$5,stock=$6,featured=$7,in_stock=$8,preorder=$9,cost_price=$10,
-                price_preorder_auto=$11,price_preorder_air=$12 WHERE id=$13
-            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, product_id)
+                price_preorder_auto=$11,price_preorder_air=$12,discount_percent=$13,weight_kg=$14 WHERE id=$15
+            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, discount_percent, weight_kg, product_id)
 
             return {"success": True, "message": "Товар обновлён"}
     except HTTPException:
@@ -2748,7 +3208,7 @@ async def get_product_specifications(product_id: int):
     try:
         async with db.pool.acquire() as conn:
             specs = await conn.fetch('''
-                SELECT id, name, price, description, image_url, stock, in_stock, preorder, cost_price, sort_order
+                SELECT id, name, price, description, image_url, stock, in_stock, preorder, cost_price, discount_percent, sort_order
                 FROM product_specifications
                 WHERE product_id = $1
                 ORDER BY sort_order ASC, id ASC
@@ -2906,6 +3366,15 @@ async def update_specification(spec_id: int, request: Request, admin=Depends(ver
             image_url = str(form.get("image_url", "")).strip()
             image_file = form.get("image_file")
             sort_order = int(form.get("sort_order", existing['sort_order']))
+            # Fix БАГ 1: сохраняем поля которые раньше игнорировались
+            weight_kg_str = str(form.get("weight_kg", "")).strip()
+            weight_kg = float(weight_kg_str) if weight_kg_str else existing.get('weight_kg')
+            discount_str = str(form.get("discount_percent", "")).strip()
+            discount_percent = max(0, min(99, int(float(discount_str)))) if discount_str else (existing.get('discount_percent') or 0)
+            price_auto_str = str(form.get("price_preorder_auto", "")).strip()
+            price_preorder_auto = float(price_auto_str) if price_auto_str else existing.get('price_preorder_auto')
+            price_air_str = str(form.get("price_preorder_air", "")).strip()
+            price_preorder_air = float(price_air_str) if price_air_str else existing.get('price_preorder_air')
 
             final_image = existing['image_url']
             if image_file and hasattr(image_file, 'filename') and image_file.filename:
@@ -2925,11 +3394,16 @@ async def update_specification(spec_id: int, request: Request, admin=Depends(ver
             elif image_url:
                 final_image = validate_image_url(image_url)  # Fix #5
 
+            # Fix БАГ 1: сохраняем все поля, включая weight_kg, discount_percent, price_preorder
             await conn.execute('''
-                UPDATE product_specifications 
-                SET name=$1, price=$2, description=$3, image_url=$4, stock=$5, in_stock=$6, preorder=$7, cost_price=$8, sort_order=$9
-                WHERE id=$10
-            ''', name, price, desc, final_image, stock, in_stock, preorder, cost_price, sort_order, spec_id)
+                UPDATE product_specifications
+                SET name=$1, price=$2, description=$3, image_url=$4, stock=$5, in_stock=$6,
+                    preorder=$7, cost_price=$8, sort_order=$9,
+                    weight_kg=$10, discount_percent=$11,
+                    price_preorder_auto=$12, price_preorder_air=$13
+                WHERE id=$14
+            ''', name, price, desc, final_image, stock, in_stock, preorder, cost_price, sort_order,
+                 weight_kg, discount_percent, price_preorder_auto, price_preorder_air, spec_id)
 
             return {"success": True, "message": "Спецификация обновлена"}
     except HTTPException:
@@ -3039,7 +3513,7 @@ async def debug_uploads(admin=Depends(verify_admin)):
 
 if __name__ == "__main__":
     print("=" * 70)
-    print("⚡ IMPORT v5.1")
+    print("⚡ Fm TuN v18")
     print("=" * 70)
     print("   http://localhost:8000              — Главная")
     print("   http://localhost:8000/products     — Каталог")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-IMPORT — Автоматический пatcher SRI-хешей
+Fm TuN — Автоматический пatcher SRI-хешей
 ==========================================
 Запустите ОДИН РАЗ локально перед деплоем на Render:
 
@@ -102,7 +102,7 @@ def patch_template(filepath: Path, url: str, sri: str) -> bool:
 
 def main():
     print("=" * 65)
-    print("  IMPORT — SRI Auto-Patcher")
+    print("  Fm TuN — SRI Auto-Patcher")
     print("=" * 65)
     print()
 

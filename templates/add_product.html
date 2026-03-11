@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Favicons - IMPORT Branding -->
+  <!-- Favicons - Fm TuN Branding -->
   <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png?v=5">
   <link rel="icon" type="image/png" sizes="512x512" href="/static/favicon/favicon-512x512.png?v=5">
   <link rel="icon" type="image/png" sizes="192x192" href="/static/favicon/favicon-192x192.png?v=5">
@@ -11,19 +11,19 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png?v=5">
   <link rel="shortcut icon" href="/static/favicon/favicon.ico?v=5">
   <meta name="theme-color" content="#080A0F">
-  <title>IMPORT — Добавить товар</title>
+  <title>Fm TuN — Добавить товар</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style nonce="{{ request.state.csp_nonce }}">
     :root{--bg:#080A0F;--bg-3:#12161E;--surface:#161B24;--border:rgba(255,255,255,.06);--border-hover:rgba(255,255,255,.12);--text:#F0F2F5;--text-2:#8B92A5;--text-3:#4E5568;--accent:#00D4FF;--accent-dim:rgba(0,212,255,.12);--green:#00E5A0;--green-dim:rgba(0,229,160,.12);--red:#FF4757;--red-dim:rgba(255,71,87,.12);--radius:10px;--radius-xl:24px;--font-d:'Syne',sans-serif;--font-b:'DM Sans',sans-serif;--ease:cubic-bezier(.16,1,.3,1)}
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
     .wrap{max-width:680px;margin:0 auto;padding:3rem 1.5rem}
-    .back{display:inline-flex;align-items:center;gap:.5rem;font-size:.875rem;color:var(--text-2);text-decoration:none;margin-bottom:2rem;padding:.5rem .875rem;border:1px solid var(--border);border-radius:var(--radius);transition:all .2s}
+    .back{display:inline-flex;align-items:center;gap:.5rem;font-size:.875rem;color:var(--text2);text-decoration:none;margin-bottom:2rem;padding:.5rem .875rem;border:1px solid var(--border);border-radius:var(--radius);transition:all .2s}
     .back:hover{color:var(--text);border-color:var(--border-hover)}
     h1{font-family:var(--font-d);font-size:1.75rem;font-weight:800;margin-bottom:2rem}
     .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);padding:2rem}
     .form-group{margin-bottom:1.25rem}
-    .form-label{display:block;font-size:.8125rem;font-weight:600;color:var(--text-2);margin-bottom:.5rem;letter-spacing:.04em;text-transform:uppercase}
+    .form-label{display:block;font-size:.8125rem;font-weight:600;color:var(--text2);margin-bottom:.5rem;letter-spacing:.04em;text-transform:uppercase}
     .form-input,.form-select,.form-textarea{width:100%;padding:.75rem 1rem;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-b);font-size:.9375rem;outline:none;transition:all .2s}
     .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
     .form-select{-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238B92A5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .625rem center;background-size:14px;padding-right:2rem;cursor:pointer}
@@ -37,11 +37,11 @@
     .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.875rem 2rem;font-family:var(--font-b);font-size:.9375rem;font-weight:700;border-radius:var(--radius);border:none;cursor:pointer;transition:all .2s}
     .btn-primary{background:var(--accent);color:#080A0F;box-shadow:0 0 20px rgba(0,212,255,.25)}
     .btn-primary:hover{transform:translateY(-1px);box-shadow:0 0 30px rgba(0,212,255,.4)}
-    .btn-ghost{background:transparent;color:var(--text-2);border:1px solid var(--border)}
+    .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
     .msg{padding:.875rem 1.125rem;border-radius:var(--radius);font-size:.875rem;font-weight:500;margin-bottom:1rem;border:1px solid transparent}
     .msg-error{background:var(--red-dim);color:var(--red);border-color:rgba(255,71,87,.2)}
     .msg-success{background:var(--green-dim);color:var(--green);border-color:rgba(0,229,160,.2)}
-    .form-hint{font-size:.75rem;color:var(--text-3);margin-top:.375rem}    /* IMPORT Logo - Lightning bolt effect */
+    .form-hint{font-size:.75rem;color:var(--text3);margin-top:.375rem}    /* Fm TuN Logo - Lightning bolt effect */
     .logo-mark,.admin-logo-mark,.login-mark{
       position:relative;
       overflow:hidden;
@@ -98,6 +98,24 @@
           <input type="number" name="cost_price" class="form-input" placeholder="1500" min="0" step="0.01">
           <div class="form-hint">Видна только в админке</div>
         </div>
+        <div class="form-group">
+          <label class="form-label">Скидка (%)</label>
+          <input type="number" name="discount_percent" class="form-input" placeholder="0" min="0" max="99" step="1" value="0">
+          <div class="form-hint">0 = без скидки. Бейдж «−X%» отобразится на карточке</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Вес (кг)</label>
+          <div style="display:flex;gap:.5rem;align-items:flex-start">
+            <div style="flex:1">
+              <input type="number" name="weight_kg" id="weight_kg" class="form-input" placeholder="1.5" min="0" step="0.001">
+            </div>
+            <button type="button" id="calcDeliveryBtn" class="btn btn-ghost" style="white-space:nowrap;padding:.75rem 1rem;font-size:.8125rem" title="Рассчитать цены доставки по весу">
+              🧮 Рассчитать доставку
+            </button>
+          </div>
+          <div class="form-hint">Вес используется для авторасчёта стоимости доставки предзаказа</div>
+          <div id="deliveryCalcResult" style="display:none;margin-top:.625rem;padding:.625rem .875rem;background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.2);border-radius:var(--radius);font-size:.8125rem;color:var(--accent)"></div>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Хит продаж</label>
@@ -147,12 +165,12 @@
               <input type="file" id="file_0" name="image_file_0" accept=".jpg,.jpeg,.png,.gif,.webp" data-preview-idx="0" style="display:none">
               <div class="upload-placeholder">
                 <div style="font-size:2.5rem;margin-bottom:.5rem">📸</div>
-                <div style="font-size:.875rem;color:var(--text-2)">Основное фото</div>
-                <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP</div>
+                <div style="font-size:.875rem;color:var(--text2)">Основное фото</div>
+                <div style="font-size:.75rem;color:var(--text3);margin-top:.25rem">JPG, PNG, GIF, WebP</div>
               </div>
               <div class="preview-box" style="display:none">
                 <img class="preview-img" src="" alt="">
-                <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name"></div>
+                <div style="font-size:.75rem;color:var(--text3);margin-top:.5rem" class="preview-name"></div>
                 <button type="button" data-remove-img="0" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
               </div>
             </div>
@@ -178,6 +196,56 @@
   const preorderPrices = document.getElementById('preorderPrices');
   preorderCheck.addEventListener('change', function(){
     preorderPrices.style.display = this.checked ? 'block' : 'none';
+  });
+
+  // ── Калькулятор стоимости доставки по весу ──────────────────────────────
+  document.getElementById('calcDeliveryBtn').addEventListener('click', async function() {
+    const weightVal = parseFloat(document.getElementById('weight_kg').value);
+    if (!weightVal || weightVal <= 0) {
+      alert('Введите вес товара (кг) перед расчётом');
+      return;
+    }
+    const btn = this;
+    btn.textContent = '⏳ Загрузка...';
+    btn.disabled = true;
+    try {
+      const r = await fetch('/api/delivery-settings', { credentials: 'include' });
+      if (!r.ok) throw new Error('Ошибка загрузки настроек');
+      const settings = await r.json();
+      const autoRate = parseFloat(settings.auto_rate_per_kg || 0);
+      const airRate  = parseFloat(settings.air_rate_per_kg  || 0);
+      const cnyRub   = parseFloat(settings.air_cny_to_rub   || 0);
+
+      if (!autoRate && !airRate) {
+        document.getElementById('deliveryCalcResult').style.display = 'block';
+        document.getElementById('deliveryCalcResult').textContent = '⚠️ Ставки доставки не настроены. Заполните в разделе «Настройки доставки» в админке.';
+        return;
+      }
+
+      const priceAuto = Math.ceil(weightVal * autoRate);
+      const priceAir  = Math.ceil(weightVal * airRate * cnyRub);
+
+      // Автозаполняем поля цен доставки и показываем блок предзаказа
+      document.getElementById('preorderCheck').checked = true;
+      preorderPrices.style.display = 'block';
+      const autoInput = document.querySelector('input[name="price_preorder_auto"]');
+      const airInput  = document.querySelector('input[name="price_preorder_air"]');
+      if (autoInput) autoInput.value = priceAuto;
+      if (airInput)  airInput.value  = priceAir;
+
+      const resultEl = document.getElementById('deliveryCalcResult');
+      resultEl.style.display = 'block';
+      resultEl.innerHTML = `✅ Рассчитано по весу <b>${weightVal} кг</b>:<br>
+        🚗 Авто: <b>${priceAuto.toLocaleString('ru-RU')} ₽</b> (${autoRate} ₽/кг)<br>
+        ✈️ Авиа: <b>${priceAir.toLocaleString('ru-RU')} ₽</b> (${airRate} ¥/кг × ${cnyRub} ₽/¥)`;
+    } catch(e) {
+      document.getElementById('deliveryCalcResult').style.display = 'block';
+      document.getElementById('deliveryCalcResult').textContent = '❌ ' + e.message;
+      document.getElementById('deliveryCalcResult').style.color = 'var(--red)';
+    } finally {
+      btn.textContent = '🧮 Рассчитать доставку';
+      btn.disabled = false;
+    }
   });
 
   // Доступ защищён на сервере — редирект в /admin если не авторизован
@@ -262,12 +330,12 @@ function addImageUpload() {
         <input type="file" id="file_${newIndex}" name="image_file_${newIndex}" accept=".jpg,.jpeg,.png,.gif,.webp" data-preview-idx="${newIndex}" style="display:none">
         <div class="upload-placeholder">
           <div style="font-size:2.5rem;margin-bottom:.5rem">📸</div>
-          <div style="font-size:.875rem;color:var(--text-2)">Доп. фото ${newIndex + 1}</div>
-          <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP</div>
+          <div style="font-size:.875rem;color:var(--text2)">Доп. фото ${newIndex + 1}</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:.25rem">JPG, PNG, GIF, WebP</div>
         </div>
         <div class="preview-box" style="display:none">
           <img class="preview-img" src="" alt="">
-          <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name"></div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:.5rem" class="preview-name"></div>
           <button type="button" data-remove-img="${newIndex}" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
         </div>
       </div>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Favicons - IMPORT Branding -->
+  <!-- Favicons - Fm TuN Branding -->
   <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png?v=5">
   <link rel="icon" type="image/png" sizes="512x512" href="/static/favicon/favicon-512x512.png?v=5">
   <link rel="icon" type="image/png" sizes="192x192" href="/static/favicon/favicon-192x192.png?v=5">
@@ -11,7 +11,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png?v=5">
   <link rel="shortcut icon" href="/static/favicon/favicon.ico?v=5">
   <meta name="theme-color" content="#080A0F">
-  <title>Admin — IMPORT</title>
+  <title>Admin — Fm TuN</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style nonce="{{ request.state.csp_nonce }}">
     :root {
@@ -41,24 +41,24 @@
     .login-mark{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:24px;position:relative}
     .login-mark::after{content:'⚡';position:absolute;background:linear-gradient(135deg,#FFD700 0%,#FFA500 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 10px rgba(255,215,0,.4))}
     .login-logo span{color:var(--accent)}
-    .login-sub{text-align:center;font-size:.8125rem;color:var(--text-3);margin-bottom:2rem}
+    .login-sub{text-align:center;font-size:.8125rem;color:var(--text3);margin-bottom:2rem}
     .badge-admin{display:inline-flex;align-items:center;gap:.375rem;padding:.25rem .75rem;background:var(--amber-dim);color:var(--amber);border:1px solid rgba(255,176,32,.25);border-radius:100px;font-size:.75rem;font-weight:600;margin:0 auto .5rem;width:fit-content}
 
     .form-group{margin-bottom:1.125rem}
-    .form-label{display:block;font-size:.8125rem;font-weight:600;color:var(--text-2);margin-bottom:.5rem;letter-spacing:.04em;text-transform:uppercase}
+    .form-label{display:block;font-size:.8125rem;font-weight:600;color:var(--text2);margin-bottom:.5rem;letter-spacing:.04em;text-transform:uppercase}
     .form-input,.form-select,.form-textarea{width:100%;padding:.75rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-b);font-size:.9375rem;outline:none;transition:all .2s}
-    .form-input::placeholder,.form-textarea::placeholder{color:var(--text-3)}
+    .form-input::placeholder,.form-textarea::placeholder{color:var(--text3)}
     .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);background:var(--bg-3);box-shadow:0 0 0 3px var(--accent-dim)}
     .form-select{-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238B92A5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .625rem center;background-size:14px;padding-right:2rem;cursor:pointer}
     .form-textarea{resize:vertical;min-height:90px;line-height:1.6}
-    .form-hint{font-size:.75rem;color:var(--text-3);margin-top:.375rem}
+    .form-hint{font-size:.75rem;color:var(--text3);margin-top:.375rem}
 
     .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.625rem 1.25rem;font-family:var(--font-b);font-size:.875rem;font-weight:600;border-radius:var(--radius);border:none;cursor:pointer;text-decoration:none;transition:all .2s;white-space:nowrap}
     .btn-primary{background:var(--accent);color:#080A0F;font-weight:700;box-shadow:0 0 20px var(--accent-glow)}
     .btn-primary:hover{transform:translateY(-1px);box-shadow:0 0 30px rgba(0,212,255,.4)}
     .btn-secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--border-hover)}
     .btn-secondary:hover{background:rgba(255,255,255,.08)}
-    .btn-ghost{background:transparent;color:var(--text-2);border:1px solid var(--border)}
+    .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
     .btn-ghost:hover{color:var(--text);border-color:var(--border-hover)}
     .btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,71,87,.25)}
     .btn-danger:hover{background:rgba(255,71,87,.2)}
@@ -104,14 +104,14 @@
     /* Stats grid */
     .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem}
     .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem}
-    .stat-label{font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:.5rem}
+    .stat-label{font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:.5rem}
     .stat-val{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;letter-spacing:-.01em}
     .stat-val.green{color:var(--green)} .stat-val.accent{color:var(--accent)} .stat-val.amber{color:var(--amber)} .stat-val.red{color:var(--red)}
 
     /* Tables */
     .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
     table{width:100%;border-collapse:collapse}
-    th{padding:.875rem 1rem;background:var(--bg-3);font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);text-align:left;border-bottom:1px solid var(--border)}
+    th{padding:.875rem 1rem;background:var(--bg-3);font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);text-align:left;border-bottom:1px solid var(--border)}
     td{padding:.875rem 1rem;font-size:.875rem;border-bottom:1px solid var(--border);vertical-align:middle}
     tr:last-child td{border-bottom:none}
     .editable-cell{cursor:pointer;transition:background .2s}
@@ -132,7 +132,7 @@
     .cat-emoji-box{width:52px;height:52px;background:var(--bg-3);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.75rem;flex-shrink:0}
     .cat-info{flex:1;min-width:0}
     .cat-name{font-weight:700;font-size:.9375rem}
-    .cat-meta{font-size:.75rem;color:var(--text-3);margin-top:.125rem}
+    .cat-meta{font-size:.75rem;color:var(--text3);margin-top:.125rem}
     .cat-actions{display:flex;gap:.375rem}
     .add-cat-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1.5rem}
     .add-cat-title{font-family:var(--font-d);font-size:1rem;font-weight:700;margin-bottom:1.25rem}
@@ -158,13 +158,23 @@
     .status-delivered{background:var(--green-dim);color:var(--green)}
     .status-cancelled{background:var(--red-dim);color:var(--red)}
 
+    /* Accordion animation */
+    .order-accordion-row{overflow:hidden}
+    .order-accordion-wrap{
+      display:grid;
+      grid-template-rows:0fr;
+      transition:grid-template-rows .28s cubic-bezier(.16,1,.3,1);
+    }
+    .order-accordion-wrap.open{grid-template-rows:1fr}
+    .order-accordion-inner{overflow:hidden}
+
     /* Modal */
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem}
     .modal-overlay.active{display:flex}
     .modal-box{background:var(--bg-3);border:1px solid var(--border-hover);border-radius:var(--radius-xl);padding:2rem;width:100%;max-width:500px;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:fadeUp .3s var(--ease);max-height:90vh;overflow-y:auto}
     .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
     .modal-title{font-family:var(--font-d);font-size:1.125rem;font-weight:700}
-    .modal-close{background:none;border:none;color:var(--text-3);font-size:1.25rem;cursor:pointer;padding:.25rem;transition:color .2s;line-height:1}
+    .modal-close{background:none;border:none;color:var(--text3);font-size:1.25rem;cursor:pointer;padding:.25rem;transition:color .2s;line-height:1}
     .modal-close:hover{color:var(--text)}
 
     /* Toast */
@@ -246,7 +256,7 @@
       background:transparent;
       border:none;
       border-radius:var(--radius);
-      color:var(--text-2);
+      color:var(--text2);
       font-family:var(--font-b);
       font-size:.875rem;
       font-weight:600;
@@ -272,7 +282,7 @@
     
     @media(min-width:769px){
       .mobile-nav-wrapper{display:none !important}
-    }    /* IMPORT Logo - Lightning bolt effect */
+    }    /* Fm TuN Logo - Lightning bolt effect */
     .logo-mark,.admin-logo-mark,.login-mark{
       position:relative;
       overflow:hidden;
@@ -333,7 +343,7 @@
       </div>
       <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.25rem">Войти в панель →</button>
     </form>
-    <p style="text-align:center;margin-top:1rem"><a href="/" style="font-size:.8125rem;color:var(--text-3);text-decoration:none">← На сайт</a></p>
+    <p style="text-align:center;margin-top:1rem"><a href="/" style="font-size:.8125rem;color:var(--text3);text-decoration:none">← На сайт</a></p>
   </div>
 </div>
 
@@ -347,7 +357,7 @@
         </button>
         <div class="admin-logo">
           <div class="admin-logo-mark">⚡</div>
-          <span>Fast <span>HUB</span></span>
+          <span>Fm <span>TuN</span></span>
           <span class="admin-badge">ADMIN</span>
         </div>
       </div>
@@ -360,6 +370,8 @@
         <button class="admin-nav-btn" data-sec="crm">📝 CRM</button>
         <button class="admin-nav-btn" data-sec="add-product">➕ Добавить товар</button>
         <button class="admin-nav-btn" data-sec="add-product-specs">🔧 Со спецами</button>
+        <button class="admin-nav-btn" data-sec="delivery-settings">🚚 Доставка</button>
+        <button class="admin-nav-btn" data-sec="installation">🔧 Установка</button>
       </nav>
       <div class="admin-actions">
         <a href="/" class="btn btn-ghost btn-sm">На сайт ↗</a>
@@ -382,6 +394,8 @@
         <button class="mobile-nav-item" data-sec="crm">📝 CRM</button>
         <button class="mobile-nav-item" data-sec="add-product">➕ Добавить товар</button>
         <button class="mobile-nav-item" data-sec="add-product-specs">🔧 Со спецами</button>
+        <button class="mobile-nav-item" data-sec="delivery-settings">🚚 Доставка</button>
+        <button class="mobile-nav-item" data-sec="installation">🔧 Установка</button>
       </div>
     </div>
   </div>
@@ -409,7 +423,7 @@
       <div class="table-wrap">
         <table>
           <thead><tr><th>Фото</th><th>Название</th><th>Категория</th><th>Цена</th><th>Склад</th><th>Себестоимость</th><th>В наличии</th><th>Предзаказ</th><th>Хит</th><th>Действия</th></tr></thead>
-          <tbody id="productsTableBody"><tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка…</td></tr></tbody>
+          <tbody id="productsTableBody"><tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -462,35 +476,51 @@
       </div>
 
       <div class="cat-grid" id="catGrid">
-        <div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--text-3)">Загрузка…</div>
+        <div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--text3)">Загрузка…</div>
       </div>
     </div>
 
     <!-- ─── ORDERS ─── -->
     <div class="admin-section" id="sec-orders">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.75rem">
         <h2 class="section-title" style="margin-bottom:0">🛒 Заказы</h2>
-        <div style="display:flex;gap:.75rem;align-items:center">
+        <div style="display:flex;gap:.625rem;align-items:center;flex-wrap:wrap">
+          <input type="text" class="form-input" id="orderTrackSearch" placeholder="🔍 Поиск по трек-номеру" style="width:200px">
           <select class="form-select" id="orderStatusFilter" style="width:auto">
-            <option value="">Все заказы</option>
-            <option value="pending">📋 Создан</option>
-            <option value="confirmed">✅ Подтверждён</option>
+            <option value="">Все статусы</option>
+            <option value="created">📋 Создан</option>
             <option value="processing">⚙️ В обработке</option>
-            <option value="shipped">🚚 В пути</option>
+            <option value="confirmed">✅ Подтверждён</option>
+            <option value="in_transit">🚚 В пути</option>
             <option value="customs">🛃 На таможне</option>
-            <option value="delivered">📦 Доставлен</option>
-            <option value="handed_over">🤝 Передан получателю</option>
+            <option value="warehouse">📦 Прибыл на склад</option>
+            <option value="delivery">🤝 Передан в доставку</option>
             <option value="completed">🏁 Завершён</option>
             <option value="cancelled">❌ Отменён</option>
           </select>
           <button class="btn btn-ghost btn-sm" id="reloadOrdersBtn">🔄 Обновить</button>
+          <button class="btn btn-primary btn-sm" id="createOrderManualBtn">➕ Новый заказ</button>
         </div>
       </div>
       <div id="ordersMsg"></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>Клиент</th><th>Сумма</th><th>Статус</th><th>Оплата</th><th>Дата</th><th>Действия</th></tr></thead>
-          <tbody id="ordersTableBody"><tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка…</td></tr></tbody>
+          <thead>
+            <tr>
+              <th style="width:2rem"></th>
+              <th>#</th>
+              <th>Клиент</th>
+              <th>Сумма</th>
+              <th>Статус</th>
+              <th>Оплата</th>
+              <th>Трек</th>
+              <th>Дата</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTableBody">
+            <tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка…</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
@@ -498,7 +528,7 @@
 
     <!-- ─── ORDER STATUS MODAL ─── -->
     <div class="modal-overlay" id="statusModal">
-      <div class="modal-box" style="max-width:500px">
+      <div class="modal-box" style="max-width:520px">
         <div class="modal-header">
           <h3 class="modal-title" id="statusModalTitle">🔄 Статус заказа</h3>
           <button class="modal-close" id="closeStatusModalBtn">✕</button>
@@ -507,25 +537,76 @@
           <div class="form-group">
             <label class="form-label">Новый статус</label>
             <select class="form-select" id="newStatusSelect">
-              <option value="pending">📋 Создан</option>
-              <option value="confirmed">✅ Подтверждён</option>
+              <option value="created">📋 Создан</option>
               <option value="processing">⚙️ В обработке</option>
-              <option value="shipped">🚚 В пути</option>
+              <option value="confirmed">✅ Подтверждён</option>
+              <option value="in_transit">🚚 В пути</option>
               <option value="customs">🛃 На таможне</option>
-              <option value="delivered">📦 Доставлен</option>
-              <option value="handed_over">🤝 Передан получателю</option>
+              <option value="warehouse">📦 Прибыл на склад</option>
+              <option value="delivery">🤝 Передан в доставку</option>
               <option value="completed">🏁 Завершён</option>
               <option value="cancelled">❌ Отменён</option>
             </select>
           </div>
-          <div class="form-group" style="margin-top:1.125rem">
-            <label class="form-label">Уведомление о задержке <span style="color:var(--text-3);text-transform:none;letter-spacing:0;font-weight:400">(необязательно)</span></label>
-            <textarea class="form-textarea" id="delayNoteInput" placeholder="Например: задержка на таможне Москвы, ориентировочная дата — 20 марта 2025." style="min-height:76px"></textarea>
-            <p class="form-hint">Клиент увидит это сообщение на странице «Заказы».</p>
+          <!-- Fix ЗАМ-05: статус оплаты (ТЗ §9.1) -->
+          <div class="form-group" style="margin-top:.875rem">
+            <label class="form-label">Статус оплаты</label>
+            <select class="form-select" id="newPaymentStatusSelect">
+              <option value="not_paid">💔 Не оплачен</option>
+              <option value="waiting">⏳ Ожидает оплаты</option>
+              <option value="paid">💚 Оплачен</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-top:.875rem">
+            <label class="form-label">Трек-номер <span style="color:var(--text3);text-transform:none;letter-spacing:0;font-weight:400">(необязательно)</span></label>
+            <input type="text" class="form-input" id="trackNumberInput" placeholder="Например: RU123456789CN">
+          </div>
+          <div class="form-group" style="margin-top:.875rem">
+            <label class="form-label">Уведомление о задержке <span style="color:var(--text3);text-transform:none;letter-spacing:0;font-weight:400">(необязательно)</span></label>
+            <textarea class="form-textarea" id="delayNoteInput" placeholder="Например: задержка на таможне Москвы, ориентировочная дата — 20 марта 2025." style="min-height:70px"></textarea>
           </div>
           <div style="display:flex;gap:.75rem;margin-top:1.25rem">
             <button class="btn btn-primary" style="flex:1" id="confirmStatusBtn">Сохранить</button>
             <button class="btn btn-ghost" id="cancelStatusBtn">Отмена</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── MANUAL ORDER MODAL ─── -->
+    <div class="modal-overlay" id="manualOrderModal">
+      <div class="modal-box" style="max-width:580px">
+        <div class="modal-header">
+          <h3 class="modal-title">➕ Создать заказ вручную</h3>
+          <button class="modal-close" id="closeManualOrderBtn">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="manualOrderMsg"></div>
+          <div class="form-group">
+            <label class="form-label">Клиент (ID пользователя или оставьте пустым)</label>
+            <input type="text" class="form-input" id="manualOrderUserId" placeholder="UUID клиента (необязательно)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Адрес доставки</label>
+            <input type="text" class="form-input" id="manualOrderAddress" placeholder="Адрес доставки">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Комментарий</label>
+            <textarea class="form-textarea" id="manualOrderComment" style="min-height:56px" placeholder="Комментарий к заказу"></textarea>
+          </div>
+          <div style="font-family:var(--font-d);font-size:.8125rem;font-weight:700;margin:.875rem 0 .5rem">Позиции заказа</div>
+          <div id="manualOrderItems">
+            <div class="manual-item-row" style="display:grid;grid-template-columns:3fr 1fr 1.2fr auto;gap:.5rem;margin-bottom:.5rem">
+              <input type="text" class="form-input" placeholder="Название товара" style="font-size:.8125rem">
+              <input type="number" class="form-input" placeholder="Кол-во" value="1" min="1" style="font-size:.8125rem">
+              <input type="number" class="form-input" placeholder="Цена ₽" min="0" style="font-size:.8125rem">
+              <button class="manual-item-del" style="background:rgba(255,59,92,.12);border:1px solid rgba(255,59,92,.2);color:var(--red);border-radius:7px;padding:.35rem .6rem;cursor:pointer;font-size:.8rem">✕</button>
+            </div>
+          </div>
+          <button id="addManualItemRowBtn" class="btn btn-ghost btn-sm" style="margin-bottom:1rem">+ Добавить позицию</button>
+          <div style="display:flex;gap:.75rem">
+            <button class="btn btn-primary" style="flex:1" id="saveManualOrderBtn">💾 Создать заказ</button>
+            <button class="btn btn-ghost" id="cancelManualOrderBtn">Отмена</button>
           </div>
         </div>
       </div>
@@ -552,7 +633,7 @@
             </tr>
           </thead>
           <tbody id="topClientsTableBody">
-            <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка...</td></tr>
+            <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка...</td></tr>
           </tbody>
         </table>
       </div>
@@ -560,23 +641,30 @@
 
     <!-- ─── CRM WITH NOTES ─── -->
     <div class="admin-section" id="sec-crm">
-      <h2 class="section-title">📝 CRM — Управление клиентами</h2>
-      <p style="color:var(--text-2);margin-bottom:2rem">Добавляйте заметки о клиентах, отслеживайте их активность</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.75rem">
+        <h2 class="section-title" style="margin-bottom:0">📝 CRM — Управление клиентами</h2>
+        <div style="display:flex;gap:.625rem">
+          <button class="btn btn-ghost btn-sm" id="createUserManualBtn">👤 Создать аккаунт</button>
+          <a href="/api/admin/crm/export-csv" class="btn btn-ghost btn-sm" download>📥 Экспорт Excel</a>
+        </div>
+      </div>
+      <p style="color:var(--text2);margin-bottom:1.5rem;font-size:.825rem">Добавляйте заметки, устанавливайте скидки, управляйте клиентами</p>
       
       <div class="table-wrap">
         <table id="crmTable">
           <thead>
             <tr>
               <th>Клиент</th>
+              <th>Контакт</th>
               <th>Заказов</th>
               <th>Общая сумма</th>
+              <th>Скидка</th>
               <th>Последний заказ</th>
-              <th>Заметок</th>
               <th>Действия</th>
             </tr>
           </thead>
           <tbody id="crmTableBody">
-            <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка...</td></tr>
+            <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка...</td></tr>
           </tbody>
         </table>
       </div>
@@ -586,14 +674,50 @@
     <div class="modal-overlay" id="notesModal">
       <div class="modal-box" style="max-width:700px">
         <div class="modal-header">
-          <h3 class="modal-title">📝 Заметки о клиенте: <span id="notesCustomerName"></span></h3>
+          <h3 class="modal-title">📝 Клиент: <span id="notesCustomerName"></span></h3>
           <button class="modal-close" id="closeNotesModalBtn">✕</button>
         </div>
-        <div class="modal-body" style="max-height:500px;overflow-y:auto">
-          <div id="notesList"></div>
-          <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border)">
+        <div class="modal-body">
+          <div id="notesCustomerInfo" style="background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.12);border-radius:10px;padding:.875rem;margin-bottom:1.25rem;font-size:.8125rem;display:none">
+            <div style="display:flex;gap:1.5rem;flex-wrap:wrap">
+              <div><span style="color:var(--text3)">Email:</span> <span id="notesCEmail" style="color:var(--text)">—</span></div>
+              <div><span style="color:var(--text3)">Телефон:</span> <span id="notesCPhone" style="color:var(--text)">—</span></div>
+              <div><span style="color:var(--text3)">ФИО:</span> <span id="notesCFullName" style="color:var(--text)">—</span></div>
+            </div>
+            <div style="margin-top:.875rem;display:flex;align-items:center;gap:.75rem">
+              <span style="color:var(--text2);font-size:.8rem">Персональная скидка:</span>
+              <input type="number" id="notesCDiscount" min="0" max="99" style="width:60px;padding:.3rem .5rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font-mono);font-size:.8125rem;text-align:center">
+              <span style="font-size:.8rem;color:var(--text3)">%</span>
+              <button class="btn btn-ghost btn-xs" id="saveDiscountBtn">💾 Сохранить скидку</button>
+            </div>
+          </div>
+          <div id="notesList" style="max-height:300px;overflow-y:auto"></div>
+          <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border)">
             <textarea id="newNoteText" placeholder="Добавить заметку о клиенте..." style="width:100%;padding:.875rem;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-b);font-size:.875rem;resize:vertical;min-height:80px;margin-bottom:.75rem"></textarea>
             <button class="btn btn-primary" id="saveNoteBtn">💾 Сохранить заметку</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create User Modal -->
+    <div class="modal-overlay" id="createUserModal">
+      <div class="modal-box" style="max-width:480px">
+        <div class="modal-header">
+          <h3 class="modal-title">👤 Создать аккаунт вручную</h3>
+          <button class="modal-close" id="closeCreateUserBtn">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="createUserMsg"></div>
+          <div class="form-group"><label class="form-label">Логин *</label><input type="text" class="form-input" id="cuUsername" placeholder="username"></div>
+          <div class="form-group"><label class="form-label">Email *</label><input type="email" class="form-input" id="cuEmail" placeholder="email@domain.com"></div>
+          <div class="form-group"><label class="form-label">ФИО</label><input type="text" class="form-input" id="cuFullName" placeholder="Иванов Иван Иванович"></div>
+          <div class="form-group"><label class="form-label">Телефон</label><input type="text" class="form-input" id="cuPhone" placeholder="+7 999 000 00 00"></div>
+          <div class="form-group"><label class="form-label">Пароль <span style="color:var(--text3);text-transform:none;font-weight:400">(оставьте пустым — сгенерируется автоматически)</span></label><input type="text" class="form-input" id="cuPassword" placeholder="Пароль"></div>
+          <div style="background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.15);border-radius:8px;padding:.75rem;margin:.875rem 0;font-size:.78rem;color:var(--text2)" id="cuResult" style="display:none"></div>
+          <div style="display:flex;gap:.75rem;margin-top:1rem">
+            <button class="btn btn-primary" style="flex:1" id="saveCreateUserBtn">✅ Создать аккаунт</button>
+            <button class="btn btn-ghost" id="cancelCreateUserBtn">Отмена</button>
           </div>
         </div>
       </div>
@@ -669,12 +793,12 @@
                   <input type="file" id="imageFileRegular_0" name="image_file_0" accept=".jpg,.jpeg,.png,.gif,.webp" data-preview-regular="0" style="display:none">
                   <div class="upload-placeholder-multi">
                     <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
-                    <div style="font-size:.875rem;color:var(--text-2)">Основное фото</div>
-                    <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
+                    <div style="font-size:.875rem;color:var(--text2)">Основное фото</div>
+                    <div style="font-size:.75rem;color:var(--text3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
                   </div>
                   <div class="img-preview-multi" style="display:none">
                     <img class="preview-img-multi" src="" alt="Preview">
-                    <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name-multi"></div>
+                    <div style="font-size:.75rem;color:var(--text3);margin-top:.5rem" class="preview-name-multi"></div>
                     <button type="button" data-remove-regular="0" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
                   </div>
                 </div>
@@ -764,12 +888,12 @@
                   <input type="file" id="imageFileSpecs_0" name="image_file_0" accept=".jpg,.jpeg,.png,.gif,.webp" data-preview-specs="0" style="display:none">
                   <div class="upload-placeholder-multi">
                     <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
-                    <div style="font-size:.875rem;color:var(--text-2)">Основное фото</div>
-                    <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
+                    <div style="font-size:.875rem;color:var(--text2)">Основное фото</div>
+                    <div style="font-size:.75rem;color:var(--text3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
                   </div>
                   <div class="img-preview-multi" style="display:none">
                     <img class="preview-img-multi" src="" alt="Preview">
-                    <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name-multi"></div>
+                    <div style="font-size:.75rem;color:var(--text3);margin-top:.5rem" class="preview-name-multi"></div>
                     <button type="button" data-remove-specs="0" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
                   </div>
                 </div>
@@ -855,12 +979,12 @@
                   <input type="file" id="imageFileSpec_0" name="image_file_0" accept=".jpg,.jpeg,.png,.gif,.webp" data-preview-spec="0" style="display:none">
                   <div class="upload-placeholder-multi">
                     <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
-                    <div style="font-size:.875rem;color:var(--text-2)">Основное фото версии</div>
-                    <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
+                    <div style="font-size:.875rem;color:var(--text2)">Основное фото версии</div>
+                    <div style="font-size:.75rem;color:var(--text3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
                   </div>
                   <div class="img-preview-multi" style="display:none">
                     <img class="preview-img-multi" src="" alt="Preview">
-                    <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name-multi"></div>
+                    <div style="font-size:.75rem;color:var(--text3);margin-top:.5rem" class="preview-name-multi"></div>
                     <button type="button" data-remove-spec="0" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
                   </div>
                 </div>
@@ -899,8 +1023,140 @@
         <div id="addedSpecsList" style="margin-top:2rem;padding-top:2rem;border-top:1px solid var(--border)">
           <h4 style="font-weight:700;margin-bottom:1rem">Добавленные спецификации:</h4>
           <div id="specsListContent">
-            <p style="color:var(--text-3);font-size:.875rem">Пока не добавлено ни одной спецификации</p>
+            <p style="color:var(--text3);font-size:.875rem">Пока не добавлено ни одной спецификации</p>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── INSTALLATION REQUESTS ─── -->
+    <div class="admin-section" id="sec-installation">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem">
+        <h2 class="section-title" style="margin-bottom:0">🔧 Заявки на установку</h2>
+        <select class="form-select" id="installationStatusFilter" style="width:auto">
+          <option value="">Все заявки</option>
+          <option value="new">🆕 Новые</option>
+          <option value="in_progress">⚙️ В работе</option>
+          <option value="completed">✅ Выполнены</option>
+          <option value="cancelled">❌ Отменены</option>
+        </select>
+      </div>
+      <div id="installationMsg"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Товар</th><th>Самокат</th><th>Клиент</th><th>Контакт</th><th>Статус</th><th>Дата</th><th>Действия</th></tr>
+          </thead>
+          <tbody id="installationTableBody">
+            <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Installation Request Detail Modal -->
+    <div class="modal-overlay" id="installationModal">
+      <div class="modal-box" style="max-width:560px">
+        <div class="modal-header">
+          <h3 class="modal-title">🔧 Заявка на установку #<span id="instModalId"></span></h3>
+          <button class="modal-close" id="closeInstModalBtn">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="instModalInfo" style="font-size:.8125rem;line-height:1.8;margin-bottom:1rem;padding:.875rem;background:rgba(255,255,255,.03);border-radius:8px"></div>
+          <div class="form-group">
+            <label class="form-label">Статус заявки</label>
+            <select class="form-select" id="instStatusSelect">
+              <option value="new">🆕 Новая</option>
+              <option value="in_progress">⚙️ В работе</option>
+              <option value="completed">✅ Выполнена</option>
+              <option value="cancelled">❌ Отменена</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-top:.875rem">
+            <label class="form-label">Комментарий менеджера</label>
+            <textarea class="form-textarea" id="instCommentInput" style="min-height:70px" placeholder="Комментарий для менеджера…"></textarea>
+          </div>
+          <div style="display:flex;gap:.75rem;margin-top:1rem">
+            <button class="btn btn-primary" style="flex:1" id="saveInstBtn">💾 Сохранить</button>
+            <button class="btn btn-ghost" id="cancelInstBtn">Отмена</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── DELIVERY SETTINGS ─── -->
+    <div class="admin-section" id="sec-delivery-settings">
+      <h2 class="section-title">🚚 Настройки доставки</h2>
+      <div id="deliverySettingsMsg"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:900px">
+
+        <!-- Авто доставка -->
+        <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem">
+          <div style="font-family:var(--font-d);font-size:1rem;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+            🚗 Авто-доставка
+          </div>
+          <div class="form-group" style="margin-bottom:.875rem">
+            <label class="form-label">Ставка за 1 кг (₽)</label>
+            <input type="number" class="form-input delivery-field" data-key="auto_rate_per_kg" placeholder="Например: 800" min="0" step="0.01">
+            <div class="form-hint">Цена = вес × ставка</div>
+          </div>
+          <div class="form-group" style="margin-bottom:.875rem">
+            <label class="form-label">Минимальная стоимость (₽)</label>
+            <input type="number" class="form-input delivery-field" data-key="auto_min_price" placeholder="Например: 1500" min="0" step="0.01">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+            <div class="form-group">
+              <label class="form-label">Срок от (дней)</label>
+              <input type="number" class="form-input delivery-field" data-key="auto_days_min" placeholder="30" min="1" step="1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Срок до (дней)</label>
+              <input type="number" class="form-input delivery-field" data-key="auto_days_max" placeholder="60" min="1" step="1">
+            </div>
+          </div>
+        </div>
+
+        <!-- Авиа доставка -->
+        <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem">
+          <div style="font-family:var(--font-d);font-size:1rem;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+            ✈️ Авиа-доставка
+          </div>
+          <div class="form-group" style="margin-bottom:.875rem">
+            <label class="form-label">Ставка за 1 кг (¥)</label>
+            <input type="number" class="form-input delivery-field" data-key="air_rate_per_kg" placeholder="Например: 3000" min="0" step="0.01">
+            <div class="form-hint">Мин. вес — 1 кг</div>
+          </div>
+          <div class="form-group" style="margin-bottom:.875rem">
+            <label class="form-label">Курс ¥ → ₽</label>
+            <input type="number" class="form-input delivery-field" data-key="air_cny_to_rub" placeholder="Например: 13.5" min="0" step="0.01">
+            <div class="form-hint">Цена (₽) = вес × ставка(¥) × курс</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+            <div class="form-group">
+              <label class="form-label">Срок от (дней)</label>
+              <input type="number" class="form-input delivery-field" data-key="air_days_min" placeholder="7" min="1" step="1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Срок до (дней)</label>
+              <input type="number" class="form-input delivery-field" data-key="air_days_max" placeholder="14" min="1" step="1">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:1.25rem;display:flex;gap:.75rem;align-items:center">
+        <button class="btn btn-primary" id="saveDeliverySettingsBtn">💾 Сохранить настройки</button>
+        <span style="font-size:.8125rem;color:var(--text2)" id="deliverySaveStatus"></span>
+      </div>
+
+      <div style="margin-top:1.5rem;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:1rem;max-width:900px">
+        <div style="font-size:.8125rem;color:var(--text2);line-height:1.7">
+          <strong>Формулы расчёта:</strong><br>
+          🚗 Авто: <code>Цена = вес_кг × ставка_₽</code> (не меньше минимума)<br>
+          ✈️ Авиа: <code>Цена = max(вес_кг, 1) × ставка_¥ × курс_¥</code><br>
+          <span style="color:var(--text3)">Если поля пустые — цена рассчитывается вручную. Вес указывается у каждого товара.</span>
         </div>
       </div>
     </div>
@@ -962,6 +1218,10 @@
             <option value="false">Нет</option><option value="true">⭐ Да</option>
           </select>
         </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">⚖️ Вес (кг) <span style="color:var(--text3);text-transform:none;letter-spacing:0;font-weight:400;font-size:.75rem">— для расчёта стоимости доставки предзаказа</span></label>
+        <input type="number" name="weight_kg" class="form-input" id="editProductWeight" placeholder="1.500" min="0" step="0.001">
       </div>
       <div class="form-group">
         <label class="form-label">По предзаказу</label>
@@ -1080,6 +1340,7 @@
     if (name === 'top-clients') loadTopClients();
     if (name === 'crm') loadCRM();
     if (name === 'add-product') loadCategoriesForSelect();
+    if (name === 'installation') loadInstallationRequests();
   }
 
   // ── Wire status modal buttons ──
@@ -1097,7 +1358,7 @@
   // ── Dashboard ──
   async function loadDashboard() {
     const statsGrid = document.getElementById('statsGrid');
-    statsGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--text-3)">Загрузка статистики...</div>';
+    statsGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--text3)">Загрузка статистики...</div>';
     
     try {
       console.log('🔄 Загрузка статистики...');
@@ -1142,7 +1403,7 @@
 
   function renderCatGrid(cats) {
     const grid = document.getElementById('catGrid');
-    if (!cats.length) { grid.innerHTML = '<div style="text-align:center;color:var(--text-3);padding:2rem">Категорий нет</div>'; return; }
+    if (!cats.length) { grid.innerHTML = '<div style="text-align:center;color:var(--text3);padding:2rem">Категорий нет</div>'; return; }
     grid.innerHTML = cats.map(c => `
       <div class="cat-card">
         <div class="cat-emoji-box">${c.emoji}</div>
@@ -1230,7 +1491,7 @@
   // ── Products ──
   async function loadProducts() {
     const tbody = document.getElementById('productsTableBody');
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка товаров...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка товаров...</td></tr>';
     
     try {
       console.log('🔄 Загрузка товаров...');
@@ -1252,7 +1513,7 @@
       }
       
       const catMap = Object.fromEntries(categories.map(c => [c.slug, `${c.emoji} ${c.name}`]));
-      if (!products.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-3)">Товаров нет</td></tr>'; return; }
+      if (!products.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text3)">Товаров нет</td></tr>'; return; }
       tbody.innerHTML = products.map(p => {
         // П.4 - Улучшенная проверка изображений
         const hasValidImage = p.image_url && p.image_url.trim() && 
@@ -1267,7 +1528,7 @@
         }
         
         const imgCell = hasValidImage
-          ? `<div class="product-img-cell"><img src="${p.image_url}" alt="${p.name}" onerror="console.error('❌ Ошибка загрузки'); this.parentElement.innerHTML='${getCatIcon(p.category)}'"></div>`
+          ? `<div class="product-img-cell"><img src="${p.image_url}" alt="${p.name}" data-fallback-icon="${encodeURIComponent(getCatIcon(p.category))}"></div>`
           : `<div class="product-img-cell">${getCatIcon(p.category)}</div>`;
         return `<tr>
           <td>${imgCell}</td>
@@ -1415,12 +1676,12 @@
         <input type="file" id="imageFileRegular_${newIndex}" name="image_file_${newIndex}" accept=".jpg,.jpeg,.png,.gif,.webp" data-preview-regular="${newIndex}" style="display:none">
         <div class="upload-placeholder-multi">
           <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
-          <div style="font-size:.875rem;color:var(--text-2)">Доп. фото ${newIndex + 1}</div>
-          <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
+          <div style="font-size:.875rem;color:var(--text2)">Доп. фото ${newIndex + 1}</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
         </div>
         <div class="img-preview-multi" style="display:none">
           <img class="preview-img-multi" src="" alt="Preview">
-          <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name-multi"></div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:.5rem" class="preview-name-multi"></div>
           <button type="button" data-remove-regular="${newIndex}" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
         </div>
       </div>
@@ -1594,12 +1855,12 @@
         <input type="file" id="imageFileSpecs_${newIndex}" name="image_file_${newIndex}" accept=".jpg,.jpeg,.png,.gif,.webp" data-preview-specs="${newIndex}" style="display:none">
         <div class="upload-placeholder-multi">
           <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
-          <div style="font-size:.875rem;color:var(--text-2)">Доп. фото ${newIndex + 1}</div>
-          <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
+          <div style="font-size:.875rem;color:var(--text2)">Доп. фото ${newIndex + 1}</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
         </div>
         <div class="img-preview-multi" style="display:none">
           <img class="preview-img-multi" src="" alt="Preview">
-          <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name-multi"></div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:.5rem" class="preview-name-multi"></div>
           <button type="button" data-remove-specs="${newIndex}" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
         </div>
       </div>
@@ -1748,12 +2009,12 @@
         <input type="file" id="imageFileSpec_${newIndex}" name="image_file_${newIndex}" accept=".jpg,.jpeg,.png,.gif,.webp" data-preview-spec="${newIndex}" style="display:none">
         <div class="upload-placeholder-multi">
           <div style="font-size:2rem;margin-bottom:.5rem">📸</div>
-          <div style="font-size:.875rem;color:var(--text-2)">Доп. фото ${newIndex + 1}</div>
-          <div style="font-size:.75rem;color:var(--text-3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
+          <div style="font-size:.875rem;color:var(--text2)">Доп. фото ${newIndex + 1}</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:.25rem">JPG, PNG, GIF, WebP · Макс. 10 МБ</div>
         </div>
         <div class="img-preview-multi" style="display:none">
           <img class="preview-img-multi" src="" alt="Preview">
-          <div style="font-size:.75rem;color:var(--text-3);margin-top:.5rem" class="preview-name-multi"></div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:.5rem" class="preview-name-multi"></div>
           <button type="button" data-remove-spec="${newIndex}" style="margin-top:.5rem;padding:.375rem .75rem;background:var(--red);color:white;border:none;border-radius:6px;cursor:pointer;font-size:.8125rem">✕ Удалить</button>
         </div>
       </div>
@@ -1821,7 +2082,7 @@
   function updateSpecsList() {
     const container = document.getElementById('specsListContent');
     if (addedSpecifications.length === 0) {
-      container.innerHTML = '<p style="color:var(--text-3);font-size:.875rem">Пока не добавлено ни одной спецификации</p>';
+      container.innerHTML = '<p style="color:var(--text3);font-size:.875rem">Пока не добавлено ни одной спецификации</p>';
       return;
     }
 
@@ -1830,7 +2091,7 @@
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.5rem">
           <div>
             <strong style="font-size:.9375rem">${idx + 1}. ${spec.name}</strong>
-            <div style="font-size:.875rem;color:var(--text-2);margin-top:.25rem">
+            <div style="font-size:.875rem;color:var(--text2);margin-top:.25rem">
               Цена: ${fmt(spec.price)} ₽ · Склад: ${spec.stock} шт.
             </div>
           </div>
@@ -1838,7 +2099,7 @@
             ${spec.in_stock ? '✓ В наличии' : '✕ Нет'}
           </span>
         </div>
-        ${spec.description ? `<p style="font-size:.8125rem;color:var(--text-3);margin-top:.5rem">${spec.description}</p>` : ''}
+        ${spec.description ? `<p style="font-size:.8125rem;color:var(--text3);margin-top:.5rem">${spec.description}</p>` : ''}
       </div>
     `).join('');
   }
@@ -1872,6 +2133,7 @@
     document.getElementById('editProductImgUrl').value = product.image_url || '';
     document.getElementById('editPriceAuto').value = product.price_preorder_auto || '';
     document.getElementById('editPriceAir').value = product.price_preorder_air || '';
+    document.getElementById('editProductWeight').value = product.weight_kg || '';
     // Show/hide preorder price block based on current value
     document.getElementById('editPreorderPricesBlock').style.display = product.preorder ? '' : 'none';
     // Populate category select
@@ -1914,79 +2176,166 @@
   // ── Orders ──
   // ── Orders: status labels & classes ──
   const ORDER_STATUS_LABELS = {
-    pending:     '📋 Создан',
-    confirmed:   '✅ Подтверждён',
-    processing:  '⚙️ В обработке',
-    shipped:     '🚚 В пути',
-    customs:     '🛃 На таможне',
-    delivered:   '📦 Доставлен',
-    handed_over: '🤝 Передан',
-    completed:   '🏁 Завершён',
-    cancelled:   '❌ Отменён'
+    created:    '📋 Создан',
+    processing: '⚙️ В обработке',
+    confirmed:  '✅ Подтверждён',
+    in_transit: '🚚 В пути',
+    customs:    '🛃 На таможне',
+    warehouse:  '📦 Прибыл на склад',
+    delivery:   '🤝 Передан в доставку',
+    completed:  '🏁 Завершён',
+    cancelled:  '❌ Отменён',
+    // Legacy aliases
+    pending:    '📋 Создан',
+    shipped:    '🚚 В пути',
+    delivered:  '📦 Прибыл на склад',
+    handed_over:'🤝 Передан в доставку'
   };
   const ORDER_STATUS_CLASS = {
-    pending:     'status-pending',
-    confirmed:   'status-confirmed',
-    processing:  'status-processing',
-    shipped:     'status-shipped',
-    customs:     'status-pending',
-    delivered:   'status-delivered',
-    handed_over: 'status-delivered',
-    completed:   'status-delivered',
-    cancelled:   'status-cancelled'
+    created:    'status-pending',
+    processing: 'status-processing',
+    confirmed:  'status-confirmed',
+    in_transit: 'status-shipped',
+    customs:    'status-pending',
+    warehouse:  'status-delivered',
+    delivery:   'status-delivered',
+    completed:  'status-delivered',
+    cancelled:  'status-cancelled',
+    pending:    'status-pending',
+    shipped:    'status-shipped',
+    delivered:  'status-delivered',
+    handed_over:'status-delivered'
   };
+  const ORDER_STATUS_OPTIONS = [
+    ['created',    '📋 Создан'],
+    ['processing', '⚙️ В обработке'],
+    ['confirmed',  '✅ Подтверждён'],
+    ['in_transit', '🚚 В пути'],
+    ['customs',    '🛃 На таможне'],
+    ['warehouse',  '📦 Прибыл на склад'],
+    ['delivery',   '🤝 Передан в доставку'],
+    ['completed',  '🏁 Завершён'],
+    ['cancelled',  '❌ Отменён'],
+  ];
 
   function escH(t) { return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
   async function loadOrders() {
     const statusFilter = document.getElementById('orderStatusFilter').value;
+    const trackSearch  = document.getElementById('orderTrackSearch').value.trim();
     const tbody = document.getElementById('ordersTableBody');
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка заказов…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка заказов…</td></tr>';
 
     let url = '/api/admin/orders?limit=100';
     if (statusFilter) url += '&status=' + encodeURIComponent(statusFilter);
+    if (trackSearch)  url += '&track='  + encodeURIComponent(trackSearch);
 
     try {
       const r = await fetch(url, { credentials: 'include' });
       if (!r.ok) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--red)">Ошибка загрузки: ' + r.status + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--red)">Ошибка загрузки: ' + r.status + '</td></tr>';
         return;
       }
       const orders = await r.json();
       if (!orders.length) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-3)">Заказов нет</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text3)">Заказов нет</td></tr>';
         return;
       }
 
       const rows = orders.map(function(o) {
         const statusLabel = ORDER_STATUS_LABELS[o.status] || o.status;
         const statusCls   = ORDER_STATUS_CLASS[o.status]  || '';
-        const payColor    = o.payment_status === 'paid' ? 'var(--green)' : 'var(--text-3)';
+        const payColor    = o.payment_status === 'paid' ? 'var(--green)' : 'var(--text3)';
         const payText     = o.payment_status === 'paid' ? '💚 Оплачен' : o.payment_status === 'waiting' ? '⏳ Ожидает' : '💔 Не оплачен';
         const dateStr     = o.created_at ? o.created_at.split('T')[0] : '—';
         const delayBadge  = o.delay_note
-          ? '<div style="font-size:.7rem;color:var(--amber);margin-top:.3rem">⚠️ ' + escH(o.delay_note.substring(0, 50)) + (o.delay_note.length > 50 ? '…' : '') + '</div>'
+          ? '<div style="font-size:.7rem;color:var(--amber);margin-top:.25rem">⚠️ ' + escH(o.delay_note.substring(0, 50)) + (o.delay_note.length > 50 ? '…' : '') + '</div>'
           : '';
+        const trackBadge  = o.track_number
+          ? '<span style="font-family:var(--font-mono);font-size:.72rem;color:var(--accent)">' + escH(o.track_number) + '</span>'
+          : '<span style="color:var(--text3);font-size:.75rem">—</span>';
         const orderId = o.id;
-        const safeStatus = escH(o.status || 'pending');
-        const safeDelay  = escH(o.delay_note || '');
+        const safeStatus  = escH(o.status || 'created');
+        const safeDelay   = escH(o.delay_note || '');
+        const safeTrack   = escH(o.track_number || '');
 
-        return '<tr>'
+        return '<tr class="order-main-row" style="cursor:pointer" data-order-id="' + orderId + '">'
+          + '<td style="text-align:center;font-size:.9rem;color:var(--text3)" class="accordion-toggle">▶</td>'
           + '<td style="font-weight:700">#' + orderId + '</td>'
-          + '<td><div>' + escH(o.username || '—') + '</div><div style="font-size:.75rem;color:var(--text-3)">' + escH(o.email || '') + '</div></td>'
+          + '<td><div>' + escH(o.username || '—') + '</div>'
+          + (o.full_name ? '<div style="font-size:.72rem;color:var(--text2)">' + escH(o.full_name) + '</div>' : '')
+          + '<div style="font-size:.72rem;color:var(--text3)">' + escH(o.email || '') + '</div>'
+          + (o.phone ? '<div style="font-size:.72rem;color:var(--text3)">' + escH(o.phone) + '</div>' : '')
+          + '</td>'
           + '<td style="font-weight:700">' + fmt(o.total_amount) + ' ₽</td>'
           + '<td><span class="order-status ' + statusCls + '">' + statusLabel + '</span>' + delayBadge + '</td>'
           + '<td><span style="font-size:.8125rem;color:' + payColor + '">' + payText + '</span></td>'
-          + '<td style="font-size:.8125rem;color:var(--text-3)">' + dateStr + '</td>'
-          + '<td><button class="btn btn-ghost btn-xs" data-order-id="' + orderId + '" data-order-status="' + safeStatus + '" data-order-delay="' + safeDelay + '" data-action="open-status">🔄 Статус</button></td>'
+          + '<td>' + trackBadge + '</td>'
+          + '<td style="font-size:.8125rem;color:var(--text3)">' + dateStr + '</td>'
+          + '<td style="white-space:nowrap"><button class="btn btn-ghost btn-xs" data-order-id="' + orderId + '" data-order-status="' + safeStatus + '" data-order-delay="' + safeDelay + '" data-order-track="' + safeTrack + '" data-order-payment="' + escH(o.payment_status || 'not_paid') + '" data-action="open-status">🔄 Статус</button></td>'
+          + '</tr>'
+          + '<tr class="order-accordion-row" data-accordion-for="' + orderId + '">'
+          + '<td colspan="9" style="padding:0"><div class="order-accordion-wrap"><div class="order-accordion-inner"><div class="order-accordion-content" id="accordion-' + orderId + '" style="padding:.875rem 1.25rem;background:rgba(0,212,255,.03);border-top:1px solid var(--border)"><span style="color:var(--text3);font-size:.8125rem">⏳ Загрузка позиций…</span></div></div></div></td>'
           + '</tr>';
       });
       tbody.innerHTML = rows.join('');
     } catch (err) {
       console.error('loadOrders error:', err);
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--red)">Критическая ошибка. Проверьте консоль.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--red)">Критическая ошибка. Проверьте консоль.</td></tr>';
     }
   }
+
+  // ── Order accordion ──
+  const _openAccordions = new Set();
+  document.getElementById('ordersTableBody').addEventListener('click', async function(e) {
+    const mainRow = e.target.closest('.order-main-row');
+    if (!mainRow) return;
+    if (e.target.closest('[data-action]')) return; // action button — don't expand
+    const orderId = mainRow.dataset.orderId;
+    const accordionRow = document.querySelector('[data-accordion-for="' + orderId + '"]');
+    const toggleIcon = mainRow.querySelector('.accordion-toggle');
+    if (!accordionRow) return;
+    const wrap = accordionRow.querySelector('.order-accordion-wrap');
+    if (_openAccordions.has(orderId)) {
+      wrap.classList.remove('open');
+      toggleIcon.textContent = '▶';
+      _openAccordions.delete(orderId);
+    } else {
+      wrap.classList.add('open');
+      toggleIcon.textContent = '▼';
+      _openAccordions.add(orderId);
+      const content = document.getElementById('accordion-' + orderId);
+      if (content.dataset.loaded) return;
+      content.dataset.loaded = '1';
+      try {
+        const r = await fetch('/api/admin/orders/' + orderId + '/items', {credentials:'include'});
+        const items = await r.json();
+        if (!items.length) { content.innerHTML = '<span style="color:var(--text3);font-size:.8125rem">Позиций нет</span>'; return; }
+        const DELIVERY_LABELS = {auto:'🚗 Авто', air:'✈️ Авиа'};
+        const TYPE_LABELS = {in_stock:'В наличии', preorder:'Предзаказ'};
+        let totalWeight = 0;
+        const itemsHtml = items.map(i => {
+          const wt = i.weight_kg || i.product_weight;
+          const lineWeight = wt ? (wt * i.quantity).toFixed(2) : null;
+          if (lineWeight) totalWeight += parseFloat(lineWeight);
+          return '<div style="display:flex;align-items:center;gap:.875rem;padding:.5rem 0;border-bottom:1px solid var(--border)">'
+            + '<div style="flex:1"><span style="font-weight:600;font-size:.8125rem">' + escH(i.product_name) + '</span>'
+            + (i.specification_name ? '<span style="font-size:.72rem;color:var(--text2);margin-left:.4rem">— ' + escH(i.specification_name) + '</span>' : '')
+            + '</div>'
+            + '<div style="font-size:.75rem;color:var(--text3)">' + i.quantity + ' шт.</div>'
+            + '<div style="font-family:var(--font-mono);font-size:.8rem;font-weight:700">' + fmt(i.price * i.quantity) + ' ₽</div>'
+            + (i.order_type ? '<span style="font-size:.7rem;padding:.15rem .4rem;border-radius:4px;background:' + (i.order_type==='in_stock'?'rgba(0,214,143,.1)':'rgba(255,184,48,.1)') + ';color:' + (i.order_type==='in_stock'?'var(--green)':'var(--amber)') + '">' + (TYPE_LABELS[i.order_type]||i.order_type) + '</span>' : '')
+            + (i.delivery_type ? '<span style="font-size:.7rem;color:var(--text2)">' + (DELIVERY_LABELS[i.delivery_type]||i.delivery_type) + '</span>' : '')
+            + (lineWeight ? '<span style="font-size:.7rem;color:var(--text3)">' + lineWeight + ' кг</span>' : '')
+            + '</div>';
+        }).join('');
+        const weightSummary = totalWeight > 0
+          ? '<div style="margin-top:.5rem;font-size:.775rem;color:var(--text2)">⚖️ Итоговый вес: <strong>' + totalWeight.toFixed(2) + ' кг</strong></div>'
+          : '';
+        content.innerHTML = itemsHtml + weightSummary;
+      } catch { content.innerHTML = '<span style="color:var(--red);font-size:.8125rem">Ошибка загрузки позиций</span>'; }
+    }
+  });
 
   // ── Status modal ──
   let _currentOrderId = null;
@@ -1994,8 +2343,10 @@
   function openStatusModal(btn) {
     _currentOrderId = btn.dataset.orderId;
     document.getElementById('statusModalTitle').textContent = '🔄 Статус заказа #' + _currentOrderId;
-    document.getElementById('newStatusSelect').value = btn.dataset.orderStatus || 'pending';
-    document.getElementById('delayNoteInput').value  = btn.dataset.orderDelay  || '';
+    document.getElementById('newStatusSelect').value         = btn.dataset.orderStatus  || 'created';
+    document.getElementById('newPaymentStatusSelect').value  = btn.dataset.orderPayment || 'not_paid';
+    document.getElementById('delayNoteInput').value          = btn.dataset.orderDelay   || '';
+    document.getElementById('trackNumberInput').value        = btn.dataset.orderTrack   || '';
     document.getElementById('statusModal').classList.add('active');
   }
 
@@ -2006,31 +2357,31 @@
 
   async function confirmStatusChange() {
     if (!_currentOrderId) return;
-    const newStatus = document.getElementById('newStatusSelect').value;
-    const delayNote = document.getElementById('delayNoteInput').value.trim();
+    const newStatus     = document.getElementById('newStatusSelect').value;
+    const newPayStatus  = document.getElementById('newPaymentStatusSelect').value;
+    const delayNote     = document.getElementById('delayNoteInput').value.trim();
+    const trackNum      = document.getElementById('trackNumberInput').value.trim();
     const btn = document.getElementById('confirmStatusBtn');
-    btn.disabled = true;
-    btn.textContent = 'Сохраняю…';
+    btn.disabled = true; btn.textContent = 'Сохраняю…';
     try {
       const r = await fetch('/api/admin/orders/' + _currentOrderId + '/status', {credentials:'include', 
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json',  },
-        body: JSON.stringify({ status: newStatus, delay_note: delayNote || null })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus, payment_status: newPayStatus, delay_note: delayNote || null })
       });
-      const d = await r.json();
-      if (r.ok) {
-        showToast('success', 'Заказ #' + _currentOrderId + ': статус обновлён');
-        closeStatusModal();
-        loadOrders();
-      } else {
-        showToast('error', d.detail || 'Ошибка');
+      if (!r.ok) { showToast('error', (await r.json()).detail || 'Ошибка'); return; }
+      if (trackNum !== undefined) {
+        await fetch('/api/admin/orders/' + _currentOrderId + '/track', {credentials:'include',
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ track_number: trackNum || null })
+        });
       }
-    } catch (e) {
-      showToast('error', 'Ошибка соединения');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Сохранить';
-    }
+      showToast('success', 'Заказ #' + _currentOrderId + ': сохранено');
+      closeStatusModal();
+      loadOrders();
+    } catch { showToast('error', 'Ошибка соединения'); }
+    finally { btn.disabled = false; btn.textContent = 'Сохранить'; }
   }
 
   async function updateOrderStatus(orderId, newStatus) {
@@ -2038,7 +2389,7 @@
     try {
       const r = await fetch('/api/admin/orders/' + orderId + '/status', {credentials:'include', 
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json',  },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       });
       const d = await r.json();
@@ -2047,12 +2398,64 @@
     } catch { showToast('error', 'Ошибка соединения'); }
   }
 
+  // ── Manual Order ──
+  function addManualItemRow() {
+    const div = document.createElement('div');
+    div.className = 'manual-item-row';
+    div.style = 'display:grid;grid-template-columns:3fr 1fr 1.2fr auto;gap:.5rem;margin-bottom:.5rem';
+    div.innerHTML = '<input type="text" class="form-input" placeholder="Название товара" style="font-size:.8125rem">'
+      + '<input type="number" class="form-input" placeholder="Кол-во" value="1" min="1" style="font-size:.8125rem">'
+      + '<input type="number" class="form-input" placeholder="Цена ₽" min="0" style="font-size:.8125rem">'
+      + '<button class="manual-item-del" style="background:rgba(255,59,92,.12);border:1px solid rgba(255,59,92,.2);color:var(--red);border-radius:7px;padding:.35rem .6rem;cursor:pointer;font-size:.8rem">✕</button>';
+    document.getElementById('manualOrderItems').appendChild(div);
+  }
+
+  // CSP-safe: event delegation for manual-item-del buttons (static + dynamic rows)
+  document.getElementById('manualOrderItems')?.addEventListener('click', function(e) {
+    const btn = e.target.closest('.manual-item-del');
+    if (btn) btn.closest('.manual-item-row')?.remove();
+  });
+  document.getElementById('addManualItemRowBtn')?.addEventListener('click', addManualItemRow);
+
+  document.getElementById('createOrderManualBtn')?.addEventListener('click', () => {
+    document.getElementById('manualOrderMsg').innerHTML = '';
+    document.getElementById('manualOrderModal').classList.add('active');
+  });
+  document.getElementById('closeManualOrderBtn')?.addEventListener('click', () => document.getElementById('manualOrderModal').classList.remove('active'));
+  document.getElementById('cancelManualOrderBtn')?.addEventListener('click', () => document.getElementById('manualOrderModal').classList.remove('active'));
+
+  document.getElementById('saveManualOrderBtn')?.addEventListener('click', async function() {
+    const userId  = document.getElementById('manualOrderUserId').value.trim() || null;
+    const address = document.getElementById('manualOrderAddress').value.trim();
+    const comment = document.getElementById('manualOrderComment').value.trim();
+    const itemRows = document.querySelectorAll('#manualOrderItems .manual-item-row');
+    const items = Array.from(itemRows).map(row => {
+      const inputs = row.querySelectorAll('input');
+      return { product_name: inputs[0].value.trim(), quantity: parseInt(inputs[1].value)||1, price: parseFloat(inputs[2].value)||0 };
+    }).filter(i => i.product_name && i.price > 0);
+    if (!items.length) { document.getElementById('manualOrderMsg').innerHTML = '<div class="msg msg-error">Добавьте хотя бы одну позицию с ценой</div>'; return; }
+    this.disabled = true; this.textContent = 'Создаю…';
+    try {
+      const r = await fetch('/api/admin/orders', {credentials:'include', method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({user_id: userId, address, comment, items})
+      });
+      const d = await r.json();
+      if (r.ok) {
+        showToast('success', '✅ Заказ #' + d.order_id + ' создан на ' + fmt(d.total) + ' ₽');
+        document.getElementById('manualOrderModal').classList.remove('active');
+        loadOrders();
+      } else document.getElementById('manualOrderMsg').innerHTML = '<div class="msg msg-error">' + escH(d.detail||'Ошибка') + '</div>';
+    } catch { document.getElementById('manualOrderMsg').innerHTML = '<div class="msg msg-error">Ошибка соединения</div>'; }
+    finally { this.disabled = false; this.textContent = '💾 Создать заказ'; }
+  });
+
 
   // ── Top Clients: Load Top Customers ──
   async function loadTopClients() {
     console.log('🔄 Загрузка топ покупателей...');
     const tbody = document.getElementById('topClientsTableBody');
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка...</td></tr>';
     try {
       const r = await fetch('/api/admin/top-customers?limit=50', {credentials:'include', 
         headers: { 'Content-Type': 'application/json' }
@@ -2067,7 +2470,7 @@
       console.log(`✅ Загружено: ${customers.length} покупателей`);
       
       if (customers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-3)">Пока нет покупателей</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">Пока нет покупателей</td></tr>';
         return;
       }
       
@@ -2079,12 +2482,12 @@
           <tr>
             <td><strong>${idx + 1}</strong></td>
             <td><strong>${c.full_name || c.username}</strong></td>
-            <td style="color:var(--text-2)">${c.email}</td>
-            <td style="color:var(--text-2)">${c.phone || '—'}</td>
+            <td style="color:var(--text2)">${c.email}</td>
+            <td style="color:var(--text2)">${c.phone || '—'}</td>
             <td><span class="badge badge-accent">${c.order_count}</span></td>
             <td><span class="badge badge-success">${c.paid_orders}</span></td>
             <td><strong style="font-family:'JetBrains Mono',monospace;color:var(--green)">${profit} ₽</strong></td>
-            <td style="color:var(--text-2);font-size:.8125rem">${lastOrder}</td>
+            <td style="color:var(--text2);font-size:.8125rem">${lastOrder}</td>
           </tr>
         `;
       }).join('');
@@ -2101,7 +2504,7 @@
   async function loadCRM() {
     console.log('🔄 Загрузка CRM данных...');
     const tbody = document.getElementById('crmTableBody');
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка...</td></tr>';
     try {
       const r = await fetch('/api/admin/customers', {credentials:'include', 
         headers: { 'Content-Type': 'application/json' }
@@ -2116,47 +2519,112 @@
       console.log(`✅ Загружено CRM записей: ${customers.length}`);
       
       if (customers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-3)">Пока нет покупателей</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text3)">Пока нет покупателей</td></tr>';
         return;
       }
       
       tbody.innerHTML = customers.map((c) => {
         const lastOrder = c.last_order_date ? new Date(c.last_order_date).toLocaleDateString('ru-RU') : '—';
-        const profit = (c.total_spent || 0).toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        const profit = (c.total_spent || 0).toLocaleString('ru-RU', {minimumFractionDigits: 0, maximumFractionDigits: 0});
         const vipBadge = c.total_spent > 100000 ? '<span class="badge badge-warning" style="margin-left:.5rem">VIP</span>' : '';
+        const discountBadge = c.personal_discount > 0 ? `<span style="font-size:.7rem;background:rgba(255,59,92,.1);color:var(--red);padding:.1rem .35rem;border-radius:4px;margin-left:.35rem">−${c.personal_discount}%</span>` : '';
+        const safeId   = escH(c.id);
+        const safeName = escH(c.full_name || c.username).replace(/"/g,'&quot;');
+        const safeEmail = escH(c.email || '').replace(/"/g,'&quot;');
+        const safePhone = escH(c.phone || '').replace(/"/g,'&quot;');
+        const safeFull  = escH(c.full_name || '').replace(/"/g,'&quot;');
+        const discount  = c.personal_discount || 0;
         
         return `
           <tr>
             <td>
-              <strong>${c.full_name || c.username}</strong>${vipBadge}
-              <div style="font-size:.8125rem;color:var(--text-2)">${c.email}</div>
+              <strong>${c.full_name || c.username}</strong>${vipBadge}${discountBadge}
+              <div style="font-size:.75rem;color:var(--text3)">${c.email}</div>
+            </td>
+            <td style="font-size:.8rem;color:var(--text2)">
+              ${c.phone ? c.phone : '<span style="color:var(--text3)">—</span>'}
             </td>
             <td><span class="badge badge-accent">${c.order_count}</span></td>
             <td><strong style="font-family:'JetBrains Mono',monospace;color:var(--green)">${profit} ₽</strong></td>
-            <td style="color:var(--text-2);font-size:.8125rem">${lastOrder}</td>
-            <td><span class="badge badge-success">${c.notes_count || 0}</span></td>
-            <td>
-              <button class="btn btn-xs btn-secondary" data-open-notes-id="${c.id}" data-open-notes-name="${(c.full_name || c.username).replace(/"/g,'&quot;')}">📝 Заметки</button>
+            <td>${discount > 0 ? `<span style="font-family:var(--font-mono);font-size:.8rem;color:var(--red)">−${discount}%</span>` : '<span style="color:var(--text3);font-size:.8rem">0%</span>'}</td>
+            <td style="color:var(--text2);font-size:.8125rem">${lastOrder}</td>
+            <td style="white-space:nowrap">
+              <button class="btn btn-xs btn-secondary" data-open-notes-id="${safeId}" data-open-notes-name="${safeName}" data-open-notes-email="${safeEmail}" data-open-notes-phone="${safePhone}" data-open-notes-fullname="${safeFull}" data-open-notes-discount="${discount}">📝 Карточка</button>
             </td>
           </tr>
         `;
       }).join('');
     } catch (err) {
       console.error('❌ Критическая ошибка при загрузке CRM:', err);
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--red)">Критическая ошибка загрузки. Проверьте консоль.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--red)">Критическая ошибка загрузки. Проверьте консоль.</td></tr>';
     }
   }
 
-  async function openNotes(userId, userName) {
+  async function openNotes(userId, userName, email, phone, fullName, discount) {
     currentCustomerId = userId;
     document.getElementById('notesCustomerName').textContent = userName;
+    // Fill info block
+    const infoBlock = document.getElementById('notesCustomerInfo');
+    infoBlock.style.display = '';
+    document.getElementById('notesCEmail').textContent    = email    || '—';
+    document.getElementById('notesCPhone').textContent    = phone    || '—';
+    document.getElementById('notesCFullName').textContent = fullName || '—';
+    document.getElementById('notesCDiscount').value       = discount || 0;
     document.getElementById('notesModal').classList.add('active');
     await loadNotes(userId);
   }
 
+  // Discount save
+  document.getElementById('saveDiscountBtn')?.addEventListener('click', async function() {
+    const discount = parseInt(document.getElementById('notesCDiscount').value) || 0;
+    try {
+      const r = await fetch(`/api/admin/customers/${currentCustomerId}/discount`, {credentials:'include',
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({discount})
+      });
+      if (r.ok) { showToast('success', `✅ Скидка ${discount}% сохранена`); loadCRM(); }
+      else showToast('error', 'Ошибка сохранения скидки');
+    } catch { showToast('error', 'Ошибка соединения'); }
+  });
+
+  // Create user manual
+  document.getElementById('createUserManualBtn')?.addEventListener('click', () => {
+    document.getElementById('createUserMsg').innerHTML = '';
+    document.getElementById('cuResult').style.display = 'none';
+    document.getElementById('cuResult').textContent = '';
+    document.getElementById('createUserModal').classList.add('active');
+  });
+  document.getElementById('closeCreateUserBtn')?.addEventListener('click', () => document.getElementById('createUserModal').classList.remove('active'));
+  document.getElementById('cancelCreateUserBtn')?.addEventListener('click', () => document.getElementById('createUserModal').classList.remove('active'));
+  document.getElementById('saveCreateUserBtn')?.addEventListener('click', async function() {
+    const payload = {
+      username: document.getElementById('cuUsername').value.trim(),
+      email:    document.getElementById('cuEmail').value.trim(),
+      full_name: document.getElementById('cuFullName').value.trim(),
+      phone:    document.getElementById('cuPhone').value.trim(),
+      password: document.getElementById('cuPassword').value.trim() || null
+    };
+    if (!payload.username || !payload.email) {
+      document.getElementById('createUserMsg').innerHTML = '<div class="msg msg-error">Логин и email обязательны</div>'; return;
+    }
+    this.disabled = true; this.textContent = 'Создаю…';
+    try {
+      const r = await fetch('/api/admin/users/create', {credentials:'include', method:'POST',
+        headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+      const d = await r.json();
+      if (r.ok) {
+        const res = document.getElementById('cuResult');
+        res.style.display = '';
+        res.innerHTML = `✅ Аккаунт создан!<br>Логин: <strong>${escH(payload.username)}</strong><br>Пароль: <strong style="font-family:var(--font-mono)">${escH(d.password)}</strong>`;
+        showToast('success', '✅ Аккаунт создан'); loadCRM();
+      } else document.getElementById('createUserMsg').innerHTML = '<div class="msg msg-error">' + escH(d.detail||'Ошибка') + '</div>';
+    } catch { document.getElementById('createUserMsg').innerHTML = '<div class="msg msg-error">Ошибка соединения</div>'; }
+    finally { this.disabled = false; this.textContent = '✅ Создать аккаунт'; }
+  });
+
   async function loadNotes(userId) {
     const notesList = document.getElementById('notesList');
-    notesList.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-3)">Загрузка...</div>';
+    notesList.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3)">Загрузка...</div>';
     
     try {
       const r = await fetch(`/api/admin/customers/${userId}/notes`, {credentials:'include', 
@@ -2165,7 +2633,7 @@
       const notes = await r.json();
       
       if (notes.length === 0) {
-        notesList.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-3)">Заметок пока нет</div>';
+        notesList.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3)">Заметок пока нет</div>';
         return;
       }
       
@@ -2173,11 +2641,11 @@
         const date = new Date(n.created_at).toLocaleString('ru-RU');
         return `
           <div style="background:var(--bg-2);padding:1rem;border-radius:12px;margin-bottom:.75rem;border:1px solid var(--border)">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;font-size:.75rem;color:var(--text-3)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;font-size:.75rem;color:var(--text3)">
               <span>${n.created_by} • ${date}</span>
               <button class="btn btn-xs btn-danger" data-del-note="${n.id}">Удалить</button>
             </div>
-            <div style="color:var(--text-2);line-height:1.6">${n.note}</div>
+            <div style="color:var(--text2);line-height:1.6">${n.note}</div>
           </div>
         `;
       }).join('');
@@ -2318,6 +2786,10 @@
     document.getElementById('createCatBtn')?.addEventListener('click', createCategory);
     document.getElementById('reloadOrdersBtn')?.addEventListener('click', loadOrders);
     document.getElementById('orderStatusFilter')?.addEventListener('change', loadOrders);
+    document.getElementById('orderTrackSearch')?.addEventListener('input', function() {
+      clearTimeout(this._debounce);
+      this._debounce = setTimeout(loadOrders, 400);
+    });
     document.getElementById('closeNotesModalBtn')?.addEventListener('click', () => closeModal('notesModal'));
     document.getElementById('saveNoteBtn')?.addEventListener('click', saveNote);
     document.getElementById('addMoreBtnRegular')?.addEventListener('click', addImageUploadRegular);
@@ -2379,6 +2851,13 @@
     });
 
     // ── Products table delegation ──
+    // Fix БАГ-04 (admin): CSP-safe image fallback delegation
+    document.getElementById('productsTableBody')?.addEventListener('error', function(e) {
+      if (e.target.tagName === 'IMG' && e.target.dataset.fallbackIcon) {
+        try { e.target.parentElement.innerHTML = decodeURIComponent(e.target.dataset.fallbackIcon); } catch(_){}
+      }
+    }, true);
+
     document.getElementById('productsTableBody')?.addEventListener('click', function(e) {
       const priceCell = e.target.closest('[data-edit-price]');
       if (priceCell) { const [id,price]=priceCell.dataset.editPrice.split('|'); editPrice(parseInt(id),parseFloat(price)); return; }
@@ -2409,7 +2888,7 @@
     // ── CRM table delegation ──
     document.getElementById('crmTableBody')?.addEventListener('click', function(e) {
       const notesBtn = e.target.closest('[data-open-notes-id]');
-      if (notesBtn) { openNotes(notesBtn.dataset.openNotesId, notesBtn.dataset.openNotesName); return; }
+      if (notesBtn) { openNotes(notesBtn.dataset.openNotesId, notesBtn.dataset.openNotesName, notesBtn.dataset.openNotesEmail, notesBtn.dataset.openNotesPhone, notesBtn.dataset.openNotesFullname, notesBtn.dataset.openNotesDiscount); return; }
     });
 
     // ── Notes list delegation ──
@@ -2443,6 +2922,109 @@
         block.style.display = this.value === 'true' ? '' : 'none';
       });
     })();
+
+    // ── Delivery Settings ──
+    async function loadDeliverySettings() {
+      try {
+        const r = await fetch('/api/delivery-settings');
+        if (!r.ok) return;
+        const data = await r.json();
+        document.querySelectorAll('.delivery-field[data-key]').forEach(input => {
+          const key = input.dataset.key;
+          if (data[key] && data[key].value !== null && data[key].value !== undefined) {
+            input.value = data[key].value;
+          }
+        });
+      } catch(e) { console.error('loadDeliverySettings:', e); }
+    }
+
+    document.getElementById('saveDeliverySettingsBtn')?.addEventListener('click', async function() {
+      const statusEl = document.getElementById('deliverySaveStatus');
+      const payload = {};
+      document.querySelectorAll('.delivery-field[data-key]').forEach(input => {
+        payload[input.dataset.key] = input.value.trim() || null;
+      });
+      try {
+        const r = await fetch('/api/delivery-settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (r.ok) {
+          if (statusEl) { statusEl.textContent = '✓ Сохранено'; statusEl.style.color = 'var(--green)'; setTimeout(() => { statusEl.textContent = ''; }, 2500); }
+        } else {
+          if (statusEl) { statusEl.textContent = '✗ Ошибка сохранения'; statusEl.style.color = 'var(--red)'; }
+        }
+      } catch(e) {
+        if (statusEl) { statusEl.textContent = '✗ Ошибка соединения'; statusEl.style.color = 'var(--red)'; }
+      }
+    });
+
+    // Загружаем настройки при переходе на вкладку
+    document.querySelectorAll('[data-sec="delivery-settings"]').forEach(btn => {
+      btn.addEventListener('click', loadDeliverySettings);
+    });
+
+    // ── Installation Requests ──
+    const INST_STATUS_LABELS = {new:'🆕 Новая', in_progress:'⚙️ В работе', completed:'✅ Выполнена', cancelled:'❌ Отменена'};
+    let _currentInstId = null;
+
+    async function loadInstallationRequests() {
+      const statusFilter = document.getElementById('installationStatusFilter').value;
+      const tbody = document.getElementById('installationTableBody');
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка…</td></tr>';
+      let url = '/api/admin/installation-requests';
+      if (statusFilter) url += '?status=' + encodeURIComponent(statusFilter);
+      try {
+        const r = await fetch(url, {credentials:'include'});
+        const data = await r.json();
+        if (!data.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">Заявок нет</td></tr>'; return; }
+        tbody.innerHTML = data.map(inst => {
+          const statusLabel = INST_STATUS_LABELS[inst.status] || inst.status;
+          const dateStr = inst.created_at ? inst.created_at.split('T')[0] : '—';
+          return '<tr>'
+            + '<td style="font-weight:700">#' + inst.id + '</td>'
+            + '<td>' + escH(inst.product_name || '—') + '</td>'
+            + '<td style="font-size:.8rem;color:var(--text2)">' + escH(inst.scooter_model || '—') + '</td>'
+            + '<td><div>' + escH(inst.username || '—') + '</div><div style="font-size:.72rem;color:var(--text3)">' + escH(inst.email || '') + '</div></td>'
+            + '<td style="font-size:.8rem"><div>' + escH(inst.full_name || '—') + '</div><div>' + escH(inst.phone || '') + '</div><div>' + (inst.telegram ? '@' + escH(inst.telegram) : '') + '</div></td>'
+            + '<td><span class="order-status ' + (inst.status==='completed'?'status-delivered':inst.status==='cancelled'?'status-cancelled':inst.status==='in_progress'?'status-processing':'status-pending') + '">' + statusLabel + '</span></td>'
+            + '<td style="font-size:.8rem;color:var(--text3)">' + dateStr + '</td>'
+            + '<td><button class="btn btn-ghost btn-xs" data-open-inst="' + inst.id + '" data-inst-status="' + escH(inst.status) + '" data-inst-comment="' + escH(inst.admin_comment||'') + '">✏️ Статус</button></td>'
+            + '</tr>';
+        }).join('');
+      } catch { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--red)">Ошибка загрузки</td></tr>'; }
+    }
+
+    document.getElementById('installationStatusFilter')?.addEventListener('change', loadInstallationRequests);
+
+    document.getElementById('installationTableBody')?.addEventListener('click', function(e) {
+      const btn = e.target.closest('[data-open-inst]');
+      if (!btn) return;
+      _currentInstId = btn.dataset.openInst;
+      document.getElementById('instModalId').textContent = _currentInstId;
+      document.getElementById('instStatusSelect').value = btn.dataset.instStatus || 'new';
+      document.getElementById('instCommentInput').value = btn.dataset.instComment || '';
+      document.getElementById('installationModal').classList.add('active');
+    });
+
+    document.getElementById('closeInstModalBtn')?.addEventListener('click', () => document.getElementById('installationModal').classList.remove('active'));
+    document.getElementById('cancelInstBtn')?.addEventListener('click', () => document.getElementById('installationModal').classList.remove('active'));
+    document.getElementById('saveInstBtn')?.addEventListener('click', async function() {
+      if (!_currentInstId) return;
+      const status  = document.getElementById('instStatusSelect').value;
+      const comment = document.getElementById('instCommentInput').value.trim();
+      this.disabled = true; this.textContent = 'Сохраняю…';
+      try {
+        const r = await fetch('/api/admin/installation-requests/' + _currentInstId, {credentials:'include',
+          method:'PUT', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({status, admin_comment: comment || null})
+        });
+        if (r.ok) { showToast('success','✅ Статус заявки обновлён'); document.getElementById('installationModal').classList.remove('active'); loadInstallationRequests(); }
+        else showToast('error','Ошибка сохранения');
+      } catch { showToast('error','Ошибка соединения'); }
+      finally { this.disabled = false; this.textContent = '💾 Сохранить'; }
+    });
 
   }); // end DOMContentLoaded
 </script>

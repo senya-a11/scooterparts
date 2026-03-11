@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Каталог запчастей для электросамокатов Fast HUB. Аккумуляторы, моторы, тормоза.">
+  <meta name="description" content="Каталог запчастей для электросамокатов Fm TuN. Аккумуляторы, моторы, тормоза.">
   <meta name="keywords" content="купить запчасти самокат, аккумулятор электросамокат, мотор-колесо, контроллер, тормозные диски, каталог запчастей">
   <meta name="robots" content="index, follow">
-  <meta property="og:title" content="Каталог — Fast HUB">
+  <meta property="og:title" content="Каталог — Fm TuN">
   <meta property="og:description" content="Большой выбор качественных запчастей для электросамокатов по лучшим ценам">
   <meta property="og:type" content="website">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png?v=5">
   <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png?v=5">
   <link rel="shortcut icon" href="/static/favicon/favicon.ico?v=5">
   <meta name="theme-color" content="#000000">
-  <title>Каталог — Fast HUB</title>
+  <title>Каталог — Fm TuN</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -159,7 +159,7 @@
     .header{
       position:fixed;top:0;left:0;right:0;
       background:rgba(0,0,0,0.75);
-      backdrop-filter:blur(24px) saturate(1.6);
+      backdrop-filter:blur(12px);
       border-bottom:1px solid var(--border);
       z-index:200;padding-top:0;
     }
@@ -377,7 +377,7 @@
     .counter-label{font-family:var(--font-raj);font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.15em;margin-top:.25rem}
 
     /* ── FILTER BAR ── */
-    .filter-bar{background:rgba(0,0,0,0.85);backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid var(--border);padding:.875rem 0;position:sticky;top:64px;z-index:100}
+    .filter-bar{background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:.875rem 0;position:sticky;top:64px;z-index:100}
     .filter-inner{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
     .filter-select{padding:.5rem .875rem;background:rgba(14,18,24,0.9);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-raj);font-size:.875rem;font-weight:600;letter-spacing:.05em;outline:none;cursor:pointer;transition:all .2s;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%237B8599'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .625rem center;background-size:14px;padding-right:2rem}
     .filter-select:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-dim)}
@@ -403,7 +403,7 @@
     /* ── GLASSMORPHISM PRODUCT CARD ── */
     .product-card{
       background:rgba(14,18,24,0.72);
-      backdrop-filter:blur(16px) saturate(1.3);
+      
       border:1px solid var(--border);
       border-radius:var(--radius-lg);
       overflow:hidden;
@@ -447,6 +447,8 @@
     .product-footer{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-top:auto}
     .product-price{font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;letter-spacing:-.01em}
     .add-btn{padding:.5rem 1.125rem;background:var(--blue);color:#000;border:none;border-radius:var(--radius);cursor:pointer;font-family:var(--font-raj);font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:all .2s}
+    .add-btn.btn-specs{background:rgba(0,212,255,.12);color:var(--blue);border:1px solid rgba(0,212,255,.4)}
+    .add-btn.btn-specs:hover{background:rgba(0,212,255,.22);border-color:var(--blue)}
     .add-btn:hover{box-shadow:0 0 20px var(--blue-glow);transform:scale(1.04)}
     .add-btn:disabled{background:var(--surface2);color:var(--text3);cursor:not-allowed;transform:none}
     .add-btn.add-btn-added{background:var(--surface2)!important;color:var(--text3)!important;cursor:not-allowed;transform:none!important;box-shadow:none!important}
@@ -457,6 +459,20 @@
     .badge-stock{background:linear-gradient(135deg,rgba(0,229,160,.15),rgba(0,229,160,.05));color:var(--green);border:1px solid rgba(0,229,160,.3);box-shadow:0 2px 8px rgba(0,229,160,.1)}
     .badge-preorder{background:linear-gradient(135deg,rgba(255,176,32,.15),rgba(255,176,32,.05));color:var(--amber);border:1px solid rgba(255,176,32,.3);box-shadow:0 2px 8px rgba(255,176,32,.1)}
     .badge-out{background:linear-gradient(135deg,rgba(255,71,87,.12),rgba(255,71,87,.04));color:var(--red);border:1px solid rgba(255,71,87,.22);box-shadow:0 2px 6px rgba(255,71,87,.08)}
+    .badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.8}
+
+    /* ── DISCOUNT BADGE ── */
+    .discount-badge{position:absolute;top:.625rem;left:.625rem;z-index:6;background:var(--red);color:#fff;font-family:var(--font-raj);font-size:.72rem;font-weight:700;letter-spacing:.04em;padding:.2rem .55rem;border-radius:6px;box-shadow:0 2px 8px rgba(255,71,87,.35);pointer-events:none}
+
+    /* ── DOUBLE PRICE ── */
+    .price-row{display:flex;flex-direction:column;gap:.18rem}
+    .price-in-stock{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;letter-spacing:-.01em;color:var(--text)}
+    .price-in-stock.striked{text-decoration:line-through;opacity:.45;font-size:.92rem}
+    .price-in-stock-discounted{font-family:'JetBrains Mono',monospace;font-size:1.2rem;font-weight:700;color:var(--red)}
+    .price-preorder-tag{display:inline-flex;align-items:center;gap:.35rem;background:linear-gradient(135deg,rgba(255,176,32,.14),rgba(255,140,0,.06));border:1px solid rgba(255,176,32,.35);border-radius:6px;padding:.22rem .55rem;margin-top:.1rem;width:fit-content}
+    .price-preorder-tag::before{content:'⏳';font-size:.65rem;line-height:1}
+    .price-preorder-label{font-family:var(--font-raj);font-size:.65rem;font-weight:700;color:rgba(255,176,32,.7);letter-spacing:.08em;text-transform:uppercase}
+    .price-preorder-val{font-family:'JetBrains Mono',monospace;font-size:.95rem;font-weight:700;color:var(--amber);letter-spacing:-.01em}
     .badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.8}
 
     .state-box{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:1rem;padding:5rem 2rem;color:var(--text3)}
@@ -605,6 +621,11 @@
     .nav-bg-panel,.nav-overlay,.nav-menu,.menu-button-icon{will-change:transform,opacity;}
     #starfield canvas,.parallax__layer-img{will-change:transform;}
     .hero-title .line,.hero-subtitle,.hero-cta{will-change:transform,opacity;}
+
+    @media(prefers-reduced-motion:reduce){
+      *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}
+      #starfield{display:none!important;}
+    }
 </style>
 <script src="/static/csrf-init.js"></script>
 </head>
@@ -621,7 +642,7 @@
     <div class="header-inner">
       <a href="/" class="logo">
         <div class="logo-bolt">&#9889;</div>
-        <span class="logo-text">Fast <span>HUB</span></span>
+        <span class="logo-text">Fm <span>TuN</span></span>
       </a>
       <div class="header-actions">
         <a href="/cart" class="cart-btn" id="cartBtn" aria-label="Корзина">
@@ -704,8 +725,8 @@
       <p class="nav-footer-label" id="navFadeItem1">Контакты</p>
       <div class="nav-socials" id="navFadeItem2">
         <a href="tel:+78001234567" class="nav-social-link">+7 (800) 123-45-67</a>
-        <a href="mailto:info@import.ru" class="nav-social-link">info@import.ru</a>
-        <a href="https://t.me/import_scooter" class="nav-social-link">Telegram</a>
+        <a href="mailto:info@fmtun.ru">info@fmtun.ru</a>
+        <a href="https://t.me/fmtun" class="nav-social-link">Telegram</a>
       </div>
     </div>
   </div>
@@ -789,7 +810,7 @@
       <div>
         <a href="/" class="logo" style="font-size:1.1rem;letter-spacing:0.08em">
           <div class="logo-bolt">&#9889;</div>
-          <span class="logo-text">Fast <span>HUB</span></span>
+          <span class="logo-text">Fm <span>TuN</span></span>
         </a>
         <p class="footer-brand-desc">Премиум запчасти для электросамокатов. Оригинальные комплектующие с гарантией качества.</p>
       </div>
@@ -812,13 +833,13 @@
         <div class="footer-col-title">Контакты</div>
         <div style="font-family:var(--font-raj);font-size:.875rem;color:var(--text2);line-height:2;letter-spacing:.04em">
           <div>📞 8 (800) 123-45-67</div>
-          <div>✉️ info@import.ru</div>
+          <div>✉️ <a href="mailto:info@fmtun.ru">info@fmtun.ru</a></div>
           <div>🕐 Ежедневно 9:00–21:00</div>
         </div>
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2025 Fast HUB. Все права защищены.</span>
+      <span>© 2025 Fm TuN. Все права защищены.</span>
       <div class="footer-legal">
         <a href="/terms">Соглашение</a>
         <a href="/privacy-policy">Конфиденциальность</a>
@@ -829,81 +850,139 @@
   </div>
 </footer>
 
-<!-- ── PREORDER CHOICE MODAL ── -->
-<div id="preorderModal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
-  <div style="background:var(--bg2);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:2rem;max-width:440px;width:calc(100% - 2rem);box-shadow:0 32px 96px rgba(0,0,0,.6);">
 
-    <!-- Header -->
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem">
+<!-- ── INSTALLATION REQUEST MODAL ── -->
+<div id="installModal" style="display:none;position:fixed;inset:0;z-index:601;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);align-items:flex-start;justify-content:center;padding-top:4rem;padding-left:.75rem;padding-right:.75rem;">
+  <div style="background:var(--bg2);border:1px solid rgba(0,212,255,.15);border-radius:20px;padding:1.5rem;max-width:440px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.7);animation:poModalIn .22s cubic-bezier(.16,1,.3,1)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
       <div>
-        <div style="font-family:var(--font-d);font-size:1.125rem;font-weight:800;line-height:1.2" id="preorderModalTitle">Выберите тип заказа</div>
-        <div style="font-size:.8125rem;color:var(--text2);margin-top:.375rem" id="preorderModalSubtitle"></div>
+        <div style="font-family:var(--font-syne);font-size:1rem;font-weight:700">🔧 Купить с установкой</div>
+        <div id="installModalProduct" style="font-size:.775rem;color:var(--text2);margin-top:.2rem"></div>
       </div>
-      <button id="preorderModalClose" style="width:32px;height:32px;border-radius:50%;background:var(--surface2);border:none;color:var(--text2);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:1rem">✕</button>
+      <button id="closeInstallModalBtn" style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:1.1rem;padding:.25rem">✕</button>
+    </div>
+    <div style="font-size:.775rem;color:var(--text2);line-height:1.6;padding:.75rem;background:rgba(0,212,255,.06);border-radius:8px;margin-bottom:1.25rem">
+      🗺️ Услуга установки доступна в сервисных центрах Москвы. Менеджер свяжется с вами для согласования времени.
+    </div>
+    <div id="installModalMsg"></div>
+    <div style="display:grid;gap:.625rem">
+      <div>
+        <div style="font-size:.72rem;color:var(--text3);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:.3rem">Модель самоката</div>
+        <input type="text" id="instScooterModel" class="po-input" placeholder="Ninebot G30D / Xiaomi Pro 2..." style="width:100%;padding:.55rem .75rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--text);font-size:.825rem;outline:none">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <div>
+          <div style="font-size:.72rem;color:var(--text3);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:.3rem">Тип АКБ</div>
+          <input type="text" id="instBatteryType" class="po-input" placeholder="10S4P, 36V..." style="width:100%;padding:.55rem .75rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--text);font-size:.825rem;outline:none">
+        </div>
+        <div>
+          <div style="font-size:.72rem;color:var(--text3);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:.3rem">Тип мотора</div>
+          <input type="text" id="instMotorType" class="po-input" placeholder="250Вт, задний..." style="width:100%;padding:.55rem .75rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--text);font-size:.825rem;outline:none">
+        </div>
+      </div>
+      <div>
+        <div style="font-size:.72rem;color:var(--text3);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:.3rem">Другое</div>
+        <textarea id="instOtherInfo" placeholder="Дополнительная информация…" style="width:100%;padding:.55rem .75rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--text);font-size:.825rem;resize:none;height:56px;outline:none"></textarea>
+      </div>
+      <div style="border-top:1px solid rgba(255,255,255,.07);padding-top:.875rem;display:grid;gap:.5rem">
+        <input type="text" id="instFullName" placeholder="ФИО" style="width:100%;padding:.55rem .75rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--text);font-size:.825rem;outline:none">
+        <input type="text" id="instPhone" placeholder="Номер телефона" style="width:100%;padding:.55rem .75rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--text);font-size:.825rem;outline:none">
+        <input type="text" id="instTelegram" placeholder="Telegram (без @)" style="width:100%;padding:.55rem .75rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--text);font-size:.825rem;outline:none">
+      </div>
+    </div>
+    <button id="submitInstallBtn" style="margin-top:1rem;width:100%;padding:.7rem;font-family:var(--font-raj);font-size:.9rem;font-weight:700;background:var(--blue);color:#080A0F;border:none;border-radius:10px;cursor:pointer;letter-spacing:.04em;transition:opacity .15s">
+      ✅ Отправить заявку
+    </button>
+    <button id="cancelInstallModalBtn" style="margin-top:.5rem;width:100%;padding:.45rem;background:none;border:none;color:rgba(255,255,255,.3);font-size:.78rem;cursor:pointer">Отмена</button>
+  </div>
+</div>
+
+<!-- ── PREORDER CHOICE MODAL ── -->
+<div id="preorderModal" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);align-items:flex-start;justify-content:center;padding-top:4.5rem;padding-left:.75rem;padding-right:.75rem;">
+  <div style="background:var(--bg2);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:1.5rem;max-width:460px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.7);animation:poModalIn .22s cubic-bezier(.16,1,.3,1);">
+
+    <!-- Header: product info + close -->
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem;gap:.75rem">
+      <div style="flex:1;min-width:0">
+        <div style="font-family:var(--font-d);font-size:1rem;font-weight:800;line-height:1.25;margin-bottom:.25rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="preorderModalTitle">Выберите тип заказа</div>
+        <div style="font-size:.8rem;color:var(--text2);margin-bottom:.2rem" id="poModalStock"></div>
+        <div style="font-size:.75rem;color:var(--text3)" id="preorderModalSubtitle"></div>
+      </div>
+      <button id="preorderModalClose" style="width:30px;height:30px;border-radius:50%;background:var(--surface2);border:none;color:var(--text2);cursor:pointer;font-size:.875rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
+    </div>
+
+    <!-- Похожий вариант в наличии -->
+    <div id="poSimilarHint" style="display:none;background:var(--green-dim);border:1px solid rgba(0,229,160,.2);border-radius:10px;padding:.625rem .875rem;margin-bottom:.875rem;font-size:.8125rem;cursor:pointer;transition:background .15s">
+      <span style="color:var(--green);font-weight:700">✓ Похожий вариант в наличии</span>
+      <span style="color:var(--text2);margin-left:.375rem" id="poSimilarName"></span>
+      <span style="color:var(--green);margin-left:.375rem;font-size:.75rem">→ выбрать</span>
     </div>
 
     <!-- Step 1: in_stock vs preorder -->
     <div id="poStep1">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem">
-        <button id="chooseInStock" style="padding:1.125rem 1rem;border:1.5px solid var(--border);border-radius:16px;background:var(--surface);cursor:pointer;text-align:left;transition:all .18s;color:var(--text)">
-          <div style="width:32px;height:32px;border-radius:8px;background:var(--green-dim);display:flex;align-items:center;justify-content:center;margin-bottom:.625rem">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.625rem;margin-bottom:1rem">
+        <button id="chooseInStock" class="po-choice-btn" style="padding:1rem .875rem;border:1.5px solid var(--border);border-radius:14px;background:var(--surface);cursor:pointer;text-align:left;transition:all .18s;color:var(--text)">
+          <div style="width:28px;height:28px;border-radius:7px;background:var(--green-dim);display:flex;align-items:center;justify-content:center;margin-bottom:.5rem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
-          <div style="font-weight:700;font-size:.875rem;margin-bottom:.25rem">В наличии</div>
+          <div style="font-weight:700;font-size:.8125rem;margin-bottom:.2rem">В наличии</div>
           <div style="font-size:.8rem;color:var(--green);font-weight:600" id="inStockPrice">—</div>
         </button>
-        <button id="choosePreorder" style="padding:1.125rem 1rem;border:1.5px solid var(--border);border-radius:16px;background:var(--surface);cursor:pointer;text-align:left;transition:all .18s;color:var(--text)">
-          <div style="width:32px;height:32px;border-radius:8px;background:var(--amber-dim);display:flex;align-items:center;justify-content:center;margin-bottom:.625rem">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <button id="choosePreorder" class="po-choice-btn" style="padding:1rem .875rem;border:1.5px solid var(--border);border-radius:14px;background:var(--surface);cursor:pointer;text-align:left;transition:all .18s;color:var(--text)">
+          <div style="width:28px;height:28px;border-radius:7px;background:var(--amber-dim);display:flex;align-items:center;justify-content:center;margin-bottom:.5rem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
           </div>
-          <div style="font-weight:700;font-size:.875rem;margin-bottom:.25rem">Предзаказ</div>
-          <div style="font-size:.8rem;color:var(--text2)">Выбор доставки →</div>
+          <div style="font-weight:700;font-size:.8125rem;margin-bottom:.2rem">Предзаказ</div>
+          <div style="font-size:.8rem;color:var(--amber);font-weight:600" id="preorderPriceHint">Выбор доставки →</div>
         </button>
       </div>
     </div>
 
     <!-- Step 2: auto vs air -->
     <div id="poStep2" style="display:none">
-      <button id="poBackBtn" style="display:flex;align-items:center;gap:.375rem;font-size:.8125rem;color:var(--text2);background:none;border:none;cursor:pointer;padding:0;margin-bottom:1rem">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      <button id="poBackBtn" style="display:flex;align-items:center;gap:.375rem;font-size:.8rem;color:var(--text2);background:none;border:none;cursor:pointer;padding:0;margin-bottom:.875rem">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         Назад
       </button>
 
       <!-- Prices summary bar -->
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.875rem 1rem;margin-bottom:1rem;font-size:.8125rem">
-        <div style="display:flex;justify-content:space-between;color:var(--text2);margin-bottom:.375rem">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.75rem .875rem;margin-bottom:.875rem;font-size:.8rem">
+        <div style="display:flex;justify-content:space-between;color:var(--text2);margin-bottom:.3rem">
           <span>Товар</span>
           <span style="color:var(--text)" id="poPriceBase">—</span>
         </div>
-        <div style="display:flex;justify-content:space-between;color:var(--text2);margin-bottom:.375rem">
+        <div style="display:flex;justify-content:space-between;color:var(--text2);margin-bottom:.3rem">
           <span>Доставка</span>
           <span id="poDeliveryPrice" style="color:var(--text2)">—</span>
         </div>
-        <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid var(--border);padding-top:.375rem;margin-top:.25rem">
+        <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid var(--border);padding-top:.3rem;margin-top:.2rem">
           <span>Итого</span>
           <span style="color:var(--blue)" id="poTotalPrice">—</span>
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem">
-        <button id="chooseAuto" style="padding:1.125rem 1rem;border:1.5px solid var(--border);border-radius:16px;background:var(--surface);cursor:pointer;text-align:left;transition:all .18s;color:var(--text)">
-          <div style="font-size:1.375rem;margin-bottom:.5rem">🚗</div>
-          <div style="font-weight:700;font-size:.875rem;margin-bottom:.2rem">Авто</div>
-          <div style="font-size:.75rem;color:var(--text2);margin-bottom:.375rem">Дольше · Дешевле</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.625rem;margin-bottom:1rem">
+        <button id="chooseAuto" class="po-choice-btn" style="padding:1rem .875rem;border:1.5px solid var(--border);border-radius:14px;background:var(--surface);cursor:pointer;text-align:left;transition:all .18s;color:var(--text)">
+          <div style="font-size:1.25rem;margin-bottom:.375rem">🚗</div>
+          <div style="font-weight:700;font-size:.8125rem;margin-bottom:.15rem">Авто</div>
+          <div style="font-size:.7rem;color:var(--text2);margin-bottom:.3rem">Дольше · Дешевле</div>
           <div style="font-size:.875rem;font-weight:700;color:var(--text)" id="autoPrice">—</div>
         </button>
-        <button id="chooseAir" style="padding:1.125rem 1rem;border:1.5px solid var(--border);border-radius:16px;background:var(--surface);cursor:pointer;text-align:left;transition:all .18s;color:var(--text)">
-          <div style="font-size:1.375rem;margin-bottom:.5rem">✈️</div>
-          <div style="font-weight:700;font-size:.875rem;margin-bottom:.2rem">Самолёт</div>
-          <div style="font-size:.75rem;color:var(--text2);margin-bottom:.375rem">Быстрее · Дороже</div>
+        <button id="chooseAir" class="po-choice-btn" style="padding:1rem .875rem;border:1.5px solid var(--border);border-radius:14px;background:var(--surface);cursor:pointer;text-align:left;transition:all .18s;color:var(--text)">
+          <div style="font-size:1.25rem;margin-bottom:.375rem">✈️</div>
+          <div style="font-weight:700;font-size:.8125rem;margin-bottom:.15rem">Самолёт</div>
+          <div style="font-size:.7rem;color:var(--text2);margin-bottom:.3rem">Быстрее · Дороже</div>
           <div style="font-size:.875rem;font-weight:700;color:var(--text)" id="airPrice">—</div>
         </button>
       </div>
     </div>
 
-    <button id="preorderModalCancel" style="width:100%;padding:.75rem;background:none;border:1px solid var(--border);border-radius:12px;cursor:pointer;color:var(--text2);font-size:.875rem;transition:border-color .2s">Отмена</button>
+    <button id="preorderModalCancel" style="width:100%;padding:.625rem;background:none;border:1px solid var(--border);border-radius:10px;cursor:pointer;color:var(--text2);font-size:.8125rem;transition:border-color .2s">Отмена</button>
   </div>
 </div>
+<style nonce="{{ request.state.csp_nonce }}">
+@keyframes poModalIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+</style>
 
 <div class="toast" id="toast"></div>
 
@@ -926,13 +1005,14 @@
 <script nonce="{{ request.state.csp_nonce }}">
 (function(){
   var c=document.getElementById("starfield"),ctx=c.getContext("2d");
-  var W,H,stars=[],COUNT=160,TRAIL=30;
+  var W,H,stars=[],COUNT = window.innerWidth < 768 ? 40 : 60,TRAIL=18;
   function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
   function make(){
-    var a=Math.random()*Math.PI*2,spd=Math.random()*.45+.08;
+    var a=Math.random()*Math.PI*2,spd=Math.random()*.3+.05;
     return{x:Math.random()*W,y:Math.random()*H,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:Math.random()*1.1+.35,alpha:Math.random()*.5+.3,tw:Math.random()*Math.PI*2,tws:Math.random()*.01+.005,trail:[]};
   }
   function init(){resize();stars=Array.from({length:COUNT},make);}
+  var _sfAnimId=null, _sfPaused=false;
   function draw(){
     var isLight=document.documentElement.getAttribute('data-theme')==='light';
     ctx.fillStyle=isLight?'rgba(247,244,239,.18)':'rgba(8,10,15,.22)';ctx.fillRect(0,0,W,H);
@@ -950,17 +1030,20 @@
         ctx.fillStyle=isLight?'rgba(180,70,0,'+(p2*s.alpha*.4)+')':'rgba(110,205,255,'+(p2*s.alpha*.5)+')';ctx.fill();
       }
       var pulse=Math.sin(s.tw)*.2+.8,a=s.alpha*pulse;
-      var g=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*4);
-      g.addColorStop(0,isLight?'rgba(232,88,10,'+(a*.25)+')':'rgba(0,212,255,'+(a*.3)+')');
-      g.addColorStop(1,isLight?'rgba(232,88,10,0)':'rgba(0,212,255,0)');
-      ctx.beginPath();ctx.arc(s.x,s.y,s.r*4,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r*2.5,0,Math.PI*2);
+      ctx.fillStyle=isLight?'rgba(232,88,10,'+(a*.12)+')':'rgba(0,212,255,'+(a*.15)+')';ctx.fill();
       ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
       ctx.fillStyle=isLight?'rgba(200,80,0,'+a+')':'rgba(215,248,255,'+a+')';ctx.fill();
     }
-    requestAnimationFrame(draw);
+    if(!_sfPaused) _sfAnimId=requestAnimationFrame(draw);
   }
+  // Fix ЗАМ-01: пауза starfield при скрытой вкладке
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden){_sfPaused=true;if(_sfAnimId){cancelAnimationFrame(_sfAnimId);_sfAnimId=null;}}
+    else{_sfPaused=false;_sfAnimId=requestAnimationFrame(draw);}
+  });
   window.addEventListener("resize",resize);
-  init();draw();
+  init();_sfAnimId=requestAnimationFrame(draw);
 })();
 /* ════════════════════════════════════════
    NAV DRAWER — GSAP (from Nav.md)
@@ -1164,7 +1247,7 @@ function renderProducts() {
         <div class="card-dots">${dots}</div>
       </div>`;
     } else if (hasImg) {
-      imgHtml = `<img src="${p.image_url}" alt="${p.name}" loading="lazy" class="lazy-load" onerror="this.parentElement.innerHTML='${icon}'">`;
+      imgHtml = `<img src="${p.image_url}" alt="${p.name}" loading="lazy" class="lazy-load" data-fallback-icon="${encodeURIComponent(icon)}">`;
     } else {
       imgHtml = icon;
     }
@@ -1176,17 +1259,53 @@ function renderProducts() {
     if(p.preorder) badges.push('<span class="product-badge badge-preorder"><span class="badge-dot"></span>Предзаказ</span>');
     const badgesHtml = badges.length?`<div class="product-badges">${badges.join('')}</div>`:'';
 
+    // ── Discount badge ──
+    const disc = p.discount_percent || 0;
+    const discBadge = disc > 0 ? `<div class="discount-badge">−${disc}%</div>` : '';
+
+    // ── Double price: in-stock + preorder ──
+    const basePrice = p.price || 0;
+    const discPrice = disc > 0 ? Math.round(basePrice * (1 - disc / 100)) : 0;
+    const preorderPrice = p.price_preorder_auto || p.price_preorder_air || null;
+    let priceHtml = '';
+    if (p.in_stock && p.preorder && preorderPrice) {
+      // Показываем обе цены
+      priceHtml = `<div class="price-row">
+        ${disc > 0
+          ? `<span class="price-in-stock striked">${fmt(basePrice)} ₽</span><span class="price-in-stock-discounted">${fmt(discPrice)} ₽</span>`
+          : `<span class="price-in-stock">${fmt(basePrice)} ₽</span>`
+        }
+        <span class="price-preorder-tag"><span class="price-preorder-label">Предзаказ</span><span class="price-preorder-val">${fmt(preorderPrice)} ₽</span></span>
+      </div>`;
+    } else if (!p.in_stock && p.preorder && preorderPrice) {
+      // Только предзаказ
+      priceHtml = `<div class="price-row">
+        ${disc > 0
+          ? `<span class="price-in-stock striked">${fmt(preorderPrice)} ₽</span><span class="price-in-stock-discounted">${fmt(Math.round(preorderPrice*(1-disc/100)))} ₽</span>`
+          : `<span class="price-preorder-val">${fmt(preorderPrice)} ₽</span>`
+        }
+      </div>`;
+    } else {
+      // Только в наличии (или нет в наличии)
+      priceHtml = `<div class="price-row">
+        ${disc > 0
+          ? `<span class="price-in-stock striked">${fmt(basePrice)} ₽</span><span class="price-in-stock-discounted">${fmt(discPrice)} ₽</span>`
+          : `<span class="price-in-stock">${fmt(basePrice)} ₽</span>`
+        }
+      </div>`;
+    }
+
     return `<div class="product-card" data-product-id="${p.id}" style="animation-delay:${Math.min(idx*.045,.4)}s;cursor:pointer">
-      <div class="product-img">${imgHtml}</div>
+      <div class="product-img" style="position:relative">${imgHtml}${discBadge}</div>
       <div class="product-body">
         ${badgesHtml}
         <div class="product-cat">${getName(p.category)}</div>
         <div class="product-name">${p.name}</div>
         <div class="product-desc">${p.description}</div>
         <div class="product-footer">
-          <span class="product-price">${fmt(p.price)} ₽</span>
-          <button class="add-btn" id="addBtn_${p.id}" data-pid="${p.id}" ${!p.in_stock&&!p.preorder?'disabled':''}>
-            ${p.in_stock||p.preorder?'В корзину':'Нет в наличии'}
+          ${priceHtml}
+          <button class="add-btn${p.has_specifications&&!p.in_stock&&!p.preorder?' btn-specs':''}" id="addBtn_${p.id}" data-pid="${p.id}" ${(!p.in_stock&&!p.preorder&&!p.has_specifications)?'disabled':''}>
+            ${p.has_specifications&&!p.in_stock&&!p.preorder?'Спецификации':(p.in_stock||p.preorder?'В корзину':'Нет в наличии')}
           </button>
         </div>
       </div>
@@ -1196,6 +1315,13 @@ function renderProducts() {
   initCardDrag();
 
   // ── CSP-safe delegation: product card open ──
+  // Fix БАГ-04: CSP-safe delegated image error handler (replacing inline onerror)
+  productsGrid.addEventListener('error', function(e) {
+    if (e.target.tagName === 'IMG' && e.target.dataset.fallbackIcon) {
+      try { e.target.parentElement.innerHTML = decodeURIComponent(e.target.dataset.fallbackIcon); } catch(_){}
+    }
+  }, true);
+
   productsGrid.addEventListener('click', function(e) {
     // Card nav prev/next
     const navBtn = e.target.closest('[data-nav]');
@@ -1355,37 +1481,118 @@ function updateCartUI(){
 // ── PREORDER MODAL LOGIC ──
 let _poResolve = null;
 let _poProduct = null;
+// Bug fix: флаг блокировки для предотвращения фантомных тапов и двойных кликов
+let _poClosing = false;
 
 function showPreorderModal(product) {
   return new Promise((resolve) => {
     _poResolve = resolve;
     _poProduct = product;
-    const hasInStock = product.in_stock;
+    _poClosing = false;
+    // БАГ-05: у спецификаций может не быть поля in_stock — вычисляем из stock
+    const stockNum = product.stock ?? 0;
+    const hasInStock = product.in_stock !== undefined ? product.in_stock : stockNum > 0;
     const hasPreorder = product.preorder;
     const priceAuto = product.price_preorder_auto;
     const priceAir  = product.price_preorder_air;
     const basePrice = product.price || product.base_price || 0;
 
+    // Заголовок: название + наличие
     document.getElementById('preorderModalTitle').textContent = product.name || 'Выберите тип заказа';
+    const stockEl = document.getElementById('poModalStock');
+    if (stockEl) {
+      if (hasInStock && hasPreorder) {
+        stockEl.textContent = '✓ В наличии · Предзаказ доступен';
+        stockEl.style.color = 'var(--green)';
+      } else if (hasInStock) {
+        stockEl.textContent = stockNum ? `✓ В наличии: ${stockNum} шт.` : '✓ В наличии';
+        stockEl.style.color = 'var(--green)';
+      } else if (hasPreorder) {
+        stockEl.textContent = '⏳ Только предзаказ';
+        stockEl.style.color = 'var(--amber)';
+      } else {
+        stockEl.textContent = '';
+      }
+    }
+
     document.getElementById('inStockPrice').textContent  = basePrice  ? fmt(Math.round(basePrice))  + ' ₽' : '—';
+
+    // Цена предзаказа в кнопке (ТЗ 05)
+    const preorderHintEl = document.getElementById('preorderPriceHint');
+    if (preorderHintEl) {
+      const minPreorderPrice = priceAuto || priceAir;
+      preorderHintEl.textContent = minPreorderPrice
+        ? `от ${fmt(Math.round(minPreorderPrice))} ₽ →`
+        : 'Выбор доставки →';
+    }
+
     document.getElementById('autoPrice').textContent     = priceAuto  ? fmt(Math.round(priceAuto))  + ' ₽' : 'Уточняйте';
     document.getElementById('airPrice').textContent      = priceAir   ? fmt(Math.round(priceAir))   + ' ₽' : 'Уточняйте';
     document.getElementById('poPriceBase').textContent   = basePrice  ? fmt(Math.round(basePrice))  + ' ₽' : '—';
     document.getElementById('poDeliveryPrice').textContent = '—';
     document.getElementById('poTotalPrice').textContent    = '—';
-    // Reset delivery button highlights
     document.getElementById('chooseAuto').style.borderColor = 'var(--border)';
     document.getElementById('chooseAir').style.borderColor  = 'var(--border)';
+
+    // Подсказка «Похожий вариант в наличии» (ТЗ 06)
+    // Fix БАГ 3: ищем in-stock СПЕЦИФИКАЦИЮ того же товара, а не другой товар из категории
+    const similarHint = document.getElementById('poSimilarHint');
+    const similarName = document.getElementById('poSimilarName');
+    // Убираем старый обработчик перед установкой нового (защита от дублей)
+    if (similarHint._poHintHandler) {
+      similarHint.removeEventListener('pointerup', similarHint._poHintHandler);
+      similarHint._poHintHandler = null;
+    }
+    if (similarHint && !hasInStock && hasPreorder) {
+      // Сначала ищем in-stock спецификацию того же товара
+      const similarSpec = product.specifications?.find(s => s.in_stock || s.stock > 0);
+      if (similarSpec) {
+        if (similarName) similarName.textContent = similarSpec.name;
+        similarHint.style.display = '';
+        // Fix БАГ 5: addEventListener вместо .onclick (правило проекта)
+        const handler = () => {
+          closePreorderModal(null);
+          // Если detail-modal открыт — переключаем спецификацию
+          if (productDetailModal && productDetailModal.classList.contains('active')) {
+            setTimeout(() => selectSpecification(similarSpec.id), 180);
+          }
+        };
+        similarHint._poHintHandler = handler;
+        similarHint.addEventListener('pointerup', handler, { once: true });
+      } else {
+        // Запасной вариант: другой товар той же категории в наличии
+        const similar = allProducts.find(p =>
+          p.id !== product.id &&
+          p.category === product.category &&
+          p.in_stock
+        );
+        if (similar) {
+          if (similarName) similarName.textContent = similar.name;
+          similarHint.style.display = '';
+          const handler = () => {
+            closePreorderModal(null);
+            setTimeout(() => openProductDetail(similar.id), 180);
+          };
+          similarHint._poHintHandler = handler;
+          similarHint.addEventListener('pointerup', handler, { once: true });
+        } else {
+          similarHint.style.display = 'none';
+        }
+      }
+    } else if (similarHint) {
+      similarHint.style.display = 'none';
+    }
 
     document.getElementById('chooseInStock').style.display  = hasInStock  ? '' : 'none';
     document.getElementById('choosePreorder').style.display = hasPreorder ? '' : 'none';
 
+    const subtitle = document.getElementById('preorderModalSubtitle');
     if (hasInStock && hasPreorder) {
-      document.getElementById('preorderModalSubtitle').textContent = 'Товар доступен по предзаказу и в наличии';
+      subtitle.textContent = 'Товар доступен по предзаказу и в наличии';
     } else if (hasPreorder) {
-      document.getElementById('preorderModalSubtitle').textContent = 'Товар доступен только по предзаказу';
+      subtitle.textContent = 'Товар доступен только по предзаказу';
     } else {
-      document.getElementById('preorderModalSubtitle').textContent = '';
+      subtitle.textContent = '';
     }
 
     if (!hasInStock && hasPreorder) {
@@ -1401,27 +1608,46 @@ function showPreorderModal(product) {
 }
 
 function closePreorderModal(result) {
+  // Bug fix (a): блокируем повторное закрытие
+  if (_poClosing) return;
+  _poClosing = true;
   document.getElementById('preorderModal').style.display = 'none';
-  if (_poResolve) { _poResolve(result); _poResolve = null; }
+  const resolve = _poResolve;
+  _poResolve = null;
+  // Bug fix (c): небольшая задержка, чтобы избежать нестабильных быстрых кликов
+  setTimeout(() => {
+    _poClosing = false;
+    if (resolve) resolve(result);
+  }, 80);
 }
 
-document.getElementById('preorderModalClose').addEventListener('click',  () => closePreorderModal(null));
-document.getElementById('preorderModalCancel').addEventListener('click', () => closePreorderModal(null));
-document.getElementById('preorderModal').addEventListener('click', e => {
+// Bug fix (b): используем pointerup вместо click для предотвращения фантомных тапов
+document.getElementById('preorderModalClose').addEventListener('pointerup', (e) => { e.stopPropagation(); closePreorderModal(null); });
+document.getElementById('preorderModalCancel').addEventListener('pointerup', (e) => { e.stopPropagation(); closePreorderModal(null); });
+document.getElementById('preorderModal').addEventListener('pointerup', e => {
   if (e.target === document.getElementById('preorderModal')) closePreorderModal(null);
 });
-document.getElementById('chooseInStock').addEventListener('click', () => closePreorderModal({ order_type:'in_stock', delivery_type:null }));
-document.getElementById('choosePreorder').addEventListener('click', () => {
+document.getElementById('chooseInStock').addEventListener('pointerup', (e) => {
+  e.stopPropagation();
+  if (_poClosing) return;
+  closePreorderModal({ order_type:'in_stock', delivery_type:null });
+});
+document.getElementById('choosePreorder').addEventListener('pointerup', (e) => {
+  e.stopPropagation();
+  if (_poClosing) return;
   document.getElementById('poStep1').style.display = 'none';
   document.getElementById('poStep2').style.display = '';
   document.getElementById('poDeliveryPrice').textContent = '—';
   document.getElementById('poTotalPrice').textContent = '—';
 });
-document.getElementById('poBackBtn').addEventListener('click', () => {
+document.getElementById('poBackBtn').addEventListener('pointerup', (e) => {
+  e.stopPropagation();
   document.getElementById('poStep1').style.display = '';
   document.getElementById('poStep2').style.display = 'none';
 });
-document.getElementById('chooseAuto').addEventListener('click', () => {
+document.getElementById('chooseAuto').addEventListener('pointerup', (e) => {
+  e.stopPropagation();
+  if (_poClosing) return;
   const p = _poProduct;
   document.getElementById('chooseAuto').style.borderColor = 'var(--blue)';
   document.getElementById('chooseAir').style.borderColor  = 'var(--border)';
@@ -1429,9 +1655,11 @@ document.getElementById('chooseAuto').addEventListener('click', () => {
   const base = p ? (p.price||p.base_price||0) : 0;
   document.getElementById('poDeliveryPrice').textContent = dp ? fmt(Math.round(dp))+' ₽' : '—';
   document.getElementById('poTotalPrice').textContent    = (base||dp) ? fmt(Math.round((base||0)+(dp||0)))+' ₽' : '—';
-  setTimeout(() => closePreorderModal({ order_type:'preorder', delivery_type:'auto' }), 220);
+  setTimeout(() => closePreorderModal({ order_type:'preorder', delivery_type:'auto' }), 160);
 });
-document.getElementById('chooseAir').addEventListener('click', () => {
+document.getElementById('chooseAir').addEventListener('pointerup', (e) => {
+  e.stopPropagation();
+  if (_poClosing) return;
   const p = _poProduct;
   document.getElementById('chooseAir').style.borderColor  = 'var(--blue)';
   document.getElementById('chooseAuto').style.borderColor = 'var(--border)';
@@ -1439,7 +1667,7 @@ document.getElementById('chooseAir').addEventListener('click', () => {
   const base = p ? (p.price||p.base_price||0) : 0;
   document.getElementById('poDeliveryPrice').textContent = dp ? fmt(Math.round(dp))+' ₽' : '—';
   document.getElementById('poTotalPrice').textContent    = (base||dp) ? fmt(Math.round((base||0)+(dp||0)))+' ₽' : '—';
-  setTimeout(() => closePreorderModal({ order_type:'preorder', delivery_type:'air' }), 220);
+  setTimeout(() => closePreorderModal({ order_type:'preorder', delivery_type:'air' }), 160);
 });
 
 async function addToCart(productId, stock, productData) {
@@ -1463,6 +1691,17 @@ async function addToCart(productId, stock, productData) {
     deliveryType = choice.delivery_type;
   }
 
+  // Fix БАГ 4 — Вариант C: диалог если тот же товар уже в корзине с другим типом
+  const existingItem = cart.find(i => (i.product_id === productId || i.product?.id === productId));
+  if (existingItem && existingItem.order_type && orderType && existingItem.order_type !== orderType) {
+    const existLabel = existingItem.order_type === 'in_stock' ? 'в наличии' : 'по предзаказу';
+    const newLabel   = orderType === 'in_stock' ? 'в наличии' : 'по предзаказу';
+    const confirmed = window.confirm(
+      `Этот товар уже есть в корзине (${existLabel}).\nДобавить ещё 1 шт. ${newLabel}?\n\nОба варианта будут в корзине как отдельные позиции.`
+    );
+    if (!confirmed) return;
+  }
+
   try {
     const body = { product_id:productId, quantity:1, order_type:orderType };
     if (deliveryType) body.delivery_type = deliveryType;
@@ -1474,6 +1713,11 @@ async function addToCart(productId, stock, productData) {
     if (r.status===401) { window.location.href='/auth?next='+encodeURIComponent(window.location.pathname); return; }
     if (r.ok) {
       await loadCart();
+      // Bug fix (a): гарантируем закрытие detail modal при добавлении из него
+      if (productDetailModal.classList.contains('active')) {
+        productDetailModal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
       // Помечаем кнопку как добавленную
       const btn = document.getElementById(`addBtn_${productId}`);
       if (btn) { btn.textContent='✓ В корзине'; btn.disabled=true; btn.classList.add('add-btn-added'); }
@@ -1514,6 +1758,12 @@ function updatePoSummary(deliveryPrice){
    PRODUCT DETAIL MODAL
 ════════════════════════════════════════ */
 const productDetailModal   = document.getElementById('productDetailModal');
+// Fix БАГ-04: delegated error handler for detail modal images
+productDetailModal.addEventListener('error', function(e) {
+  if (e.target.tagName === 'IMG' && e.target.dataset.fallbackIcon) {
+    try { e.target.parentElement.innerHTML = decodeURIComponent(e.target.dataset.fallbackIcon); } catch(_){}
+  }
+}, true);
 const closeProductDetailBtn = document.getElementById('closeProductDetail');
 const productDetailContent  = document.getElementById('productDetailContent');
 let currentDetailProduct=null, selectedSpec=null, detailQty=1;
@@ -1559,7 +1809,7 @@ function renderProductDetail(p) {
       <div class="modal-slider-count"><span id="modalCurrentNum">1</span>&nbsp;/&nbsp;${allImages.length}</div>
     </div>`;
   } else if (allImages.length===1) {
-    galleryHtml=`<div class="product-main-img"><img src="${allImages[0]}" alt="${p.name}" onerror="this.parentElement.innerHTML='${icon}'"></div>`;
+    galleryHtml=`<div class="product-main-img"><img src="${allImages[0]}" alt="${p.name}" data-fallback-icon="${encodeURIComponent(icon)}"></div>`;
   } else {
     galleryHtml=`<div class="product-main-img">${icon}</div>`;
   }
@@ -1583,7 +1833,7 @@ function renderProductDetail(p) {
         <div class="product-detail-price">${fmt(currentPrice)} ₽</div>
       </div>
       ${specsHtml}
-      <div class="product-detail-desc"><strong>Описание:</strong><br>${selectedSpec?selectedSpec.description||p.description:p.description}</div>
+      <div class="product-detail-desc"><strong>Описание:</strong><br>${(selectedSpec?selectedSpec.description||p.description:p.description||'').replace(/\n/g,'<br>')}</div>
       ${charsHtml}
       <div class="product-actions">
         <div class="qty-selector">
@@ -1596,6 +1846,9 @@ function renderProductDetail(p) {
         </div>
         <button class="add-to-cart-btn" data-action="add-to-cart" ${!inStock?'disabled':''}>
           ${currentStock > 0 ? '🛒 Добавить в корзину' : isPreorderItem ? '⏳ Предзаказ' : '✕ Нет в наличии'}
+        </button>
+        <button class="add-install-btn" data-action="buy-with-install" style="margin-top:.625rem;width:100%;padding:.6rem;font-family:var(--font-raj);font-size:.82rem;font-weight:700;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);border-radius:10px;color:var(--blue);cursor:pointer;letter-spacing:.03em;transition:background .15s" title="Купить с установкой в Москве">
+          🔧 Купить с установкой
         </button>
       </div>
     </div>`;
@@ -1716,6 +1969,64 @@ productDetailContent.addEventListener('click', function(e) {
   // add to cart
   const cartBtn = e.target.closest('[data-action="add-to-cart"]');
   if (cartBtn && !cartBtn.disabled) { addToCartFromDetail(); return; }
+  // buy with installation
+  const installBtn = e.target.closest('[data-action="buy-with-install"]');
+  if (installBtn) { openInstallModal(); return; }
+});
+
+// ── Installation Request Modal ──
+function openInstallModal() {
+  const p = currentDetailProduct;
+  if (!p) return;
+  const spec = selectedSpec;
+  const name = spec ? `${p.name} — ${spec.name}` : p.name;
+  document.getElementById('installModalProduct').textContent = name;
+  document.getElementById('installModal')._productId = p.id;
+  document.getElementById('installModal')._productName = name;
+  // Clear inputs
+  ['instScooterModel','instBatteryType','instMotorType','instOtherInfo','instFullName','instPhone','instTelegram'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('installModalMsg').innerHTML = '';
+  document.getElementById('installModal').style.display = 'flex';
+}
+
+document.getElementById('closeInstallModalBtn')?.addEventListener('click', () => { document.getElementById('installModal').style.display = 'none'; });
+document.getElementById('cancelInstallModalBtn')?.addEventListener('click', () => { document.getElementById('installModal').style.display = 'none'; });
+document.getElementById('installModal')?.addEventListener('click', e => { if (e.target === document.getElementById('installModal')) document.getElementById('installModal').style.display = 'none'; });
+
+document.getElementById('submitInstallBtn')?.addEventListener('click', async function() {
+  const modal = document.getElementById('installModal');
+  const fullName = document.getElementById('instFullName').value.trim();
+  const phone    = document.getElementById('instPhone').value.trim();
+  if (!fullName || !phone) {
+    document.getElementById('installModalMsg').innerHTML = '<div style="color:var(--red);font-size:.8rem;margin-bottom:.5rem">Укажите ФИО и телефон</div>';
+    return;
+  }
+  this.disabled = true; this.textContent = 'Отправляю…';
+  try {
+    const r = await fetch('/api/installation-requests', {
+      method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        product_id:   modal._productId,
+        product_name: modal._productName,
+        scooter_model: document.getElementById('instScooterModel').value.trim(),
+        battery_type:  document.getElementById('instBatteryType').value.trim(),
+        motor_type:    document.getElementById('instMotorType').value.trim(),
+        other_info:    document.getElementById('instOtherInfo').value.trim(),
+        full_name: fullName, phone,
+        telegram:  document.getElementById('instTelegram').value.trim()
+      })
+    });
+    if (r.ok) {
+      document.getElementById('installModalMsg').innerHTML = '<div style="color:var(--green);font-size:.85rem;text-align:center;padding:.75rem;background:rgba(0,214,143,.08);border-radius:8px;margin-bottom:.5rem">✅ Заявка принята! Менеджер свяжется с вами.</div>';
+      setTimeout(() => { document.getElementById('installModal').style.display = 'none'; }, 2200);
+    } else {
+      document.getElementById('installModalMsg').innerHTML = '<div style="color:var(--red);font-size:.8rem;margin-bottom:.5rem">Ошибка отправки. Попробуйте ещё раз.</div>';
+    }
+  } catch { document.getElementById('installModalMsg').innerHTML = '<div style="color:var(--red);font-size:.8rem;margin-bottom:.5rem">Ошибка соединения</div>'; }
+  finally { this.disabled = false; this.textContent = '✅ Отправить заявку'; }
 });
 
 closeProductDetailBtn.addEventListener('click',()=>{productDetailModal.classList.remove('active');document.body.style.overflow='';});

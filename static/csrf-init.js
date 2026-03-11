@@ -83,7 +83,7 @@
   (function scheduleRefresh() {
     var REFRESH_AFTER_MS = 50 * 60 * 1000; // 50 минут
     function doRefresh() {
-      window._nativeFetch('/api/refresh', {
+      window.fetch('/api/refresh', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' }

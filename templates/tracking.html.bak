@@ -10,7 +10,7 @@
   <meta name="theme-color" content="#080A0F">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#080A0F">
-  <title>Заказы — Fast HUB</title>
+  <title>Заказы — Fm TuN</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style nonce="{{ request.state.csp_nonce }}">
@@ -70,10 +70,10 @@
     ::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--bg2);}::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px;}
 
     /* ── STARFIELD ── */
-    #starfield{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;image-rendering:pixelated;}
+    #starfield{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:.7;}
 
     /* ── HEADER ── */
-    .header{position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,.78);backdrop-filter:blur(24px) saturate(1.6);border-bottom:1px solid var(--border);z-index:200;}
+    .header{position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,.78);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);z-index:200;}
     .header-inner{display:flex;align-items:center;justify-content:space-between;height:64px;gap:1rem;}
     .logo{display:flex;align-items:center;gap:10px;font-family:var(--fd);font-size:1.25rem;font-weight:800;color:var(--text);text-decoration:none;letter-spacing:.08em;flex-shrink:0;}
     .logo-bolt{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:22px;background:linear-gradient(135deg,#FFD700,#FFA500);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 8px rgba(255,190,0,.55));}
@@ -320,6 +320,11 @@
     .nav-bg-panel,.nav-overlay,.nav-menu,.menu-button-icon{will-change:transform,opacity;}
     #starfield canvas,.parallax__layer-img{will-change:transform;}
     .hero-title .line,.hero-subtitle,.hero-cta{will-change:transform,opacity;}
+
+    @media(prefers-reduced-motion:reduce){
+      *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}
+      #starfield{display:none!important;}
+    }
 </style>
 <script src="/static/csrf-init.js"></script>
 </head>
@@ -361,7 +366,7 @@
     -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
   }
 
-  @font-face{font-family:'PP Neue Corp Tight';src:url('https://cdn.prod.website-files.com/673af51dea86ab95d124c3ee/673b0f5784f7060c0ac05534_PPNeueCorp-TightUltrabold.otf') format('opentype');font-weight:700;font-display:block;}
+  @font-face{font-family:'PP Neue Corp Tight';src:url('https://cdn.prod.website-files.com/673af51dea86ab95d124c3ee/673b0f5784f7060c0ac05534_PPNeueCorp-TightUltrabold.otf') format('opentype');font-weight:700;font-display:swap;}
 </style>
 
 <div id="crisp-loader">
@@ -415,7 +420,7 @@
       </div>
     </div>
     <div class="cl-fade"></div>
-    <div id="crisp-heading"><span>Заказы Fast HUB</span></div>
+    <div id="crisp-heading"><span>Заказы Fm TuN</span></div>
   </div>
 </div>
 
@@ -443,7 +448,7 @@
 <!-- HEADER -->
 <header class="header">
   <div class="container"><div class="header-inner">
-    <a href="/" class="logo"><div class="logo-bolt">&#9889;</div><span class="logo-text">Fast <span>HUB</span></span></a>
+    <a href="/" class="logo"><div class="logo-bolt">&#9889;</div><span class="logo-text">Fm <span>TuN</span></span></a>
     <div class="header-actions">
       <a href="/cart" class="btn btn-ghost btn-sm cart-btn-header" id="cartBtn" style="position:relative">🛒 Корзина<span class="cart-count" id="cartCount">0</span></a>
       <div class="user-dropdown-wrap" id="userMenu"></div>
@@ -528,7 +533,7 @@
   <!-- HERO -->
   <section class="track-hero">
     <div class="container">
-      <div class="track-eyebrow"><span class="eyebrow-dot"></span>Fast HUB — Личный кабинет</div>
+      <div class="track-eyebrow"><span class="eyebrow-dot"></span>Fm TuN — Личный кабинет</div>
       <h1 class="track-title">МОИ<br><span>ЗАКАЗЫ</span></h1>
       <p class="track-subtitle" id="trackSubtitle">Отслеживайте статус своих заказов в режиме реального времени.</p>
     </div>
@@ -553,14 +558,14 @@
   <div class="container">
     <div class="footer-grid">
       <div>
-        <a href="/" class="logo"><div class="logo-bolt">&#9889;</div><span class="logo-text">Fast <span>HUB</span></span></a>
+        <a href="/" class="logo"><div class="logo-bolt">&#9889;</div><span class="logo-text">Fm <span>TuN</span></span></a>
         <p class="footer-brand-desc">Премиум запчасти для электросамокатов с гарантией качества.</p>
       </div>
       <div><div class="footer-col-title">Каталог</div><ul class="footer-links"><li><a href="/products">Все товары</a></li><li><a href="/products?category=batteries">Аккумуляторы</a></li><li><a href="/products?category=motors">Моторы</a></li><li><a href="/products?category=electronics">Электроника</a></li></ul></div>
       <div><div class="footer-col-title">Документы</div><ul class="footer-links"><li><a href="/terms">Соглашение</a></li><li><a href="/privacy-policy">Конфиденциальность</a></li><li><a href="/offer">Оферта</a></li><li><a href="/returns">Возврат</a></li></ul></div>
-      <div><div class="footer-col-title">Контакты</div><div class="footer-contact-item">📍 <span>Москва</span></div><div class="footer-contact-item">📞 <a href="tel:+78001234567">8 (800) 123-45-67</a></div><div class="footer-contact-item">✉ <a href="mailto:info@import.ru">info@import.ru</a></div></div>
+      <div><div class="footer-col-title">Контакты</div><div class="footer-contact-item">📍 <span>Москва</span></div><div class="footer-contact-item">📞 <a href="tel:+78001234567">8 (800) 123-45-67</a></div><div class="footer-contact-item">✉ <a href="mailto:info@fmtun.ru">info@fmtun.ru</a></div></div>
     </div>
-    <div class="footer-bottom"><span>© 2025 Fast HUB.</span><div class="footer-legal-links"><a href="/terms">Соглашение</a><a href="/privacy-policy">Конфиденциальность</a></div></div>
+    <div class="footer-bottom"><span>© 2025 Fm TuN.</span><div class="footer-legal-links"><a href="/terms">Соглашение</a><a href="/privacy-policy">Конфиденциальность</a></div></div>
   </div>
 </footer>
 
@@ -611,63 +616,53 @@
                 document.getElementById('clp3'),document.getElementById('clp4')];
   var heading = document.getElementById('crisp-heading');
 
+  var _loaderDone = false;
+  function hideLoader() {
+    if (_loaderDone) return;
+    _loaderDone = true;
+    loader.style.transition = 'opacity .35s ease';
+    loader.style.opacity = '0';
+    setTimeout(function(){ loader.style.display = 'none'; }, 380);
+  }
+
   function runCrispLoader(){
-    if(typeof gsap==='undefined'){setTimeout(runCrispLoader,40);return;}
+    // Если GSAP не загрузился — просто скрываем прелоадер
+    if(typeof gsap==='undefined'){ hideLoader(); return; }
 
     gsap.registerPlugin(CustomEase);
     CustomEase.create('wipe','0.625,0.05,0,1');
 
-    // Set initial states — panels start off-screen to the right
     gsap.set(strip, {display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1vw'});
-    gsap.set(panels, {xPercent:600, opacity:0});
+    gsap.set(panels, {xPercent:400, opacity:0});
     gsap.set(center, {width:'10em', height:'10em', borderRadius:'.5em', opacity:0});
     gsap.set(heading, {yPercent:130, opacity:0});
 
     var tl = gsap.timeline({defaults:{ease:'expo.inOut'}});
 
-    // 1 — panels sweep in slowly from right (visible for longer)
-    tl.to(panels, {xPercent:-600, opacity:1, duration:2.8, stagger:0.12, ease:'expo.inOut'}, 0);
-
-    // fade side panels as center expands, then hide completely
-    tl.to(panels, {opacity:0, duration:.6, stagger:0.07, ease:'power2.in'}, 2.1);
-    // Fix Bug5: after fade, set visibility:hidden so swept panels cannot reappear
-    tl.set(panels, {visibility:'hidden', display:'none'}, 2.85);
-
-    // 2 — center GPS panel reveals
-    tl.to(center, {opacity:1, duration:.5, ease:'power2.out'}, 1.7);
-
-    // 3 — center expands to fill screen (the big reveal)
-    tl.to(center, {
-      width:'104vw', height:'104dvh',
-      borderRadius:0,
-      duration:2.4, ease:'expo.inOut'
+    // Ускоренная анимация: ~2.5s вместо 5s
+    tl.to(panels, {xPercent:-400, opacity:1, duration:1.4, stagger:0.07}, 0);
+    tl.to(panels, {opacity:0, duration:.4, stagger:0.04, ease:'power2.in'}, 1.0);
+    tl.set(panels, {display:'none'}, 1.5);
+    tl.to(center, {opacity:1, duration:.4, ease:'power2.out'}, 0.8);
+    tl.to(center, {width:'104vw', height:'104dvh', borderRadius:0, duration:1.2, ease:'expo.inOut'}, 1.1);
+    tl.to(heading, {yPercent:0, opacity:1, duration:.7, ease:'expo.out'}, 1.6);
+    tl.to(loader, {opacity:0, duration:.4, ease:'power2.in',
+      onComplete: hideLoader
     }, 2.2);
-
-    // 4 — heading rises into view
-    tl.to(heading, {
-      yPercent:0, opacity:1,
-      duration:1.2, ease:'expo.out'
-    }, 3.2);
-
-    // 5 — Scale & Fade: loader scales up then dissolves (~5.4s total)
-    tl.to(loader, {
-      scale: 1.12,
-      duration: 0.7,
-      ease: 'power2.in'
-    }, 4.2);
-    tl.to(loader, {
-      opacity: 0,
-      duration: 0.55,
-      ease: 'power3.out',
-      onComplete: function() {
-        loader.style.display = 'none';
-        loader.style.opacity = '';
-        loader.style.transform = '';
-      }
-    }, 4.55);
   }
 
-  document.fonts.ready.then(runCrispLoader);
+  // Запускаем без ожидания шрифтов, но даём 300ms на загрузку
+  var _fontTimeout = setTimeout(runCrispLoader, 300);
+  Promise.race([
+    document.fonts.ready,
+    new Promise(function(r){ setTimeout(r, 300); })
+  ]).then(function(){
+    clearTimeout(_fontTimeout);
+    runCrispLoader();
+  });
+
+  // Абсолютный fallback — через 3.5s скрываем в любом случае
+  setTimeout(hideLoader, 3500);
 })();
 
 /* =========================================================
@@ -675,10 +670,10 @@
 ========================================================= */
 (function(){
   var c=document.getElementById('starfield'),ctx=c.getContext('2d');
-  var W,H,stars=[],COUNT=160,TRAIL=30;
+  var W,H,stars=[],COUNT = window.innerWidth < 768 ? 40 : 60,TRAIL=18;
   function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
   function make(){
-    var a=Math.random()*Math.PI*2,spd=Math.random()*.45+.08;
+    var a=Math.random()*Math.PI*2,spd=Math.random()*.3+.05;
     return{x:Math.random()*W,y:Math.random()*H,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
       r:Math.random()*1.1+.35,alpha:Math.random()*.5+.3,tw:Math.random()*Math.PI*2,tws:Math.random()*.01+.005,trail:[]};
   }
@@ -700,16 +695,20 @@
         ctx.fillStyle=isLight?'rgba(180,70,0,'+(p2*s.alpha*.4)+')':'rgba(110,205,255,'+(p2*s.alpha*.5)+')';ctx.fill();
       }
       var pulse=Math.sin(s.tw)*.2+.8,al=s.alpha*pulse;
-      var g=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*4);
-      g.addColorStop(0,isLight?'rgba(232,88,10,'+(al*.25)+')':'rgba(0,212,255,'+(al*.3)+')');g.addColorStop(1,isLight?'rgba(232,88,10,0)':'rgba(0,212,255,0)');
-      ctx.beginPath();ctx.arc(s.x,s.y,s.r*4,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r*2.5,0,Math.PI*2);
+      ctx.fillStyle=isLight?'rgba(232,88,10,'+(al*.12)+')':'rgba(0,212,255,'+(al*.15)+')';ctx.fill();
       ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
       ctx.fillStyle=isLight?'rgba(200,80,0,'+al+')':'rgba(215,248,255,'+al+')';ctx.fill();
     }
-    requestAnimationFrame(draw);
+    if(!_sfPaused) _sfAnimId=requestAnimationFrame(draw);
   }
+  var _sfPaused=false,_sfAnimId=null;
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden){_sfPaused=true;if(_sfAnimId){cancelAnimationFrame(_sfAnimId);_sfAnimId=null;}}
+    else{_sfPaused=false;_sfAnimId=requestAnimationFrame(draw);}
+  });
   window.addEventListener('resize',resize);
-  init();draw();
+  init();_sfAnimId=requestAnimationFrame(draw);
 })();
 
 /* =========================================================
@@ -837,7 +836,6 @@ function renderUser(){
       '</div>';
     gi('uBtn').onclick=function(e){e.stopPropagation();gi('uDrop').classList.toggle('active');};
   document.addEventListener('click',function(e){if(e.target&&e.target.id==='trackLogoutBtn')doLogout();});
-  document.getElementById('ordersContainer')?.addEventListener('click',function(e){var h=e.target.closest('[data-toggle-order]');if(h)toggleOrder(parseInt(h.dataset.toggleOrder));});
     if(navLabel)navLabel.textContent=me.username;
     if(navAt){navAt.onclick=function(){if(window._closeNav)window._closeNav();setTimeout(function(){doLogout();},400);};}
   }else{
@@ -907,17 +905,22 @@ function renderCart(){
 /* =========================================================
    ORDER STATUS HELPERS
 ========================================================= */
-var STATUS_FLOW = ['pending','confirmed','processing','shipped','customs','delivered','handed_over','completed'];
+var STATUS_FLOW = ['created','processing','confirmed','in_transit','customs','warehouse','delivery','completed'];
 var STATUS_LABELS = {
-  pending:      {label:'Создан',       icon:'📋', cls:'badge-pending'},
-  confirmed:    {label:'Подтверждён',  icon:'✅', cls:'badge-confirmed'},
-  processing:   {label:'В обработке', icon:'⚙️',  cls:'badge-processing'},
-  shipped:      {label:'В пути',       icon:'🚚', cls:'badge-shipped'},
-  customs:      {label:'На таможне',   icon:'🛃', cls:'badge-customs'},
-  delivered:    {label:'Доставлен',    icon:'📦', cls:'badge-delivered'},
-  handed_over:  {label:'Передан',      icon:'🤝', cls:'badge-handed_over'},
-  completed:    {label:'Завершён',     icon:'🏁', cls:'badge-completed'},
-  cancelled:    {label:'Отменён',      icon:'✕',  cls:'badge-cancelled'}
+  created:      {label:'Создан',           icon:'📋', cls:'badge-pending'},
+  processing:   {label:'В обработке',      icon:'⚙️',  cls:'badge-processing'},
+  confirmed:    {label:'Подтверждён',      icon:'✅', cls:'badge-confirmed'},
+  in_transit:   {label:'В пути',           icon:'🚚', cls:'badge-shipped'},
+  customs:      {label:'На таможне',       icon:'🛃', cls:'badge-customs'},
+  warehouse:    {label:'Прибыл на склад',  icon:'📦', cls:'badge-delivered'},
+  delivery:     {label:'Передан в доставку',icon:'🤝', cls:'badge-delivered'},
+  completed:    {label:'Завершён',         icon:'🏁', cls:'badge-completed'},
+  cancelled:    {label:'Отменён',          icon:'✕',  cls:'badge-cancelled'},
+  // Legacy aliases (для старых заказов из БД)
+  pending:      {label:'Создан',           icon:'📋', cls:'badge-pending'},
+  shipped:      {label:'В пути',           icon:'🚚', cls:'badge-shipped'},
+  delivered:    {label:'Прибыл на склад',  icon:'📦', cls:'badge-delivered'},
+  handed_over:  {label:'Передан',          icon:'🤝', cls:'badge-delivered'}
 };
 
 function getBadgeHtml(status){
@@ -1058,14 +1061,27 @@ async function loadOrderItems(orderId){
 ========================================================= */
 document.addEventListener('DOMContentLoaded',function(){
   initNav();
-  // Theme seg buttons sync
+  // Theme sync
   var saved=localStorage.getItem('import_theme')||'dark';
+  document.documentElement.setAttribute('data-theme',saved);
   document.querySelectorAll('.theme-seg-btn').forEach(function(b){
-    b.classList.toggle('seg-active',b.dataset.seg===saved);
+    b.classList.toggle('seg-active', b.getAttribute('data-seg')===saved);
+    b.addEventListener('click',function(){
+      var t=b.getAttribute('data-seg');
+      document.documentElement.setAttribute('data-theme',t);
+      localStorage.setItem('import_theme',t);
+      document.querySelectorAll('.theme-seg-btn').forEach(function(x){x.classList.toggle('seg-active',x.getAttribute('data-seg')===t);});
+    });
   });
-  // Check auth
+  // Order card toggle — единственный listener
+  document.getElementById('ordersContainer').addEventListener('click',function(e){
+    var h=e.target.closest('[data-toggle-order]');
+    if(h)toggleOrder(h.getAttribute('data-toggle-order'));
+  });
+  loadCart();
   checkAuth();
 });
 </script>
+<script src="/static/cookie-consent.js" defer></script>
 </body>
 </html>

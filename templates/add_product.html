@@ -107,7 +107,7 @@
           <label class="form-label">Вес (кг)</label>
           <div style="display:flex;gap:.5rem;align-items:flex-start">
             <div style="flex:1">
-              <input type="number" name="weight_kg" id="weight_kg" class="form-input" placeholder="1.5" min="0" step="0.001">
+              <input type="number" name="weight_kg" id="weight_kg" class="form-input" placeholder="1.5" min="0" step="0.001" required>
             </div>
             <button type="button" id="calcDeliveryBtn" class="btn btn-ghost" style="white-space:nowrap;padding:.75rem 1rem;font-size:.8125rem" title="Рассчитать цены доставки по весу">
               🧮 Рассчитать доставку
@@ -369,6 +369,14 @@ function addImageUpload() {
     e.preventDefault();
     const msgEl = document.getElementById('msg');
     const formData = new FormData(e.target);
+    
+    // Валидация веса — обязателен для расчёта доставки предзаказа
+    const weightVal = formData.get('weight_kg');
+    if (!weightVal || parseFloat(weightVal) <= 0) {
+      msgEl.innerHTML = '<div class="msg msg-error">⚠️ Укажите вес товара (кг) — он необходим для расчёта стоимости доставки предзаказа</div>';
+      document.getElementById('weight_kg').focus();
+      return;
+    }
     
     // Обрабатываем чекбоксы правильно
     if (!formData.get('in_stock')) formData.set('in_stock', 'false');

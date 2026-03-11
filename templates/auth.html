@@ -13,9 +13,9 @@
   <link rel="shortcut icon" href="/static/favicon/favicon.ico?v=6">
   <meta name="theme-color" content="#080A0F">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/Flip.min.js" integrity="sha384-CHvG5TSBYWY4gs18D+se5IrGOZ6r8JlhAWob7LbkaUcfqD8PWzaYz2pqZdH7LsXQ" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/CustomEase.min.js" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/Flip.min.js" integrity="sha384-CHvG5TSBYWY4gs18D+se5IrGOZ6r8JlhAWob7LbkaUcfqD8PWzaYz2pqZdH7LsXQ" crossorigin="anonymous" integrity="sha384-CHvG5TSBYWY4gs18D+se5IrGOZ6r8JlhAWob7LbkaUcfqD8PWzaYz2pqZdH7LsXQ" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/CustomEase.min.js" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous"></script>
   <style nonce="{{ request.state.csp_nonce }}">
     @font-face{font-family:'PP Neue Corp Tight';src:url('https://cdn.prod.website-files.com/673af51dea86ab95d124c3ee/673b0f5784f7060c0ac05534_PPNeueCorp-TightUltrabold.otf') format('opentype');font-weight:700;font-display:swap;}
     :root{
@@ -308,12 +308,15 @@ gsap.registerPlugin(Flip, CustomEase);
 
 (function(){
   var c=document.getElementById('starfield'),ctx=c.getContext('2d');
-  var W,H,stars=[],COUNT=160,TRAIL=30;
+  var W,H,stars=[],COUNT=window.innerWidth<768?55:90,TRAIL=12;
+  var _FPS=1000/24,_lastT=0;
   function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
-  function make(){var a=Math.random()*Math.PI*2,spd=Math.random()*.45+.08;return{x:Math.random()*W,y:Math.random()*H,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:Math.random()*1.1+.35,alpha:Math.random()*.5+.3,tw:Math.random()*Math.PI*2,tws:Math.random()*.01+.005,trail:[]};}
+  function make(){var a=Math.random()*Math.PI*2,spd=Math.random()*.14+.03;return{x:Math.random()*W,y:Math.random()*H,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:Math.random()*1.1+.35,alpha:Math.random()*.5+.3,tw:Math.random()*Math.PI*2,tws:Math.random()*.008+.003,trail:[]};}
   function init(){resize();stars=Array.from({length:COUNT},make);}
-  function draw(){
-    ctx.fillStyle='rgba(8,10,15,.22)';ctx.fillRect(0,0,W,H);
+  function draw(now){
+    if(now-_lastT<_FPS){if(!_sfStop)_sfId=requestAnimationFrame(draw);return;}
+    _lastT=now;
+    ctx.fillStyle='rgba(8,10,15,.28)';ctx.fillRect(0,0,W,H);
     for(var i=0;i<stars.length;i++){
       var s=stars[i];s.trail.push({x:s.x,y:s.y});if(s.trail.length>TRAIL)s.trail.shift();
       s.x+=s.vx;s.y+=s.vy;s.tw+=s.tws;
@@ -321,16 +324,15 @@ gsap.registerPlugin(Flip, CustomEase);
       for(var t=1;t<s.trail.length;t++){var p=s.trail[t-1],q=s.trail[t],frac=t/s.trail.length;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.strokeStyle='rgba(0,212,255,'+(s.alpha*frac*.35)+')';ctx.lineWidth=s.r*frac;ctx.stroke();}
       var tw=Math.sin(s.tw)*.5+.5;ctx.beginPath();ctx.arc(s.x,s.y,s.r*(1+tw*.3),0,Math.PI*2);ctx.fillStyle='rgba(180,230,255,'+(s.alpha*(0.6+tw*.4))+')';ctx.fill();
     }
-    requestAnimationFrame(draw);
+    if(!_sfStop)_sfId=requestAnimationFrame(draw);
   }
   // Fix ЗАМ-01: пауза starfield при скрытой вкладке
   var _sfId=null,_sfStop=false;
-  function draw2(){if(!_sfStop)_sfId=requestAnimationFrame(draw2);draw();}
   document.addEventListener('visibilitychange',function(){
     if(document.hidden){_sfStop=true;if(_sfId){cancelAnimationFrame(_sfId);_sfId=null;}}
-    else{_sfStop=false;_sfId=requestAnimationFrame(draw2);}
+    else{_sfStop=false;_sfId=requestAnimationFrame(draw);}
   });
-  window.addEventListener('resize',resize);init();_sfId=requestAnimationFrame(draw2);
+  window.addEventListener('resize',resize);init();_sfId=requestAnimationFrame(draw);
 })();
 
 function initFlipButtons(){
@@ -498,7 +500,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <script nonce="{{ request.state.csp_nonce }}">
 /* ══ THEME SYSTEM ══ */
 (function(){
-  var KEY='import_theme';
+  var KEY='fmtun_theme';
   function updateSegs(t){
     document.querySelectorAll('.theme-seg-btn').forEach(function(b){
       b.classList.toggle('seg-active', b.getAttribute('data-seg')===t);

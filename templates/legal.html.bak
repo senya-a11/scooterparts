@@ -1069,7 +1069,7 @@
 <script nonce="{{ request.state.csp_nonce }}">
 /* ══ THEME SYSTEM ══ */
 (function(){
-  var KEY='import_theme';
+  var KEY='fmtun_theme';
   function updateSegs(t){
     document.querySelectorAll('.theme-seg-btn').forEach(function(b){
       b.classList.toggle('seg-active', b.getAttribute('data-seg')===t);

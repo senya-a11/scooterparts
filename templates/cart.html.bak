@@ -700,6 +700,10 @@
           <span class="summary-row-label">Доставка</span>
           <span class="summary-row-val" id="summaryDelivery">—</span>
         </div>
+        <div class="summary-row" id="summaryDiscountRow" style="display:none">
+          <span class="summary-row-label" style="color:var(--green)">Скидка</span>
+          <span class="summary-row-val" style="color:var(--green)" id="summaryDiscount">—</span>
+        </div>
         <div class="summary-sep"></div>
         <div class="summary-total-row">
           <span class="summary-total-label">Всего</span>
@@ -782,16 +786,19 @@
 ════════════════════════════════════════ */
 (function(){
   var c=document.getElementById("starfield"),ctx=c.getContext("2d");
-  var W,H,stars=[],COUNT = window.innerWidth < 768 ? 40 : 60,TRAIL=18;
+  var W,H,stars=[],COUNT = window.innerWidth < 768 ? 55 : 90,TRAIL=12;
+  var _FPS=1000/24,_lastT=0;
   function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
   function make(){
-    var a=Math.random()*Math.PI*2,spd=Math.random()*.3+.05;
-    return{x:Math.random()*W,y:Math.random()*H,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:Math.random()*1.1+.35,alpha:Math.random()*.5+.3,tw:Math.random()*Math.PI*2,tws:Math.random()*.01+.005,trail:[]};
+    var a=Math.random()*Math.PI*2,spd=Math.random()*.14+.03;
+    return{x:Math.random()*W,y:Math.random()*H,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:Math.random()*1.1+.35,alpha:Math.random()*.5+.3,tw:Math.random()*Math.PI*2,tws:Math.random()*.008+.003,trail:[]};
   }
   function init(){resize();stars=Array.from({length:COUNT},make);}
-  function draw(){
+  function draw(now){
+    if(now-_lastT<_FPS){if(!_sfStop)_sfId=requestAnimationFrame(draw);return;}
+    _lastT=now;
     var isLight=document.documentElement.getAttribute('data-theme')==='light';
-    ctx.fillStyle=isLight?'rgba(247,244,239,.18)':'rgba(8,10,15,.22)';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle=isLight?'rgba(247,244,239,.22)':'rgba(8,10,15,.28)';ctx.fillRect(0,0,W,H);
     for(var i=0;i<stars.length;i++){
       var s=stars[i];
       s.trail.push({x:s.x,y:s.y});
@@ -811,17 +818,16 @@
       ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
       ctx.fillStyle=isLight?'rgba(200,80,0,'+a+')':'rgba(215,248,255,'+a+')';ctx.fill();
     }
-    requestAnimationFrame(draw);
+    if(!_sfStop)_sfId=requestAnimationFrame(draw);
   }
   // Fix ЗАМ-01: пауза при скрытой вкладке
   var _sfId=null,_sfStop=false;
-  function draw2(){if(!_sfStop)_sfId=requestAnimationFrame(draw2);draw();}
   document.addEventListener('visibilitychange',function(){
     if(document.hidden){_sfStop=true;if(_sfId){cancelAnimationFrame(_sfId);_sfId=null;}}
-    else{_sfStop=false;_sfId=requestAnimationFrame(draw2);}
+    else{_sfStop=false;_sfId=requestAnimationFrame(draw);}
   });
   window.addEventListener("resize",resize);
-  init();_sfId=requestAnimationFrame(draw2);
+  init();_sfId=requestAnimationFrame(draw);
 })();
 /* ════════════════════════════════════════
    NAV DRAWER — GSAP (точно как products.html)
@@ -891,7 +897,7 @@
    THEME SYSTEM (точно как products.html)
 ════════════════════════════════════════ */
 (function(){
-  var KEY='import_theme';
+  var KEY='fmtun_theme';
   function updateSegs(t){
     document.querySelectorAll('.theme-seg-btn').forEach(function(b){
       b.classList.toggle('seg-active', b.getAttribute('data-seg')===t);
@@ -1032,6 +1038,19 @@ function renderCart() {
       : `<span class="item-order-badge badge-in-stock">✓ В наличии</span>`;
     const priceAuto = p.price_preorder_auto;
     const priceAir  = p.price_preorder_air;
+    const weightKg  = p.weight_kg ? parseFloat(p.weight_kg) : null;
+    // Compute delivery formula hint from delivery settings
+    function delivFormulaAuto() {
+      const rate = parseFloat(deliverySettings.auto_rate_per_kg?.value);
+      if (weightKg && rate) return `${(weightKg*item.quantity).toFixed(2)} кг × ${fmt(rate)} ₽/кг`;
+      return null;
+    }
+    function delivFormulaAir() {
+      const rate = parseFloat(deliverySettings.air_rate_per_kg?.value);
+      const cny  = parseFloat(deliverySettings.air_cny_to_rub?.value);
+      if (weightKg && rate && cny) return `${(weightKg*item.quantity).toFixed(2)} кг × ${rate} юань × ${cny} ₽`;
+      return null;
+    }
     const deliveryHtml = isPreorder ? `
       <div class="delivery-selector">
         <div class="delivery-sel-label">
@@ -1043,12 +1062,14 @@ function renderCart() {
             <div class="del-opt-icon">🚗</div>
             <div class="del-opt-name">Авто</div>
             <div class="del-opt-price">${priceAuto ? fmt(priceAuto)+' ₽' : 'Уточняйте'}</div>
+            ${delivFormulaAuto() ? `<div style="font-size:.65rem;color:var(--text3);margin-top:.1rem;line-height:1.2">${delivFormulaAuto()}</div>` : ''}
             ${(()=>{ const mn=deliverySettings.auto_days_min?.value, mx=deliverySettings.auto_days_max?.value; return (mn||mx)?`<div style="font-size:.68rem;color:var(--text3);margin-top:.15rem">${mn&&mx?mn+'–'+mx+' дн':mn?'от '+mn+' дн':mx?'до '+mx+' дн':''}</div>`:''; })()}
           </button>
           <button class="delivery-opt${item.delivery_type==='air'?' selected':''}" data-delivery-pid="${p.id}" data-delivery-spec="${specId}" data-delivery-type="air">
             <div class="del-opt-icon">✈️</div>
             <div class="del-opt-name">Самолёт</div>
             <div class="del-opt-price">${priceAir ? fmt(priceAir)+' ₽' : 'Уточняйте'}</div>
+            ${delivFormulaAir() ? `<div style="font-size:.65rem;color:var(--text3);margin-top:.1rem;line-height:1.2">${delivFormulaAir()}</div>` : ''}
             ${(()=>{ const mn=deliverySettings.air_days_min?.value, mx=deliverySettings.air_days_max?.value; return (mn||mx)?`<div style="font-size:.68rem;color:var(--text3);margin-top:.15rem">${mn&&mx?mn+'–'+mx+' дн':mn?'от '+mn+' дн':mx?'до '+mx+' дн':''}</div>`:''; })()}
           </button>
         </div>
@@ -1073,7 +1094,29 @@ function renderCart() {
       </div>
       <div class="item-right">
         <div class="item-total">${fmt(item.item_total)} ₽</div>
-        <div class="item-unit-price">${fmt(p.base_price || p.price)} ₽ × ${item.quantity}</div>
+        ${(()=>{
+          // effective unit price (after discount, after delivery selection)
+          const unitPrice = item.item_total / item.quantity;
+          const baseUnit  = p.base_price || 0;
+          const disc      = p.discount_percent || 0;
+          // Show striked original only when there's a real discount and prices differ
+          const showStrike = disc > 0 && baseUnit > 0 && Math.round(baseUnit) !== Math.round(unitPrice);
+          if (isPreorder && item.delivery_type) {
+            // Preorder: show "X ₽/шт × qty (доставка)"
+            const strikedHtml = showStrike
+              ? `<span style="text-decoration:line-through;color:var(--text3);font-size:.72rem;margin-right:.2rem">${fmt(Math.round(baseUnit))} ₽</span>`
+              : '';
+            return `<div class="item-unit-price">${strikedHtml}${fmt(Math.round(unitPrice))} ₽/шт × ${item.quantity}</div>
+                    <div style="font-size:.68rem;color:var(--text3);margin-top:.1rem">${item.delivery_type==='auto'?'🚗 Авто':'✈️ Самолёт'}</div>`;
+          } else if (isPreorder) {
+            return `<div class="item-unit-price" style="color:var(--amber)">Выберите доставку</div>`;
+          } else {
+            const strikedHtml = showStrike
+              ? `<span style="text-decoration:line-through;color:var(--text3);font-size:.72rem;margin-right:.2rem">${fmt(Math.round(baseUnit))} ₽</span>`
+              : '';
+            return `<div class="item-unit-price">${strikedHtml}${fmt(Math.round(unitPrice))} ₽ × ${item.quantity}</div>`;
+          }
+        })()}
         <button class="item-remove" data-remove-pid="${p.id}" data-remove-spec="${specId}" title="Удалить">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
         </button>
@@ -1170,8 +1213,12 @@ async function changeDelivery(productId, specificationId, deliveryType) {
   if (item) {
     item.delivery_type = deliveryType;
     const p = item.product;
-    if (deliveryType === 'auto' && p.price_preorder_auto) item.item_total = p.price_preorder_auto * item.quantity;
-    else if (deliveryType === 'air' && p.price_preorder_air) item.item_total = p.price_preorder_air * item.quantity;
+    const eff = p.discount_percent || 0;
+    if (deliveryType === 'auto' && p.price_preorder_auto) {
+      item.item_total = Math.round(p.price_preorder_auto * (eff > 0 ? (1 - eff/100) : 1)) * item.quantity;
+    } else if (deliveryType === 'air' && p.price_preorder_air) {
+      item.item_total = Math.round(p.price_preorder_air * (eff > 0 ? (1 - eff/100) : 1)) * item.quantity;
+    }
     renderCart();
   }
   // Persist via PATCH endpoint
@@ -1205,18 +1252,84 @@ function updateSummary() {
     return;
   }
 
-  const baseSubtotal = cart.reduce((s, i) => s + (i.product.base_price||i.product.price) * i.quantity, 0);
-  const total = cart.reduce((s, i) => s + i.item_total, 0);
-  const deliveryCost = Math.max(0, total - baseSubtotal);
   const preorderItems = cart.filter(i => i.order_type === 'preorder');
+  const inStockItems  = cart.filter(i => i.order_type !== 'preorder');
   const missingDelivery = preorderItems.some(i => !i.delivery_type);
 
-  document.getElementById('summarySubtotal').textContent = fmt(baseSubtotal) + ' ₽';
-  document.getElementById('summaryTotal').textContent = fmt(total) + ' ₽';
+  // Goods subtotal = in-stock items at effective price + preorder items at BASE price (goods cost)
+  const goodsTotal = cart.reduce((s, i) => {
+    const baseUnit = i.product.base_price || i.product.price || 0;
+    return s + baseUnit * i.quantity;
+  }, 0);
+
+  // Delivery cost = sum of preorder item totals only (they ARE the delivery-based price)
+  // = total_preorder_cost - preorder_base_cost
+  const preorderGoodsBase = preorderItems.reduce((s, i) => s + (i.product.base_price || i.product.price || 0) * i.quantity, 0);
+  const preorderTotal     = preorderItems.reduce((s, i) => s + i.item_total, 0);
+  const deliveryCost      = Math.max(0, preorderTotal - preorderGoodsBase);
+
+  // Discount savings = base prices - effective prices for in-stock items
+  const inStockBase = inStockItems.reduce((s, i) => s + (i.product.base_price || i.product.price || 0) * i.quantity, 0);
+  const inStockTotal = inStockItems.reduce((s, i) => s + i.item_total, 0);
+  const discountSavings = Math.max(0, inStockBase - inStockTotal);
+
+  // Grand total = all item_totals
+  const grandTotal = cart.reduce((s, i) => s + i.item_total, 0);
+
+  // Build delivery label with weight formula
+  let deliveryLabel = '—';
+  if (!missingDelivery && preorderItems.length > 0) {
+    const autoItems = preorderItems.filter(i => i.delivery_type === 'auto');
+    const airItems  = preorderItems.filter(i => i.delivery_type === 'air');
+    const parts = [];
+    if (autoItems.length) {
+      const totalAutoKg = autoItems.reduce((s, i) => s + (parseFloat(i.product.weight_kg)||0) * i.quantity, 0);
+      const rate = parseFloat(deliverySettings.auto_rate_per_kg?.value);
+      if (totalAutoKg > 0 && rate) {
+        parts.push(`🚗 ${totalAutoKg.toFixed(2)} кг × ${fmt(rate)} ₽/кг = ${fmt(Math.ceil(totalAutoKg * rate))} ₽`);
+      } else {
+        parts.push(`🚗 ${fmt(autoItems.reduce((s,i)=>s+i.item_total,0))} ₽`);
+      }
+    }
+    if (airItems.length) {
+      const totalAirKg = airItems.reduce((s, i) => s + (parseFloat(i.product.weight_kg)||0) * i.quantity, 0);
+      const rate = parseFloat(deliverySettings.air_rate_per_kg?.value);
+      const cny  = parseFloat(deliverySettings.air_cny_to_rub?.value);
+      if (totalAirKg > 0 && rate && cny) {
+        parts.push(`✈️ ${totalAirKg.toFixed(2)} кг × ${rate} ¥ × ${cny} ₽/¥ = ${fmt(Math.ceil(totalAirKg*rate*cny))} ₽`);
+      } else {
+        parts.push(`✈️ ${fmt(airItems.reduce((s,i)=>s+i.item_total,0))} ₽`);
+      }
+    }
+    deliveryLabel = parts.join(' + ') || fmt(deliveryCost) + ' ₽';
+  } else if (missingDelivery) {
+    deliveryLabel = 'Не выбрана';
+  }
+
+  document.getElementById('summarySubtotal').textContent = fmt(Math.round(goodsTotal)) + ' ₽';
+  document.getElementById('summaryTotal').textContent = fmt(Math.round(grandTotal)) + ' ₽';
+
+  // Discount row
+  const discRow = document.getElementById('summaryDiscountRow');
+  const discVal = document.getElementById('summaryDiscount');
+  if (discRow && discVal) {
+    if (discountSavings > 0) {
+      discVal.textContent = '−' + fmt(Math.round(discountSavings)) + ' ₽';
+      discRow.style.display = 'flex';
+    } else {
+      discRow.style.display = 'none';
+    }
+  }
 
   if (preorderItems.length > 0) {
     if (summaryDeliveryRow) summaryDeliveryRow.style.display = 'flex';
-    document.getElementById('summaryDelivery').textContent = missingDelivery ? 'Не выбрана' : (deliveryCost > 0 ? '+' + fmt(deliveryCost) + ' ₽' : '0 ₽');
+    const summDelEl = document.getElementById('summaryDelivery');
+    if (summDelEl) {
+      // Use small font for formula
+      summDelEl.innerHTML = missingDelivery
+        ? '<span style="color:var(--amber)">Не выбрана</span>'
+        : `<span style="font-size:.75rem;line-height:1.4">${deliveryLabel}</span>`;
+    }
   } else {
     if (summaryDeliveryRow) summaryDeliveryRow.style.display = 'none';
   }
@@ -1264,7 +1377,7 @@ document.getElementById('checkoutBtn').addEventListener('click', async function(
    THEME SYSTEM
 ════════════════════════════════════════ */
 (function(){
-  var KEY='import_theme';
+  var KEY='fmtun_theme';
   function applyTheme(t){
     document.documentElement.setAttribute('data-theme',t);
     localStorage.setItem(KEY,t);

@@ -1153,8 +1153,11 @@
 <script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js"></script>
 <script nonce="{{ request.state.csp_nonce }}">
   try {
+    if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+      gsap.registerPlugin(ScrollTrigger); // must be first
+    }
     if (typeof Lenis !== 'undefined' && typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
-      var lenis = new Lenis({duration:1.0,easing:function(t){return Math.min(1,1.001-Math.pow(2,-10*t))},smoothWheel:true,wheelMultiplier:0.8});
+      var lenis = new Lenis({duration:0.6,easing:function(t){return Math.min(1,1.001-Math.pow(2,-10*t))},smoothWheel:true,wheelMultiplier:1.0});
       lenis.on('scroll', ScrollTrigger.update);
       gsap.ticker.add(function(time) { lenis.raf(time * 1000); });
       gsap.ticker.lagSmoothing(0);
@@ -1180,8 +1183,6 @@
   try {
     if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
 
-    gsap.registerPlugin(ScrollTrigger);
-
     /* ── Scroll parallax (Osmo-style: single timeline, scrub:0) ── */
     var SCROLL_LAYERS = [
       { layer: '1', yPercent: 70 },
@@ -1196,7 +1197,7 @@
           trigger: triggerElement,
           start: '0% 0%',
           end: '100% 0%',
-          scrub: 0
+          scrub: 0.3
         }
       });
       SCROLL_LAYERS.forEach(function(layerObj, idx) {
@@ -1216,7 +1217,7 @@
 <script nonce="{{ request.state.csp_nonce }}">
 /* ══ THEME SYSTEM ══ */
 (function(){
-  var KEY='import_theme';
+  var KEY='fmtun_theme';
   function updateSegs(t){
     document.querySelectorAll('.theme-seg-btn').forEach(function(b){
       b.classList.toggle('seg-active', b.getAttribute('data-seg')===t);

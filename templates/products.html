@@ -398,7 +398,7 @@
     [data-theme="light"] .cat-pill{background:#fff;border-color:rgba(0,0,0,.15);color:var(--text);}
     [data-theme="light"] .cat-pill:hover{background:rgba(255,255,255,.9);border-color:rgba(232,88,10,.3);color:var(--text);}
     [data-theme="light"] .cat-pill.active{background:var(--blue-dim);border-color:rgba(232,88,10,.4);color:var(--blue);box-shadow:0 0 12px rgba(232,88,10,.1);}
-    .products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:1.25rem}
+    .products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:1.25rem;align-items:start}
 
     /* ── GLASSMORPHISM PRODUCT CARD ── */
     .product-card{
@@ -463,6 +463,8 @@
 
     /* ── DISCOUNT BADGE ── */
     .discount-badge{position:absolute;top:.625rem;left:.625rem;z-index:6;background:var(--red);color:#fff;font-family:var(--font-raj);font-size:.72rem;font-weight:700;letter-spacing:.04em;padding:.2rem .55rem;border-radius:6px;box-shadow:0 2px 8px rgba(255,71,87,.35);pointer-events:none}
+    .personal-disc-badge{display:inline-block;margin-top:.25rem;padding:.15rem .5rem;background:rgba(0,212,255,.12);border:1px solid rgba(0,212,255,.25);border-radius:4px;font-family:var(--font-raj);font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--blue)}
+    .product-weight-badge{display:inline-flex;align-items:center;gap:.25rem;margin:.3rem 0 .2rem;font-family:var(--font-raj);font-size:.65rem;font-weight:600;letter-spacing:.06em;color:rgba(255,255,255,.4)}
 
     /* ── DOUBLE PRICE ── */
     .price-row{display:flex;flex-direction:column;gap:.18rem}
@@ -977,6 +979,13 @@
       </div>
     </div>
 
+    <div id="poWeightNote" style="display:none;margin-bottom:.625rem;padding:.4rem .75rem;background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.15);border-radius:8px;font-size:.75rem;color:var(--blue)">
+      ⚖ Рассчитано по весу: <strong id="poWeightVal">—</strong>
+    </div>
+    <div id="poPersonalDiscNote" style="display:none;margin-bottom:.625rem;padding:.4rem .75rem;background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.15);border-radius:8px;font-size:.75rem;color:var(--blue)">
+      🏷 Ваша персональная скидка <strong id="poPersonalDiscVal">—</strong>% применена
+    </div>
+
     <button id="preorderModalCancel" style="width:100%;padding:.625rem;background:none;border:1px solid var(--border);border-radius:10px;cursor:pointer;color:var(--text2);font-size:.8125rem;transition:border-color .2s">Отмена</button>
   </div>
 </div>
@@ -998,24 +1007,27 @@
 </div>
 
 <!-- ── GSAP ── -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/CustomEase.min.js" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js" integrity="sha384-ioeiiA4Qj8TNkk15vf+DfcM4fQbw3fUabf9VWRr56yQZ2fjAWiHPV6oWH2Jo0bXE" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/CustomEase.min.js" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js" integrity="sha384-ioeiiA4Qj8TNkk15vf+DfcM4fQbw3fUabf9VWRr56yQZ2fjAWiHPV6oWH2Jo0bXE" crossorigin="anonymous" integrity="sha384-ioeiiA4Qj8TNkk15vf+DfcM4fQbw3fUabf9VWRr56yQZ2fjAWiHPV6oWH2Jo0bXE" crossorigin="anonymous"></script>
 
 <script nonce="{{ request.state.csp_nonce }}">
 (function(){
   var c=document.getElementById("starfield"),ctx=c.getContext("2d");
-  var W,H,stars=[],COUNT = window.innerWidth < 768 ? 40 : 60,TRAIL=18;
+  var W,H,stars=[],COUNT = window.innerWidth < 768 ? 55 : 90,TRAIL=12;
+  var _FPS=1000/24,_lastT=0;
   function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
   function make(){
-    var a=Math.random()*Math.PI*2,spd=Math.random()*.3+.05;
-    return{x:Math.random()*W,y:Math.random()*H,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:Math.random()*1.1+.35,alpha:Math.random()*.5+.3,tw:Math.random()*Math.PI*2,tws:Math.random()*.01+.005,trail:[]};
+    var a=Math.random()*Math.PI*2,spd=Math.random()*.14+.03;
+    return{x:Math.random()*W,y:Math.random()*H,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:Math.random()*1.1+.35,alpha:Math.random()*.5+.3,tw:Math.random()*Math.PI*2,tws:Math.random()*.008+.003,trail:[]};
   }
   function init(){resize();stars=Array.from({length:COUNT},make);}
   var _sfAnimId=null, _sfPaused=false;
-  function draw(){
+  function draw(now){
+    if(now-_lastT<_FPS){if(!_sfPaused)_sfAnimId=requestAnimationFrame(draw);return;}
+    _lastT=now;
     var isLight=document.documentElement.getAttribute('data-theme')==='light';
-    ctx.fillStyle=isLight?'rgba(247,244,239,.18)':'rgba(8,10,15,.22)';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle=isLight?'rgba(247,244,239,.22)':'rgba(8,10,15,.28)';ctx.fillRect(0,0,W,H);
     for(var i=0;i<stars.length;i++){
       var s=stars[i];
       s.trail.push({x:s.x,y:s.y});
@@ -1259,41 +1271,45 @@ function renderProducts() {
     if(p.preorder) badges.push('<span class="product-badge badge-preorder"><span class="badge-dot"></span>Предзаказ</span>');
     const badgesHtml = badges.length?`<div class="product-badges">${badges.join('')}</div>`:'';
 
-    // ── Discount badge ──
-    const disc = p.discount_percent || 0;
+    // ── Discount badge (personal or product discount, whichever higher) ──
+    const disc = p.effective_discount || p.discount_percent || 0;
     const discBadge = disc > 0 ? `<div class="discount-badge">−${disc}%</div>` : '';
-
+    // Personal discount badge label
+    const isPersonalDisc = (p.personal_discount || 0) > 0 && (p.personal_discount || 0) >= (p.discount_percent || 0);
     // ── Double price: in-stock + preorder ──
     const basePrice = p.price || 0;
-    const discPrice = disc > 0 ? Math.round(basePrice * (1 - disc / 100)) : 0;
-    const preorderPrice = p.price_preorder_auto || p.price_preorder_air || null;
+    const discPrice = disc > 0 ? (p.price_discounted || Math.round(basePrice * (1 - disc / 100))) : 0;
+    const preorderPriceRaw = p.price_preorder_auto || p.price_preorder_air || null;
+    const preorderPrice = disc > 0 && preorderPriceRaw
+      ? (p.price_preorder_auto_discounted || p.price_preorder_air_discounted || Math.round(preorderPriceRaw*(1-disc/100)))
+      : preorderPriceRaw;
+    const personalBadge = isPersonalDisc ? `<span class="personal-disc-badge">Ваша скидка</span>` : '';
     let priceHtml = '';
-    if (p.in_stock && p.preorder && preorderPrice) {
-      // Показываем обе цены
+    if (p.in_stock && p.preorder && preorderPriceRaw) {
       priceHtml = `<div class="price-row">
         ${disc > 0
           ? `<span class="price-in-stock striked">${fmt(basePrice)} ₽</span><span class="price-in-stock-discounted">${fmt(discPrice)} ₽</span>`
           : `<span class="price-in-stock">${fmt(basePrice)} ₽</span>`
         }
         <span class="price-preorder-tag"><span class="price-preorder-label">Предзаказ</span><span class="price-preorder-val">${fmt(preorderPrice)} ₽</span></span>
-      </div>`;
-    } else if (!p.in_stock && p.preorder && preorderPrice) {
-      // Только предзаказ
+      </div>${personalBadge}`;
+    } else if (!p.in_stock && p.preorder && preorderPriceRaw) {
       priceHtml = `<div class="price-row">
         ${disc > 0
-          ? `<span class="price-in-stock striked">${fmt(preorderPrice)} ₽</span><span class="price-in-stock-discounted">${fmt(Math.round(preorderPrice*(1-disc/100)))} ₽</span>`
+          ? `<span class="price-in-stock striked">${fmt(preorderPriceRaw)} ₽</span><span class="price-in-stock-discounted">${fmt(preorderPrice)} ₽</span>`
           : `<span class="price-preorder-val">${fmt(preorderPrice)} ₽</span>`
         }
-      </div>`;
+      </div>${personalBadge}`;
     } else {
-      // Только в наличии (или нет в наличии)
       priceHtml = `<div class="price-row">
         ${disc > 0
           ? `<span class="price-in-stock striked">${fmt(basePrice)} ₽</span><span class="price-in-stock-discounted">${fmt(discPrice)} ₽</span>`
           : `<span class="price-in-stock">${fmt(basePrice)} ₽</span>`
         }
-      </div>`;
+      </div>${personalBadge}`;
     }
+    // Weight badge
+    const weightBadge = p.weight_kg ? `<div class="product-weight-badge">⚖ ${p.weight_kg} кг</div>` : '';
 
     return `<div class="product-card" data-product-id="${p.id}" style="animation-delay:${Math.min(idx*.045,.4)}s;cursor:pointer">
       <div class="product-img" style="position:relative">${imgHtml}${discBadge}</div>
@@ -1302,6 +1318,7 @@ function renderProducts() {
         <div class="product-cat">${getName(p.category)}</div>
         <div class="product-name">${p.name}</div>
         <div class="product-desc">${p.description}</div>
+        ${weightBadge}
         <div class="product-footer">
           ${priceHtml}
           <button class="add-btn${p.has_specifications&&!p.in_stock&&!p.preorder?' btn-specs':''}" id="addBtn_${p.id}" data-pid="${p.id}" ${(!p.in_stock&&!p.preorder&&!p.has_specifications)?'disabled':''}>
@@ -1425,7 +1442,10 @@ async function loadActiveOrders() {
 async function checkAuth() {
   try {
     const r = await fetch('/api/me',{credentials:'include'});
-    if(r.ok){currentUser=await r.json();updateAuthUI();loadCart();}
+    if(r.ok){currentUser=await r.json();updateAuthUI();loadCart();
+      // Перезагружаем товары с учётом личной скидки (если она есть)
+      if((currentUser.personal_discount||0) > 0) loadProducts();
+    }
   } catch {}
 }
 
@@ -1438,6 +1458,7 @@ function updateAuthUI() {
       <div class="user-dropdown" id="userDropdown">
         <div class="user-info-box"><div class="user-info-name">${currentUser.username}</div><div class="user-info-email">${currentUser.email}</div></div>
         ${currentUser.is_admin?'<a href="/admin" class="drop-item">⚙️ Панель admin</a>':''}
+        ${currentUser.is_manager&&!currentUser.is_admin?'<a href="/admin" class="drop-item">📋 Панель менеджера</a>':''}
         <button class="drop-item danger" id="logoutBtnHeader">← Выйти</button>
       </div>
     </div>`;
@@ -1517,18 +1538,44 @@ function showPreorderModal(product) {
 
     document.getElementById('inStockPrice').textContent  = basePrice  ? fmt(Math.round(basePrice))  + ' ₽' : '—';
 
+    // Вес товара
+    const poWeightNote = document.getElementById('poWeightNote');
+    const poWeightVal  = document.getElementById('poWeightVal');
+    if (poWeightNote && product.weight_kg) {
+      poWeightVal.textContent = product.weight_kg + ' кг';
+      poWeightNote.style.display = '';
+    } else if (poWeightNote) {
+      poWeightNote.style.display = 'none';
+    }
+
+    // Персональная скидка
+    const poDiscNote = document.getElementById('poPersonalDiscNote');
+    const poDiscVal  = document.getElementById('poPersonalDiscVal');
+    const effDisc = product.effective_discount || product.discount_percent || 0;
+    const persDisc = product.personal_discount || 0;
+    if (poDiscNote && persDisc > 0) {
+      poDiscVal.textContent = persDisc;
+      poDiscNote.style.display = '';
+    } else if (poDiscNote) {
+      poDiscNote.style.display = 'none';
+    }
+    // Применяем скидку к ценам в модалке
+    const discountedAuto = priceAuto && effDisc > 0 ? Math.round(priceAuto * (1 - effDisc/100)) : priceAuto;
+    const discountedAir  = priceAir  && effDisc > 0 ? Math.round(priceAir  * (1 - effDisc/100)) : priceAir;
+    const discountedBase = basePrice && effDisc > 0 ? Math.round(basePrice * (1 - effDisc/100)) : basePrice;
+
     // Цена предзаказа в кнопке (ТЗ 05)
     const preorderHintEl = document.getElementById('preorderPriceHint');
     if (preorderHintEl) {
-      const minPreorderPrice = priceAuto || priceAir;
+      const minPreorderPrice = discountedAuto || discountedAir;
       preorderHintEl.textContent = minPreorderPrice
         ? `от ${fmt(Math.round(minPreorderPrice))} ₽ →`
         : 'Выбор доставки →';
     }
 
-    document.getElementById('autoPrice').textContent     = priceAuto  ? fmt(Math.round(priceAuto))  + ' ₽' : 'Уточняйте';
-    document.getElementById('airPrice').textContent      = priceAir   ? fmt(Math.round(priceAir))   + ' ₽' : 'Уточняйте';
-    document.getElementById('poPriceBase').textContent   = basePrice  ? fmt(Math.round(basePrice))  + ' ₽' : '—';
+    document.getElementById('autoPrice').textContent     = discountedAuto  ? fmt(Math.round(discountedAuto))  + ' ₽' : 'Уточняйте';
+    document.getElementById('airPrice').textContent      = discountedAir   ? fmt(Math.round(discountedAir))   + ' ₽' : 'Уточняйте';
+    document.getElementById('poPriceBase').textContent   = discountedBase  ? fmt(Math.round(discountedBase))  + ' ₽' : '—';
     document.getElementById('poDeliveryPrice').textContent = '—';
     document.getElementById('poTotalPrice').textContent    = '—';
     document.getElementById('chooseAuto').style.borderColor = 'var(--border)';
@@ -2048,7 +2095,7 @@ productDetailModal.addEventListener('click',e=>{if(e.target===productDetailModal
 <script nonce="{{ request.state.csp_nonce }}">
 /* ══ THEME SYSTEM ══ */
 (function(){
-  var KEY='import_theme';
+  var KEY='fmtun_theme';
   function updateSegs(t){
     document.querySelectorAll('.theme-seg-btn').forEach(function(b){
       b.classList.toggle('seg-active', b.getAttribute('data-seg')===t);

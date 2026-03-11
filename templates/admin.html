@@ -684,11 +684,19 @@
               <div><span style="color:var(--text3)">Телефон:</span> <span id="notesCPhone" style="color:var(--text)">—</span></div>
               <div><span style="color:var(--text3)">ФИО:</span> <span id="notesCFullName" style="color:var(--text)">—</span></div>
             </div>
-            <div style="margin-top:.875rem;display:flex;align-items:center;gap:.75rem">
+            <div style="margin-top:.875rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
               <span style="color:var(--text2);font-size:.8rem">Персональная скидка:</span>
               <input type="number" id="notesCDiscount" min="0" max="99" style="width:60px;padding:.3rem .5rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font-mono);font-size:.8125rem;text-align:center">
               <span style="font-size:.8rem;color:var(--text3)">%</span>
               <button class="btn btn-ghost btn-xs" id="saveDiscountBtn">💾 Сохранить скидку</button>
+            </div>
+            <div style="margin-top:.625rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+              <span style="color:var(--text2);font-size:.8rem">Роль менеджера:</span>
+              <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer">
+                <input type="checkbox" id="notesCManager" style="width:16px;height:16px;accent-color:var(--blue);cursor:pointer">
+                <span id="notesCManagerLabel" style="font-size:.8rem;color:var(--text2)">Менеджер</span>
+              </label>
+              <button class="btn btn-ghost btn-xs" id="saveManagerRoleBtn">💾 Сохранить роль</button>
             </div>
           </div>
           <div id="notesList" style="max-height:300px;overflow-y:auto"></div>
@@ -1298,18 +1306,32 @@
     }
   });
 
+  // Роль из серверного рендера (Jinja2)
+  const IS_MANAGER = {{ 'true' if is_manager else 'false' }};
+
+  // Секции, недоступные менеджеру
+  const MANAGER_HIDDEN_SECTIONS = ['dashboard','products','categories','top-clients','crm','add-product','add-product-specs','delivery-settings','installation'];
+
+  function applyManagerRestrictions() {
+    if (!IS_MANAGER) return;
+    MANAGER_HIDDEN_SECTIONS.forEach(sec => {
+      document.querySelectorAll(`[data-sec="${sec}"]`).forEach(el => el.style.display = 'none');
+    });
+  }
+
   function showAdminPanel() {
     document.getElementById('loginScreen').style.display = 'none';
     const panel = document.getElementById('adminPanel');
     panel.style.display = 'flex';
+    applyManagerRestrictions();
     
-    // Активируем Dashboard при входе
-    switchSection('dashboard');
+    // Менеджер начинает с раздела Заказы, админ — с Дашборда
+    switchSection(IS_MANAGER ? 'orders' : 'dashboard');
     
     // Загружаем категории для всех форм
-    loadCategories();
+    if (!IS_MANAGER) loadCategories();
     
-    console.log('✅ Админ панель загружена');
+    console.log('✅ Панель загружена, роль:', IS_MANAGER ? 'Менеджер' : 'Админ');
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -1322,7 +1344,8 @@
   // Auto-restore session — проверяем cookie через /api/me
   (async () => {
     try {
-      const r = await fetch('/api/admin/stats', {credentials:'include'});
+      const endpoint = IS_MANAGER ? '/api/me' : '/api/admin/stats';
+      const r = await fetch(endpoint, {credentials:'include'});
       if (r.ok) { showAdminPanel(); }
     } catch {}
   })();
@@ -2263,9 +2286,10 @@
           + '<td style="text-align:center;font-size:.9rem;color:var(--text3)" class="accordion-toggle">▶</td>'
           + '<td style="font-weight:700">#' + orderId + '</td>'
           + '<td><div>' + escH(o.username || '—') + '</div>'
-          + (o.full_name ? '<div style="font-size:.72rem;color:var(--text2)">' + escH(o.full_name) + '</div>' : '')
-          + '<div style="font-size:.72rem;color:var(--text3)">' + escH(o.email || '') + '</div>'
-          + (o.phone ? '<div style="font-size:.72rem;color:var(--text3)">' + escH(o.phone) + '</div>' : '')
+          + (!IS_MANAGER && o.full_name ? '<div style="font-size:.72rem;color:var(--text2)">' + escH(o.full_name) + '</div>' : '')
+          + (!IS_MANAGER ? '<div style="font-size:.72rem;color:var(--text3)">' + escH(o.email || '') + '</div>' : '')
+          + (!IS_MANAGER && o.phone ? '<div style="font-size:.72rem;color:var(--text3)">' + escH(o.phone) + '</div>' : '')
+          + (IS_MANAGER ? '<div style="font-size:.72rem;color:var(--text3)">—</div>' : '')
           + '</td>'
           + '<td style="font-weight:700">' + fmt(o.total_amount) + ' ₽</td>'
           + '<td><span class="order-status ' + statusCls + '">' + statusLabel + '</span>' + delayBadge + '</td>'
@@ -2347,6 +2371,9 @@
     document.getElementById('newPaymentStatusSelect').value  = btn.dataset.orderPayment || 'not_paid';
     document.getElementById('delayNoteInput').value          = btn.dataset.orderDelay   || '';
     document.getElementById('trackNumberInput').value        = btn.dataset.orderTrack   || '';
+    // Менеджер не управляет оплатой
+    const payRow = document.getElementById('newPaymentStatusSelect')?.closest('.form-group');
+    if (payRow) payRow.style.display = IS_MANAGER ? 'none' : '';
     document.getElementById('statusModal').classList.add('active');
   }
 
@@ -2534,11 +2561,13 @@
         const safePhone = escH(c.phone || '').replace(/"/g,'&quot;');
         const safeFull  = escH(c.full_name || '').replace(/"/g,'&quot;');
         const discount  = c.personal_discount || 0;
+        const isManager = c.is_manager ? '1' : '0';
+        const managerBadge = c.is_manager ? '<span style="font-size:.68rem;background:rgba(0,212,255,.1);color:var(--blue);padding:.1rem .35rem;border-radius:4px;margin-left:.35rem">Менеджер</span>' : '';
         
         return `
           <tr>
             <td>
-              <strong>${c.full_name || c.username}</strong>${vipBadge}${discountBadge}
+              <strong>${c.full_name || c.username}</strong>${vipBadge}${discountBadge}${managerBadge}
               <div style="font-size:.75rem;color:var(--text3)">${c.email}</div>
             </td>
             <td style="font-size:.8rem;color:var(--text2)">
@@ -2549,7 +2578,7 @@
             <td>${discount > 0 ? `<span style="font-family:var(--font-mono);font-size:.8rem;color:var(--red)">−${discount}%</span>` : '<span style="color:var(--text3);font-size:.8rem">0%</span>'}</td>
             <td style="color:var(--text2);font-size:.8125rem">${lastOrder}</td>
             <td style="white-space:nowrap">
-              <button class="btn btn-xs btn-secondary" data-open-notes-id="${safeId}" data-open-notes-name="${safeName}" data-open-notes-email="${safeEmail}" data-open-notes-phone="${safePhone}" data-open-notes-fullname="${safeFull}" data-open-notes-discount="${discount}">📝 Карточка</button>
+              <button class="btn btn-xs btn-secondary" data-open-notes-id="${safeId}" data-open-notes-name="${safeName}" data-open-notes-email="${safeEmail}" data-open-notes-phone="${safePhone}" data-open-notes-fullname="${safeFull}" data-open-notes-discount="${discount}" data-open-notes-manager="${isManager}">📝 Карточка</button>
             </td>
           </tr>
         `;
@@ -2560,7 +2589,7 @@
     }
   }
 
-  async function openNotes(userId, userName, email, phone, fullName, discount) {
+  async function openNotes(userId, userName, email, phone, fullName, discount, isManager) {
     currentCustomerId = userId;
     document.getElementById('notesCustomerName').textContent = userName;
     // Fill info block
@@ -2570,6 +2599,8 @@
     document.getElementById('notesCPhone').textContent    = phone    || '—';
     document.getElementById('notesCFullName').textContent = fullName || '—';
     document.getElementById('notesCDiscount').value       = discount || 0;
+    const managerChk = document.getElementById('notesCManager');
+    if (managerChk) managerChk.checked = isManager === '1' || isManager === true;
     document.getElementById('notesModal').classList.add('active');
     await loadNotes(userId);
   }
@@ -2584,6 +2615,21 @@
       });
       if (r.ok) { showToast('success', `✅ Скидка ${discount}% сохранена`); loadCRM(); }
       else showToast('error', 'Ошибка сохранения скидки');
+    } catch { showToast('error', 'Ошибка соединения'); }
+  });
+
+  // Manager role save
+  document.getElementById('saveManagerRoleBtn')?.addEventListener('click', async function() {
+    const is_manager = document.getElementById('notesCManager')?.checked || false;
+    try {
+      const r = await fetch(`/api/admin/customers/${currentCustomerId}/role`, {credentials:'include',
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({is_manager})
+      });
+      if (r.ok) {
+        showToast('success', is_manager ? '✅ Роль менеджера выдана' : '✅ Роль менеджера снята');
+        loadCRM();
+      } else showToast('error', 'Ошибка сохранения роли');
     } catch { showToast('error', 'Ошибка соединения'); }
   });
 
@@ -2888,7 +2934,7 @@
     // ── CRM table delegation ──
     document.getElementById('crmTableBody')?.addEventListener('click', function(e) {
       const notesBtn = e.target.closest('[data-open-notes-id]');
-      if (notesBtn) { openNotes(notesBtn.dataset.openNotesId, notesBtn.dataset.openNotesName, notesBtn.dataset.openNotesEmail, notesBtn.dataset.openNotesPhone, notesBtn.dataset.openNotesFullname, notesBtn.dataset.openNotesDiscount); return; }
+      if (notesBtn) { openNotes(notesBtn.dataset.openNotesId, notesBtn.dataset.openNotesName, notesBtn.dataset.openNotesEmail, notesBtn.dataset.openNotesPhone, notesBtn.dataset.openNotesFullname, notesBtn.dataset.openNotesDiscount, notesBtn.dataset.openNotesManager); return; }
     });
 
     // ── Notes list delegation ──

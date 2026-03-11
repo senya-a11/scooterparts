@@ -602,8 +602,8 @@
 <div class="toast" id="toastEl"></div>
 
 <!-- SCRIPTS -->
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/CustomEase.min.js" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/CustomEase.min.js" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous"></script>
 <script nonce="{{ request.state.csp_nonce }}">
 /* =========================================================
    CRISP PRELOADER — SVG icons horizontal sweep → expand → wipe
@@ -670,17 +670,20 @@
 ========================================================= */
 (function(){
   var c=document.getElementById('starfield'),ctx=c.getContext('2d');
-  var W,H,stars=[],COUNT = window.innerWidth < 768 ? 40 : 60,TRAIL=18;
+  var W,H,stars=[],COUNT = window.innerWidth < 768 ? 55 : 90,TRAIL=12;
+  var _FPS=1000/24,_lastT=0;
   function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
   function make(){
-    var a=Math.random()*Math.PI*2,spd=Math.random()*.3+.05;
+    var a=Math.random()*Math.PI*2,spd=Math.random()*.14+.03;
     return{x:Math.random()*W,y:Math.random()*H,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
-      r:Math.random()*1.1+.35,alpha:Math.random()*.5+.3,tw:Math.random()*Math.PI*2,tws:Math.random()*.01+.005,trail:[]};
+      r:Math.random()*1.1+.35,alpha:Math.random()*.5+.3,tw:Math.random()*Math.PI*2,tws:Math.random()*.008+.003,trail:[]};
   }
   function init(){resize();stars=Array.from({length:COUNT},make);}
-  function draw(){
+  function draw(now){
+    if(now-_lastT<_FPS){if(!_sfPaused)_sfAnimId=requestAnimationFrame(draw);return;}
+    _lastT=now;
     var isLight=document.documentElement.getAttribute('data-theme')==='light';
-    ctx.fillStyle=isLight?'rgba(247,244,239,.18)':'rgba(8,10,15,.22)';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle=isLight?'rgba(247,244,239,.22)':'rgba(8,10,15,.28)';ctx.fillRect(0,0,W,H);
     for(var i=0;i<stars.length;i++){
       var s=stars[i];
       s.trail.push({x:s.x,y:s.y});
@@ -771,11 +774,11 @@ function initNav(){
    THEME
 ========================================================= */
 (function(){
-  var saved=localStorage.getItem('import_theme')||'dark';
+  var saved=localStorage.getItem('fmtun_theme')||'dark';
   document.documentElement.setAttribute('data-theme',saved);
   function applyTheme(t){
     document.documentElement.setAttribute('data-theme',t);
-    localStorage.setItem('import_theme',t);
+    localStorage.setItem('fmtun_theme',t);
     document.querySelectorAll('.theme-seg-btn').forEach(function(b){
       b.classList.toggle('seg-active',b.dataset.seg===t);
     });
@@ -1062,14 +1065,14 @@ async function loadOrderItems(orderId){
 document.addEventListener('DOMContentLoaded',function(){
   initNav();
   // Theme sync
-  var saved=localStorage.getItem('import_theme')||'dark';
+  var saved=localStorage.getItem('fmtun_theme')||'dark';
   document.documentElement.setAttribute('data-theme',saved);
   document.querySelectorAll('.theme-seg-btn').forEach(function(b){
     b.classList.toggle('seg-active', b.getAttribute('data-seg')===saved);
     b.addEventListener('click',function(){
       var t=b.getAttribute('data-seg');
       document.documentElement.setAttribute('data-theme',t);
-      localStorage.setItem('import_theme',t);
+      localStorage.setItem('fmtun_theme',t);
       document.querySelectorAll('.theme-seg-btn').forEach(function(x){x.classList.toggle('seg-active',x.getAttribute('data-seg')===t);});
     });
   });

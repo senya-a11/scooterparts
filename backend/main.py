@@ -181,7 +181,6 @@ class OrderStatusUpdate(BaseModel):
         'customs', 'warehouse', 'delivery', 'completed', 'cancelled'
     ]
     delay_note: Optional[str] = Field(None, max_length=500)
-    payment_status: Optional[Literal['pending', 'waiting', 'paid', 'failed', 'not_paid']] = None
     payment_status: Optional[Literal['not_paid', 'pending', 'waiting', 'paid', 'failed']] = None
 
 
@@ -371,6 +370,22 @@ def verify_admin(request: Request) -> dict:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Доступ запрещён")
+        return payload
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=401, detail="Не авторизован")
+
+
+def verify_manager_or_admin(request: Request) -> dict:
+    """Доступ для менеджеров И администраторов (заказы, статусы, трек-номера)."""
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Не авторизован")
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if not (payload.get("is_admin") or payload.get("is_manager")):
             raise HTTPException(status_code=403, detail="Доступ запрещён")
         return payload
     except HTTPException:
@@ -736,7 +751,7 @@ class Database:
                 await conn.execute('''
                     ALTER TABLE orders ADD COLUMN IF NOT EXISTS delay_note TEXT
                 ''')
-            except:
+            except Exception:
                 pass
 
             # Заказы
@@ -1020,13 +1035,13 @@ async def products_page(request: Request):
 
 
 def _require_admin_cookie(request: Request):
-    """Fix #4: Серверная проверка — редирект на /auth если не admin."""
+    """Серверная проверка — редирект на /auth если не admin и не manager."""
     token = request.cookies.get("access_token")
     if not token:
         return None
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        if payload.get("is_admin"):
+        if payload.get("is_admin") or payload.get("is_manager"):
             return payload
     except Exception:
         pass
@@ -1034,9 +1049,11 @@ def _require_admin_cookie(request: Request):
 
 @app.get("/admin")
 async def admin_panel(request: Request):
-    if not _require_admin_cookie(request):
+    payload = _require_admin_cookie(request)
+    if not payload:
         return RedirectResponse("/auth?next=/admin", status_code=302)
-    return templates.TemplateResponse("admin.html", {"request": request})
+    is_manager = bool(payload.get("is_manager")) and not bool(payload.get("is_admin"))
+    return templates.TemplateResponse("admin.html", {"request": request, "is_manager": is_manager})
 
 @app.get("/admin/add-product")
 async def admin_add_product_page(request: Request):
@@ -1178,7 +1195,7 @@ async def login(login_data: UserLogin, response: Response):
     try:
         async with db.pool.acquire() as conn:
             user = await conn.fetchrow(
-                "SELECT id,username,email,full_name,password_hash,is_admin FROM users WHERE username=$1",
+                "SELECT id,username,email,full_name,password_hash,is_admin,is_manager,personal_discount FROM users WHERE username=$1",
                 login_data.username
             )
             if not user or not hasher.verify_password(login_data.password, user['password_hash']):
@@ -1186,7 +1203,8 @@ async def login(login_data: UserLogin, response: Response):
                 raise HTTPException(status_code=401, detail="Неверное имя пользователя или пароль")
 
             user_id = str(user['id'])
-            token = create_access_token({"user_id": user_id, "is_admin": user['is_admin']})
+            is_manager = bool(user.get('is_manager', False))
+            token = create_access_token({"user_id": user_id, "is_admin": user['is_admin'], "is_manager": is_manager})
 
             # Fix #1: токен в HttpOnly cookie — JS не может прочитать
             _is_https = os.getenv("ENVIRONMENT", "production") != "development"
@@ -1199,7 +1217,7 @@ async def login(login_data: UserLogin, response: Response):
                 max_age=3600,
                 path="/",
             )
-            logger.info("User logged in: %s (admin=%s)", login_data.username, user['is_admin'])
+            logger.info("User logged in: %s (admin=%s, manager=%s)", login_data.username, user['is_admin'], is_manager)
             return {
                 "message": "Вход выполнен",
                 "user": {
@@ -1208,6 +1226,8 @@ async def login(login_data: UserLogin, response: Response):
                     "email": user['email'],
                     "full_name": user['full_name'],
                     "is_admin": user['is_admin'],
+                    "is_manager": is_manager,
+                    "personal_discount": int(user.get('personal_discount') or 0),
                 }
             }
     except HTTPException:
@@ -1266,13 +1286,15 @@ async def get_me(user_id: str = Depends(get_current_user)):
     try:
         async with db.pool.acquire() as conn:
             user = await conn.fetchrow(
-                "SELECT id,username,email,full_name,phone,is_admin,created_at FROM users WHERE id=$1",
+                "SELECT id,username,email,full_name,phone,is_admin,is_manager,personal_discount,created_at FROM users WHERE id=$1",
                 user_id
             )
             if not user:
                 raise HTTPException(status_code=404, detail="Пользователь не найден")
             d = dict(user)
             d['id'] = str(d['id'])
+            d['is_manager'] = bool(d.get('is_manager', False))
+            d['personal_discount'] = int(d.get('personal_discount') or 0)
             if isinstance(d.get('created_at'), datetime):
                 d['created_at'] = d['created_at'].isoformat()
             return d
@@ -1481,11 +1503,23 @@ async def delete_category(slug: str, admin=Depends(verify_admin)):
 
 @app.get("/api/products")
 async def get_products(
+    request: Request,
     category: Optional[str] = None,
     featured: Optional[bool] = None,
     search: Optional[str] = Query(None, max_length=200),   # Fix #17
     limit: Optional[int] = Query(None, ge=1, le=200),      # Fix #9
 ):
+    # Получаем personal_discount текущего пользователя (если авторизован)
+    personal_discount = 0
+    try:
+        uid = get_current_user(request)
+        if uid:
+            async with db.pool.acquire() as conn:
+                row = await conn.fetchrow("SELECT personal_discount FROM users WHERE id=$1", uid)
+                personal_discount = int(row['personal_discount'] or 0) if row else 0
+    except Exception:
+        pass
+
     try:
         async with db.pool.acquire() as conn:
             # Fix #12: исключаем cost_price из публичного ответа
@@ -1510,6 +1544,17 @@ async def get_products(
                 d['in_stock'] = bool(d.get('stock', 0) > 0)
                 if isinstance(d.get('created_at'), datetime):
                     d['created_at'] = d['created_at'].isoformat()
+                # Применяем личную скидку: берём максимум из product discount и personal
+                prod_disc = int(d.get('discount_percent') or 0)
+                eff_disc = max(prod_disc, personal_discount)
+                d['personal_discount'] = personal_discount
+                d['effective_discount'] = eff_disc
+                if eff_disc > 0:
+                    d['price_discounted'] = round(d['price'] * (1 - eff_disc / 100))
+                    if d.get('price_preorder_auto'):
+                        d['price_preorder_auto_discounted'] = round(float(d['price_preorder_auto']) * (1 - eff_disc / 100))
+                    if d.get('price_preorder_air'):
+                        d['price_preorder_air_discounted'] = round(float(d['price_preorder_air']) * (1 - eff_disc / 100))
                 result.append(d)
             return result
     except Exception as e:
@@ -1601,18 +1646,22 @@ async def get_product(product_id: int):
 async def get_cart(user_id: str = Depends(get_current_user)):
     try:
         async with db.pool.acquire() as conn:
+            # Получаем персональную скидку пользователя
+            user_row = await conn.fetchrow("SELECT personal_discount FROM users WHERE id=$1", user_id)
+            personal_discount = int(user_row['personal_discount'] or 0) if user_row else 0
+
             items = await conn.fetch('''
                 SELECT ci.product_id, ci.specification_id, ci.quantity,
                        ci.order_type, ci.delivery_type,
                        p.name, p.category, p.price, p.description, p.image_url, p.stock,
                        p.preorder as p_preorder, p.in_stock as p_in_stock,
                        p.price_preorder_auto as p_price_auto, p.price_preorder_air as p_price_air,
-                       p.weight_kg as p_weight_kg,
+                       p.weight_kg as p_weight_kg, p.discount_percent as p_disc,
                        ps.name as spec_name, ps.price as spec_price, ps.stock as spec_stock,
                        ps.image_url as spec_image_url, ps.description as spec_description,
                        ps.preorder as ps_preorder, ps.in_stock as ps_in_stock,
                        ps.price_preorder_auto as ps_price_auto, ps.price_preorder_air as ps_price_air,
-                       ps.weight_kg as ps_weight_kg
+                       ps.weight_kg as ps_weight_kg, ps.discount_percent as ps_disc
                 FROM cart_items ci 
                 JOIN products p ON ci.product_id = p.id
                 LEFT JOIN product_specifications ps ON ci.specification_id = ps.id
@@ -1632,7 +1681,7 @@ async def get_cart(user_id: str = Depends(get_current_user)):
                     is_in_stock = item['ps_in_stock']
                     price_auto = float(item['ps_price_auto']) if item['ps_price_auto'] else None
                     price_air = float(item['ps_price_air']) if item['ps_price_air'] else None
-                    # Fix БАГ-01: вес — сначала у спецификации, потом у товара
+                    prod_disc = int(item['ps_disc'] or item['p_disc'] or 0)
                     weight_kg = float(item['ps_weight_kg']) if item['ps_weight_kg'] else (float(item['p_weight_kg']) if item['p_weight_kg'] else None)
                 else:
                     base_price = float(item['price'])
@@ -1644,16 +1693,22 @@ async def get_cart(user_id: str = Depends(get_current_user)):
                     is_in_stock = item['p_in_stock']
                     price_auto = float(item['p_price_auto']) if item['p_price_auto'] else None
                     price_air = float(item['p_price_air']) if item['p_price_air'] else None
+                    prod_disc = int(item['p_disc'] or 0)
                     weight_kg = float(item['p_weight_kg']) if item['p_weight_kg'] else None
+
+                # Итоговая скидка = максимум из скидки товара и личной скидки
+                eff_disc = max(prod_disc, personal_discount)
 
                 order_type = item['order_type']
                 delivery_type = item['delivery_type']
                 if order_type == 'preorder' and delivery_type == 'auto' and price_auto:
-                    effective_price = price_auto
+                    raw_price = price_auto
                 elif order_type == 'preorder' and delivery_type == 'air' and price_air:
-                    effective_price = price_air
+                    raw_price = price_air
                 else:
-                    effective_price = base_price
+                    raw_price = base_price
+
+                effective_price = round(raw_price * (1 - eff_disc / 100)) if eff_disc > 0 else raw_price
 
                 item_total = effective_price * item['quantity']
                 total += item_total
@@ -1670,18 +1725,19 @@ async def get_cart(user_id: str = Depends(get_current_user)):
                         "category": item['category'],
                         "price": effective_price,
                         "base_price": base_price,
+                        "discount_percent": eff_disc,
                         "description": description,
                         "image_url": image_url,
                         "stock": stock,
                         "preorder": is_preorder,
                         "in_stock": is_in_stock,
-                        "price_preorder_auto": price_auto,
-                        "price_preorder_air": price_air,
-                        "weight_kg": weight_kg,  # Fix БАГ-01
+                        "price_preorder_auto": round(price_auto * (1 - eff_disc / 100)) if price_auto and eff_disc > 0 else price_auto,
+                        "price_preorder_air": round(price_air * (1 - eff_disc / 100)) if price_air and eff_disc > 0 else price_air,
+                        "weight_kg": weight_kg,
                     },
                     "item_total": item_total
                 })
-            return {"items": result, "total": total, "items_count": len(items)}
+            return {"items": result, "total": total, "items_count": len(items), "personal_discount": personal_discount}
     except Exception as e:
         logger.error("Internal error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
@@ -1944,13 +2000,20 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(get_curre
     """Создать заказ из корзины"""
     try:
         async with db.pool.acquire() as conn:
+            # Получаем персональную скидку
+            user_row = await conn.fetchrow("SELECT personal_discount FROM users WHERE id=$1", user_id)
+            personal_discount = int(user_row['personal_discount'] or 0) if user_row else 0
+
             cart_items = await conn.fetch('''
                 SELECT ci.product_id, ci.specification_id, ci.quantity,
                        ci.order_type, ci.delivery_type,
                        p.name, p.price, p.stock, p.preorder as p_preorder,
-                       p.weight_kg as p_weight_kg,
+                       p.weight_kg as p_weight_kg, p.discount_percent as p_disc,
+                       p.price_preorder_auto as p_price_auto, p.price_preorder_air as p_price_air,
                        ps.name as spec_name, ps.price as spec_price, ps.stock as spec_stock,
-                       ps.preorder as ps_preorder, ps.weight_kg as ps_weight_kg
+                       ps.preorder as ps_preorder, ps.weight_kg as ps_weight_kg,
+                       ps.discount_percent as ps_disc,
+                       ps.price_preorder_auto as ps_price_auto, ps.price_preorder_air as ps_price_air
                 FROM cart_items ci 
                 JOIN products p ON ci.product_id = p.id
                 LEFT JOIN product_specifications ps ON ci.specification_id = ps.id
@@ -1960,10 +2023,24 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(get_curre
             if not cart_items:
                 raise HTTPException(status_code=400, detail="Корзина пуста")
 
-            # Подсчитываем общую сумму с учётом спецификаций
+            # Подсчитываем общую сумму с учётом скидок
             total = 0
             for i in cart_items:
-                price = float(i['spec_price']) if i['specification_id'] else float(i['price'])
+                prod_disc = int(i['ps_disc'] or i['p_disc'] or 0) if i['specification_id'] else int(i['p_disc'] or 0)
+                eff_disc = max(prod_disc, personal_discount)
+                if i['specification_id']:
+                    raw = float(i['spec_price'])
+                    if i['order_type'] == 'preorder' and i['delivery_type'] == 'auto' and i['ps_price_auto']:
+                        raw = float(i['ps_price_auto'])
+                    elif i['order_type'] == 'preorder' and i['delivery_type'] == 'air' and i['ps_price_air']:
+                        raw = float(i['ps_price_air'])
+                else:
+                    raw = float(i['price'])
+                    if i['order_type'] == 'preorder' and i['delivery_type'] == 'auto' and i['p_price_auto']:
+                        raw = float(i['p_price_auto'])
+                    elif i['order_type'] == 'preorder' and i['delivery_type'] == 'air' and i['p_price_air']:
+                        raw = float(i['p_price_air'])
+                price = round(raw * (1 - eff_disc / 100)) if eff_disc > 0 else raw
                 total += price * i['quantity']
 
             order_id = await conn.fetchval('''
@@ -1976,20 +2053,32 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(get_curre
                 # Определяем название и цену товара
                 if item['specification_id']:
                     product_name = f"{item['name']} - {item['spec_name']}"
-                    price = float(item['spec_price'])
+                    raw_price = float(item['spec_price'])
+                    if item['order_type'] == 'preorder' and item['delivery_type'] == 'auto' and item['ps_price_auto']:
+                        raw_price = float(item['ps_price_auto'])
+                    elif item['order_type'] == 'preorder' and item['delivery_type'] == 'air' and item['ps_price_air']:
+                        raw_price = float(item['ps_price_air'])
+                    prod_disc_item = int(item['ps_disc'] or item['p_disc'] or 0)
                     stock_column = 'product_specifications'
                     stock_id = item['specification_id']
                     current_stock = item['spec_stock']
-                    # Fix БАГ 8: вес — сначала у спецификации, потом у товара
                     item_weight = item['ps_weight_kg'] or item['p_weight_kg']
                 else:
                     product_name = item['name']
-                    price = float(item['price'])
+                    raw_price = float(item['price'])
+                    if item['order_type'] == 'preorder' and item['delivery_type'] == 'auto' and item['p_price_auto']:
+                        raw_price = float(item['p_price_auto'])
+                    elif item['order_type'] == 'preorder' and item['delivery_type'] == 'air' and item['p_price_air']:
+                        raw_price = float(item['p_price_air'])
+                    prod_disc_item = int(item['p_disc'] or 0)
                     stock_column = 'products'
                     stock_id = item['product_id']
                     current_stock = item['stock']
                     item_weight = item['p_weight_kg']
-                
+
+                eff_disc_item = max(prod_disc_item, personal_discount)
+                price = round(raw_price * (1 - eff_disc_item / 100)) if eff_disc_item > 0 else raw_price
+
                 # Проверяем наличие (пропускаем для предзаказов — stock=0 это норма)
                 is_preorder_item = item['order_type'] == 'preorder'
                 if not is_preorder_item and current_stock < item['quantity']:
@@ -1998,7 +2087,6 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(get_curre
                         detail=f"Недостаточно товара '{product_name}' на складе"
                     )
                 
-                # Fix БАГ 8: сохраняем order_type, delivery_type, weight_kg, specification_id
                 await conn.execute('''
                     INSERT INTO order_items (order_id, product_id, product_name, price, quantity,
                                             order_type, delivery_type, weight_kg, specification_id)
@@ -2400,8 +2488,9 @@ async def get_admin_stats(admin=Depends(verify_admin)):
 
 
 @app.get("/api/admin/orders")
-async def get_admin_orders(admin=Depends(verify_admin), status: Optional[str] = None, track: Optional[str] = None, limit: int = 50):
+async def get_admin_orders(admin=Depends(verify_manager_or_admin), status: Optional[str] = None, track: Optional[str] = None, limit: int = 50):
     try:
+        is_manager_only = admin.get("is_manager") and not admin.get("is_admin")
         async with db.pool.acquire() as conn:
             q = "SELECT o.*, u.username, u.email, u.full_name, u.phone FROM orders o LEFT JOIN users u ON o.user_id=u.id WHERE 1=1"
             params = []
@@ -2418,6 +2507,12 @@ async def get_admin_orders(admin=Depends(verify_admin), status: Optional[str] = 
                 d['user_id'] = str(d['user_id']) if d.get('user_id') else None
                 if isinstance(d.get('created_at'), datetime): d['created_at'] = d['created_at'].isoformat()
                 if isinstance(d.get('updated_at'), datetime): d['updated_at'] = d['updated_at'].isoformat()
+                # Менеджеры не видят личные данные клиентов
+                if is_manager_only:
+                    d['email'] = None
+                    d['full_name'] = None
+                    d['phone'] = None
+                    d['delivery_address'] = None
                 result.append(d)
             return result
     except Exception as e:
@@ -2477,6 +2572,8 @@ async def get_all_customers(admin=Depends(verify_admin)):
                     u.email,
                     u.full_name,
                     u.phone,
+                    u.personal_discount,
+                    u.is_manager,
                     COUNT(DISTINCT o.id) as order_count,
                     COALESCE(SUM(o.total_amount), 0) as total_spent,
                     MAX(o.created_at) as last_order_date,
@@ -2485,7 +2582,7 @@ async def get_all_customers(admin=Depends(verify_admin)):
                 LEFT JOIN orders o ON u.id = o.user_id
                 LEFT JOIN customer_notes n ON u.id = n.user_id
                 WHERE u.is_admin = FALSE
-                GROUP BY u.id, u.username, u.email, u.full_name, u.phone, u.personal_discount
+                GROUP BY u.id, u.username, u.email, u.full_name, u.phone, u.personal_discount, u.is_manager
                 HAVING COUNT(DISTINCT o.id) > 0
                 ORDER BY total_spent DESC
             ''')
@@ -2495,6 +2592,8 @@ async def get_all_customers(admin=Depends(verify_admin)):
                 d = dict(r)
                 d['id'] = str(d['id'])
                 d['total_spent'] = float(d['total_spent'])
+                d['personal_discount'] = int(d.get('personal_discount') or 0)
+                d['is_manager'] = bool(d.get('is_manager', False))
                 if isinstance(d.get('last_order_date'), datetime):
                     d['last_order_date'] = d['last_order_date'].isoformat()
                 result.append(d)
@@ -2567,7 +2666,7 @@ async def delete_customer_note(note_id: int, admin=Depends(verify_admin)):
 
 
 @app.put("/api/admin/orders/{order_id}/status")
-async def update_order_status(order_id: int, body: OrderStatusUpdate, admin=Depends(verify_admin)):
+async def update_order_status(order_id: int, body: OrderStatusUpdate, admin=Depends(verify_manager_or_admin)):
     new_status = body.status
     delay_note = body.delay_note
     try:
@@ -2598,7 +2697,7 @@ async def update_order_status(order_id: int, body: OrderStatusUpdate, admin=Depe
 
 
 @app.put("/api/admin/orders/{order_id}/track")
-async def update_order_track(order_id: int, body: TrackNumberUpdate, admin=Depends(verify_admin)):
+async def update_order_track(order_id: int, body: TrackNumberUpdate, admin=Depends(verify_manager_or_admin)):
     """Установить трек-номер заказа"""
     try:
         async with db.pool.acquire() as conn:
@@ -2636,7 +2735,7 @@ async def update_order_payment_status(order_id: int, body: PaymentStatusUpdate, 
 
 
 @app.get("/api/admin/orders/{order_id}/items")
-async def get_order_items(order_id: int, admin=Depends(verify_admin)):
+async def get_order_items(order_id: int, admin=Depends(verify_manager_or_admin)):
     """Получить позиции заказа (для аккордеона)"""
     try:
         async with db.pool.acquire() as conn:
@@ -2713,6 +2812,23 @@ async def set_customer_discount(user_id: str, request: Request, admin=Depends(ve
         return {"success": True, "discount": discount}
     except Exception as e:
         logger.error("Discount set error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/admin/customers/{user_id}/role")
+async def set_customer_role(user_id: str, request: Request, admin=Depends(verify_admin)):
+    """Выдать / снять роль менеджера у клиента"""
+    try:
+        data = await request.json()
+        is_manager = bool(data.get('is_manager', False))
+        async with db.pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE users SET is_manager=$1 WHERE id=$2",
+                is_manager, user_id
+            )
+        return {"success": True, "is_manager": is_manager}
+    except Exception as e:
+        logger.error("Role set error: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -808,6 +808,39 @@ class Database:
                 )
             ''')
 
+            # ── v24: Промокоды ──
+            await conn.execute('''
+                CREATE TABLE IF NOT EXISTS promo_codes (
+                    id SERIAL PRIMARY KEY,
+                    code VARCHAR(50) UNIQUE NOT NULL,
+                    discount_type VARCHAR(10) NOT NULL DEFAULT 'percent',
+                    discount_value DECIMAL(10,2) NOT NULL,
+                    max_uses INTEGER DEFAULT NULL,
+                    used_count INTEGER DEFAULT 0,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    expires_at TIMESTAMP DEFAULT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            # ── v24: Авто-скидка (ключ-значение, как delivery_settings) ──
+            auto_disc_defaults = [
+                ('auto_discount_enabled', '0', 'Авто-скидка: включена (1/0)'),
+                ('auto_discount_percent', '0', 'Авто-скидка: размер (%)'),
+            ]
+            for key, val, label in auto_disc_defaults:
+                await conn.execute('''
+                    INSERT INTO delivery_settings (key, value, label)
+                    VALUES ($1, $2, $3)
+                    ON CONFLICT (key) DO NOTHING
+                ''', key, val, label)
+            # ── v24: Комментарий к позиции заказа ──
+            try:
+                await conn.execute("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS item_comment TEXT DEFAULT NULL")
+                print("✅ Миграция v24: item_comment в order_items")
+            except Exception as e:
+                print(f"⚠️ Миграция v24 (item_comment): {e}")
+            print("✅ v24: promo_codes, auto_discount, item_comment готовы")
+
             # --- Начальные категории ---
             for slug, name, emoji, desc in DEFAULT_CATEGORIES:
                 exists = await conn.fetchval(
@@ -1517,6 +1550,13 @@ async def get_products(
             async with db.pool.acquire() as conn:
                 row = await conn.fetchrow("SELECT personal_discount FROM users WHERE id=$1", uid)
                 personal_discount = int(row['personal_discount'] or 0) if row else 0
+                # v24: Авто-скидка — применяется только если нет персональной
+                if personal_discount == 0:
+                    en_row = await conn.fetchrow("SELECT value FROM delivery_settings WHERE key='auto_discount_enabled'")
+                    if en_row and en_row['value'] == '1':
+                        pct_row = await conn.fetchrow("SELECT value FROM delivery_settings WHERE key='auto_discount_percent'")
+                        if pct_row and pct_row['value']:
+                            personal_discount = max(0, min(99, int(pct_row['value'])))
     except Exception:
         pass
 
@@ -1649,6 +1689,13 @@ async def get_cart(user_id: str = Depends(get_current_user)):
             # Получаем персональную скидку пользователя
             user_row = await conn.fetchrow("SELECT personal_discount FROM users WHERE id=$1", user_id)
             personal_discount = int(user_row['personal_discount'] or 0) if user_row else 0
+            # v24: Авто-скидка — применяется только если нет персональной
+            if personal_discount == 0:
+                en_row = await conn.fetchrow("SELECT value FROM delivery_settings WHERE key='auto_discount_enabled'")
+                if en_row and en_row['value'] == '1':
+                    pct_row = await conn.fetchrow("SELECT value FROM delivery_settings WHERE key='auto_discount_percent'")
+                    if pct_row and pct_row['value']:
+                        personal_discount = max(0, min(99, int(pct_row['value'])))
 
             items = await conn.fetch('''
                 SELECT ci.product_id, ci.specification_id, ci.quantity,
@@ -2779,8 +2826,8 @@ async def create_order_manual(request: Request, admin=Depends(verify_admin)):
             )
             for item in items:
                 await conn.execute(
-                    """INSERT INTO order_items (order_id, product_id, product_name, price, quantity, order_type, delivery_type, weight_kg)
-                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)""",
+                    """INSERT INTO order_items (order_id, product_id, product_name, price, quantity, order_type, delivery_type, weight_kg, item_comment)
+                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)""",
                     order_id,
                     item.get('product_id') or 0,
                     item.get('product_name', 'Позиция'),
@@ -2788,7 +2835,8 @@ async def create_order_manual(request: Request, admin=Depends(verify_admin)):
                     int(item.get('quantity', 1)),
                     item.get('order_type', 'in_stock'),
                     item.get('delivery_type'),
-                    float(item['weight_kg']) if item.get('weight_kg') else None
+                    float(item['weight_kg']) if item.get('weight_kg') else None,
+                    item.get('comment') or None
                 )
             return {"success": True, "order_id": order_id, "total": total}
     except HTTPException:
@@ -3626,6 +3674,178 @@ async def debug_uploads(admin=Depends(verify_admin)):
     except Exception as e:
         logger.error("debug_uploads error: %s", e)
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+# ══════════════════════════════════════════════
+# ═══ v24: АВТО-СКИДКА ════════════════════════
+# ══════════════════════════════════════════════
+
+@app.get("/api/admin/auto-discount")
+async def get_auto_discount(admin=Depends(verify_admin)):
+    """Получить текущие настройки авто-скидки"""
+    try:
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT key, value FROM delivery_settings WHERE key IN ('auto_discount_enabled','auto_discount_percent')"
+            )
+            settings = {r['key']: r['value'] for r in rows}
+            return {
+                "enabled": settings.get('auto_discount_enabled') == '1',
+                "discount_percent": int(settings.get('auto_discount_percent') or 0)
+            }
+    except Exception as e:
+        logger.error("get_auto_discount error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/admin/auto-discount")
+async def set_auto_discount(request: Request, admin=Depends(verify_admin)):
+    """Установить авто-скидку (включить/выключить и размер)"""
+    try:
+        data = await request.json()
+        enabled = bool(data.get('enabled', False))
+        pct = max(0, min(99, int(data.get('discount_percent', 0))))
+        async with db.pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE delivery_settings SET value=$1, updated_at=CURRENT_TIMESTAMP WHERE key='auto_discount_enabled'",
+                '1' if enabled else '0'
+            )
+            await conn.execute(
+                "UPDATE delivery_settings SET value=$1, updated_at=CURRENT_TIMESTAMP WHERE key='auto_discount_percent'",
+                str(pct)
+            )
+        return {"success": True, "enabled": enabled, "discount_percent": pct}
+    except Exception as e:
+        logger.error("set_auto_discount error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ══════════════════════════════════════════════
+# ═══ v24: ПРОМОКОДЫ ══════════════════════════
+# ══════════════════════════════════════════════
+
+@app.get("/api/admin/promo-codes")
+async def list_promo_codes(admin=Depends(verify_admin)):
+    """Список всех промокодов"""
+    try:
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT id,code,discount_type,discount_value,max_uses,used_count,is_active,expires_at,created_at FROM promo_codes ORDER BY created_at DESC"
+            )
+            result = []
+            for r in rows:
+                d = dict(r)
+                d['discount_value'] = float(d['discount_value'])
+                if d.get('expires_at'):
+                    d['expires_at'] = d['expires_at'].isoformat()
+                if d.get('created_at'):
+                    d['created_at'] = d['created_at'].isoformat()
+                result.append(d)
+            return result
+    except Exception as e:
+        logger.error("list_promo_codes error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/admin/promo-codes")
+async def create_promo_code(request: Request, admin=Depends(verify_admin)):
+    """Создать промокод"""
+    try:
+        data = await request.json()
+        code = data.get('code', '').strip().upper()
+        if not code:
+            raise HTTPException(status_code=400, detail="Код не может быть пустым")
+        disc_type = data.get('discount_type', 'percent')
+        if disc_type not in ('percent', 'fixed'):
+            raise HTTPException(status_code=400, detail="Неверный тип скидки")
+        disc_val = float(data.get('discount_value', 0))
+        if disc_val <= 0:
+            raise HTTPException(status_code=400, detail="Значение скидки должно быть > 0")
+        if disc_type == 'percent' and disc_val > 99:
+            raise HTTPException(status_code=400, detail="Процент скидки не может быть > 99")
+        max_uses = int(data['max_uses']) if data.get('max_uses') else None
+        expires_raw = data.get('expires_at')
+        expires_at = None
+        if expires_raw:
+            from datetime import datetime as dt
+            try:
+                expires_at = dt.fromisoformat(expires_raw)
+            except Exception:
+                expires_at = None
+        async with db.pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """INSERT INTO promo_codes (code,discount_type,discount_value,max_uses,expires_at)
+                   VALUES ($1,$2,$3,$4,$5) RETURNING id""",
+                code, disc_type, disc_val, max_uses, expires_at
+            )
+        return {"success": True, "id": row['id'], "code": code}
+    except HTTPException:
+        raise
+    except asyncpg.UniqueViolationError:
+        raise HTTPException(status_code=409, detail=f"Промокод с кодом уже существует")
+    except Exception as e:
+        logger.error("create_promo_code error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/admin/promo-codes/{code_id}")
+async def delete_promo_code(code_id: int, admin=Depends(verify_admin)):
+    """Удалить промокод"""
+    try:
+        async with db.pool.acquire() as conn:
+            deleted = await conn.fetchval(
+                "DELETE FROM promo_codes WHERE id=$1 RETURNING id", code_id
+            )
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Промокод не найден")
+        return {"success": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("delete_promo_code error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/promo-codes/validate")
+async def validate_promo_code(request: Request, user_id: str = Depends(get_current_user)):
+    """Проверить и применить промокод к сумме корзины (вызывается из корзины)"""
+    try:
+        data = await request.json()
+        code = data.get('code', '').strip().upper()
+        cart_total = float(data.get('cart_total', 0))
+        if not code:
+            raise HTTPException(status_code=400, detail="Введите промокод")
+        async with db.pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT * FROM promo_codes WHERE code=$1 AND is_active=TRUE", code
+            )
+            if not row:
+                raise HTTPException(status_code=404, detail="Промокод не найден или неактивен")
+            from datetime import datetime as dt
+            if row['expires_at'] and row['expires_at'] < dt.utcnow():
+                raise HTTPException(status_code=410, detail="Срок действия промокода истёк")
+            if row['max_uses'] and row['used_count'] >= row['max_uses']:
+                raise HTTPException(status_code=410, detail="Промокод исчерпан")
+            # Считаем скидку
+            if row['discount_type'] == 'percent':
+                discount_amount = round(cart_total * float(row['discount_value']) / 100)
+            else:
+                discount_amount = min(round(float(row['discount_value'])), cart_total)
+            new_total = max(0, cart_total - discount_amount)
+            return {
+                "valid": True,
+                "code": code,
+                "discount_type": row['discount_type'],
+                "discount_value": float(row['discount_value']),
+                "discount_amount": discount_amount,
+                "new_total": new_total
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("validate_promo error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     print("=" * 70)

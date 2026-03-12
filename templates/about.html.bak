@@ -1156,11 +1156,16 @@
     if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
       gsap.registerPlugin(ScrollTrigger); // must be first
     }
-    if (typeof Lenis !== 'undefined' && typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
-      var lenis = new Lenis({duration:0.6,easing:function(t){return Math.min(1,1.001-Math.pow(2,-10*t))},smoothWheel:true,wheelMultiplier:1.0});
+    // Lenis включаем ТОЛЬКО на touch-устройствах.
+    // На десктопе нативный скролл значительно быстрее и плавнее.
+    var isTouchOnly = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0 && !window.matchMedia('(pointer:fine)').matches);
+    if (isTouchOnly && typeof Lenis !== 'undefined' && typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+      var lenis = new Lenis({duration:0.5,easing:function(t){return Math.min(1,1.001-Math.pow(2,-10*t))},smoothWheel:true,wheelMultiplier:1.4});
       lenis.on('scroll', ScrollTrigger.update);
       gsap.ticker.add(function(time) { lenis.raf(time * 1000); });
       gsap.ticker.lagSmoothing(0);
+    } else if (typeof ScrollTrigger !== 'undefined') {
+      window.addEventListener('scroll', function(){ ScrollTrigger.update(); }, {passive:true});
     }
   } catch(e) {}
 </script>
@@ -1197,7 +1202,7 @@
           trigger: triggerElement,
           start: '0% 0%',
           end: '100% 0%',
-          scrub: 0.3
+          scrub: 0
         }
       });
       SCROLL_LAYERS.forEach(function(layerObj, idx) {

@@ -704,10 +704,27 @@
           <span class="summary-row-label" style="color:var(--green)">Скидка</span>
           <span class="summary-row-val" style="color:var(--green)" id="summaryDiscount">—</span>
         </div>
+        <div class="summary-row" id="summaryPromoRow" style="display:none">
+          <span class="summary-row-label" style="color:var(--green)">🎁 Промокод</span>
+          <span class="summary-row-val" style="color:var(--green)" id="summaryPromoAmount">—</span>
+        </div>
         <div class="summary-sep"></div>
         <div class="summary-total-row">
           <span class="summary-total-label">Всего</span>
           <span class="summary-total-val" id="summaryTotal">0 ₽</span>
+        </div>
+        <!-- v24: промокод -->
+        <div id="promoCodeBlock" style="margin-top:.875rem">
+          <div style="font-family:var(--font-raj);font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:.4rem">Промокод</div>
+          <div style="display:flex;gap:.5rem">
+            <input type="text" id="promoCodeInput" placeholder="Введите промокод" maxlength="50"
+              style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:.5rem .875rem;font-family:var(--font-raj);font-size:.875rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;outline:none;transition:border-color .2s">
+            <button id="applyPromoBtn"
+              style="padding:.5rem 1rem;background:var(--blue-dim);border:1px solid rgba(0,212,255,.2);border-radius:var(--radius);color:var(--blue);font-family:var(--font-raj);font-size:.8rem;font-weight:700;letter-spacing:.06em;cursor:pointer;white-space:nowrap;transition:all .2s">
+              Применить
+            </button>
+          </div>
+          <div id="promoMsg" style="margin-top:.35rem;font-size:.78rem;font-family:var(--font-raj);font-weight:700;letter-spacing:.04em;display:none"></div>
         </div>
         <div class="delivery-warning" id="deliveryWarning">
           ⚠️ Выберите тип доставки для всех товаров по предзаказу
@@ -778,8 +795,8 @@
 </footer>
 
 <div class="toast" id="toast"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/CustomEase.min.js" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/CustomEase.min.js" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous"></script>
 <script nonce="{{ request.state.csp_nonce }}">
 /* ════════════════════════════════════════
    STARFIELD (точно как products.html)
@@ -1063,14 +1080,14 @@ function renderCart() {
             <div class="del-opt-name">Авто</div>
             <div class="del-opt-price">${priceAuto ? fmt(priceAuto)+' ₽' : 'Уточняйте'}</div>
             ${delivFormulaAuto() ? `<div style="font-size:.65rem;color:var(--text3);margin-top:.1rem;line-height:1.2">${delivFormulaAuto()}</div>` : ''}
-            ${(()=>{ const mn=deliverySettings.auto_days_min?.value, mx=deliverySettings.auto_days_max?.value; return (mn||mx)?`<div style="font-size:.68rem;color:var(--text3);margin-top:.15rem">${mn&&mx?mn+'–'+mx+' дн':mn?'от '+mn+' дн':mx?'до '+mx+' дн':''}</div>`:''; })()}
+            <div style="font-size:.68rem;color:var(--text3);margin-top:.15rem">${(()=>{ const mn=deliverySettings.auto_days_min?.value, mx=deliverySettings.auto_days_max?.value; return mn&&mx?mn+'–'+mx+' дн':mn?'от '+mn+' дн':mx?'до '+mx+' дн':'12–14 дн'; })()}</div>
           </button>
           <button class="delivery-opt${item.delivery_type==='air'?' selected':''}" data-delivery-pid="${p.id}" data-delivery-spec="${specId}" data-delivery-type="air">
             <div class="del-opt-icon">✈️</div>
             <div class="del-opt-name">Самолёт</div>
             <div class="del-opt-price">${priceAir ? fmt(priceAir)+' ₽' : 'Уточняйте'}</div>
             ${delivFormulaAir() ? `<div style="font-size:.65rem;color:var(--text3);margin-top:.1rem;line-height:1.2">${delivFormulaAir()}</div>` : ''}
-            ${(()=>{ const mn=deliverySettings.air_days_min?.value, mx=deliverySettings.air_days_max?.value; return (mn||mx)?`<div style="font-size:.68rem;color:var(--text3);margin-top:.15rem">${mn&&mx?mn+'–'+mx+' дн':mn?'от '+mn+' дн':mx?'до '+mx+' дн':''}</div>`:''; })()}
+            <div style="font-size:.68rem;color:var(--text3);margin-top:.15rem">${(()=>{ const mn=deliverySettings.air_days_min?.value, mx=deliverySettings.air_days_max?.value; return mn&&mx?mn+'–'+mx+' дн':mn?'от '+mn+' дн':mx?'до '+mx+' дн':'1–2 дн'; })()}</div>
           </button>
         </div>
       </div>` : '';
@@ -1374,6 +1391,59 @@ document.getElementById('checkoutBtn').addEventListener('click', async function(
 
 
 /* ════════════════════════════════════════
+   v24: ПРОМОКОД
+════════════════════════════════════════ */
+let appliedPromo = null;
+
+async function applyPromoCode() {
+  const input = document.getElementById('promoCodeInput');
+  const msgEl = document.getElementById('promoMsg');
+  const btn   = document.getElementById('applyPromoBtn');
+  const code  = (input?.value || '').trim().toUpperCase();
+
+  if (appliedPromo && (code === appliedPromo.code || !code)) {
+    appliedPromo = null;
+    document.getElementById('summaryPromoRow').style.display = 'none';
+    msgEl.style.display = 'none';
+    input.style.borderColor = '';
+    input.value = '';
+    btn.textContent = 'Применить';
+    renderCart();
+    return;
+  }
+  if (!code) return;
+
+  const rawTotal = cart.reduce((s, i) => s + (i.item_total || 0), 0);
+  if (rawTotal <= 0) { showToast('error', 'Корзина пуста'); return; }
+
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    const r = await fetch('/api/promo-codes/validate', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, cart_total: rawTotal })
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      msgEl.textContent = d.detail || 'Промокод недействителен';
+      msgEl.style.color = 'var(--red)'; msgEl.style.display = 'block';
+      input.style.borderColor = 'var(--red)'; appliedPromo = null;
+    } else {
+      appliedPromo = d;
+      const discStr = d.discount_type === 'percent' ? `${d.discount_value}%` : `${fmt(d.discount_value)} ₽`;
+      msgEl.textContent = `✓ Промокод ${d.code} — скидка ${discStr}`;
+      msgEl.style.color = 'var(--green)'; msgEl.style.display = 'block';
+      input.style.borderColor = 'var(--green)'; btn.textContent = 'Сбросить';
+      document.getElementById('summaryPromoRow').style.display = 'flex';
+      document.getElementById('summaryPromoAmount').textContent = `−${fmt(d.discount_amount)} ₽`;
+      document.getElementById('summaryTotal').textContent = fmt(d.new_total) + ' ₽';
+    }
+  } catch { showToast('error', 'Ошибка соединения'); }
+  finally { btn.disabled = false; if (!appliedPromo) btn.textContent = 'Применить'; }
+}
+
+
+/* ════════════════════════════════════════
    THEME SYSTEM
 ════════════════════════════════════════ */
 (function(){
@@ -1397,6 +1467,11 @@ document.getElementById('checkoutBtn').addEventListener('click', async function(
     document.querySelectorAll('.theme-pill').forEach(function(p){ p.addEventListener('click',window.importToggleTheme); });
     // ← ГЛАВНЫЙ FIX: запускаем авторизацию и загрузку корзины
     checkAuth();
+    // ── CSP-safe: промокод (replaces oninput/onclick attrs) ──
+    var pi = document.getElementById('promoCodeInput');
+    if (pi) pi.addEventListener('input', function(){ this.value = this.value.toUpperCase(); });
+    var pb = document.getElementById('applyPromoBtn');
+    if (pb) pb.addEventListener('click', applyPromoCode);
   });
 })();
 </script>

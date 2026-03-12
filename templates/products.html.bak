@@ -446,7 +446,7 @@
     .product-desc{font-size:.8125rem;color:var(--text2);line-height:1.5;flex:1;margin-bottom:1rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
     .product-footer{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-top:auto}
     .product-price{font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;letter-spacing:-.01em}
-    .add-btn{padding:.5rem 1.125rem;background:var(--blue);color:#000;border:none;border-radius:var(--radius);cursor:pointer;font-family:var(--font-raj);font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:all .2s}
+    .add-btn{padding:.5rem 1.125rem;background:var(--blue);color:#000;border:none;border-radius:var(--radius);cursor:pointer;font-family:var(--font-raj);font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:all .2s;white-space:nowrap;flex-shrink:0}
     .add-btn.btn-specs{background:rgba(0,212,255,.12);color:var(--blue);border:1px solid rgba(0,212,255,.4)}
     .add-btn.btn-specs:hover{background:rgba(0,212,255,.22);border-color:var(--blue)}
     .add-btn:hover{box-shadow:0 0 20px var(--blue-glow);transform:scale(1.04)}
@@ -1308,8 +1308,8 @@ function renderProducts() {
         }
       </div>${personalBadge}`;
     }
-    // Weight badge
-    const weightBadge = p.weight_kg ? `<div class="product-weight-badge">⚖ ${p.weight_kg} кг</div>` : '';
+    // Weight badge скрыт из каталога — только для админки
+    const weightBadge = '';
 
     return `<div class="product-card" data-product-id="${p.id}" style="animation-delay:${Math.min(idx*.045,.4)}s;cursor:pointer">
       <div class="product-img" style="position:relative">${imgHtml}${discBadge}</div>
@@ -1486,13 +1486,23 @@ function updateCartUI(){
   const count=cart.reduce((s,i)=>s+i.quantity,0);
   cartCount.textContent=count; cartCount.style.display=count>0?'flex':'none';
   // Синхронизируем состояние кнопок «В корзину»
-  const cartProductIds = new Set(cart.map(i=>i.product.id));
+  // Учитываем order_type: если товар в корзине только как предзаказ, а в наличии — кнопку не блокируем
   document.querySelectorAll('.add-btn[data-pid]').forEach(btn => {
     const pid = parseInt(btn.dataset.pid);
     const prod = allProducts.find(p=>p.id===pid);
     if (!prod) return;
-    if (cartProductIds.has(pid)) {
+    const itemsInCart = cart.filter(i => i.product?.id === pid);
+    const hasInStockInCart = itemsInCart.some(i => i.order_type === 'in_stock');
+    const hasPreorderInCart = itemsInCart.some(i => i.order_type === 'preorder');
+    // Блокируем только если оба варианта уже в корзине ИЛИ товар только одного типа и он уже добавлен
+    const bothInCart = (prod.in_stock && hasInStockInCart) && (prod.preorder && hasPreorderInCart);
+    const soloInStockAdded = prod.in_stock && !prod.preorder && hasInStockInCart;
+    const soloPreorderAdded = !prod.in_stock && prod.preorder && hasPreorderInCart;
+    if (bothInCart || soloInStockAdded || soloPreorderAdded) {
       btn.textContent='✓ В корзине'; btn.disabled=true; btn.classList.add('add-btn-added');
+    } else if (itemsInCart.length > 0) {
+      // Частично добавлен (только один тип) — кнопка активна, показываем что уже часть есть
+      btn.textContent='+ Добавить ещё'; btn.disabled=false; btn.classList.remove('add-btn-added');
     } else if (prod.in_stock || prod.preorder) {
       btn.textContent='В корзину'; btn.disabled=false; btn.classList.remove('add-btn-added');
     }
@@ -1887,7 +1897,7 @@ function renderProductDetail(p) {
           <span class="qty-label">Кол-во:</span>
           <div class="qty-controls">
             <button class="qty-btn" data-qty="-1" ${!inStock?'disabled':''}>−</button>
-            <input type="number" class="qty-input" value="${detailQty}" min="1" max="${isPreorderItem ? 999 : currentStock}" readonly>
+            <input type="number" class="qty-input" value="${detailQty}" min="1" max="${isPreorderItem ? 999 : currentStock}" id="detailQtyInput" data-detail-qty-input="1">
             <button class="qty-btn" data-qty="1" ${!inStock?'disabled':''}>+</button>
           </div>
         </div>
@@ -1973,7 +1983,31 @@ function changeDetailQty(delta) {
   const isPreorder = item.preorder || false;
   const maxQty = isPreorder ? 999 : (item.stock || 0);
   detailQty=Math.max(1,Math.min(detailQty+delta, maxQty));
-  renderProductDetail(currentDetailProduct); setTimeout(initModalSlider,80);
+  // Обновляем только input, не перерисовываем весь модал
+  const inp = document.getElementById('detailQtyInput');
+  if (inp) {
+    inp.value = detailQty;
+    const max = parseInt(inp.max)||999;
+    const minusBtn = inp.previousElementSibling;
+    const plusBtn = inp.nextElementSibling;
+    if (minusBtn) minusBtn.disabled = detailQty <= 1;
+    if (plusBtn) plusBtn.disabled = detailQty >= max;
+  }
+}
+
+function handleDetailQtyInput(inp) {
+  const item=selectedSpec||currentDetailProduct;
+  if (!item) return;
+  const isPreorder = item.preorder || false;
+  const maxQty = isPreorder ? 999 : (item.stock || 0);
+  let val = parseInt(inp.value) || 1;
+  val = Math.max(1, Math.min(maxQty, val));
+  detailQty = val;
+  inp.value = val;
+  const minusBtn = inp.previousElementSibling;
+  const plusBtn = inp.nextElementSibling;
+  if (minusBtn) minusBtn.disabled = detailQty <= 1;
+  if (plusBtn) plusBtn.disabled = detailQty >= maxQty;
 }
 
 async function addToCartFromDetail() {
@@ -2004,6 +2038,16 @@ async function addToCartFromDetail() {
     else{const d=await r.json();showToast('error',d.detail||'Ошибка');}
   }catch{showToast('error','Ошибка соединения');}
 }
+
+// ── CSP-safe: delegated input handler for detail qty (replaces oninput/onchange) ──
+productDetailContent.addEventListener('input', function(e) {
+  const inp = e.target.closest('[data-detail-qty-input]');
+  if (inp) handleDetailQtyInput(inp);
+});
+productDetailContent.addEventListener('change', function(e) {
+  const inp = e.target.closest('[data-detail-qty-input]');
+  if (inp) handleDetailQtyInput(inp);
+});
 
 // ── CSP-safe delegation for product detail modal ──
 productDetailContent.addEventListener('click', function(e) {

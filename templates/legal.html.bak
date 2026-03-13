@@ -3,530 +3,284 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png?v=5">
-  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png?v=5">
-  <link rel="shortcut icon" href="/static/favicon/favicon.ico?v=5">
-  <meta name="theme-color" content="#000000">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png?v=6">
+  <link rel="icon" type="image/svg+xml" href="/static/favicon/favicon.svg?v=6">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png?v=6">
+  <link rel="shortcut icon" href="/static/favicon/favicon.ico?v=6">
+  <meta name="theme-color" content="#080A0F">
   <title>Документы — Fm TuN</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/CustomEase.min.js"></script>
   <style nonce="{{ request.state.csp_nonce }}">
-    @font-face {
-      font-family: 'PP Neue Corp Tight';
-      src: url('https://cdn.prod.website-files.com/673af51dea86ab95d124c3ee/673b0f5784f7060c0ac05534_PPNeueCorp-TightUltrabold.otf') format('opentype');
-      font-weight: 700; font-style: normal; font-display: swap;
-    }
-    @font-face {
-      font-family: 'PP Neue Montreal';
-      src: url('https://cdn.prod.website-files.com/6819ed8312518f61b84824df/6819ed8312518f61b84825ba_PPNeueMontreal-Medium.woff2') format('woff2');
-      font-weight: 500; font-style: normal; font-display: swap;
-    }
+    @font-face{font-family:'PP Neue Corp Tight';src:url('https://cdn.prod.website-files.com/673af51dea86ab95d124c3ee/673b0f5784f7060c0ac05534_PPNeueCorp-TightUltrabold.otf') format('opentype');font-weight:700;font-display:swap;}
+    @font-face{font-family:'PP Neue Montreal';src:url('https://cdn.prod.website-files.com/6819ed8312518f61b84824df/6819ed8312518f61b84825ba_PPNeueMontreal-Medium.woff2') format('woff2');font-weight:500;font-display:swap;}
 
-    :root {
-      --blue: #00D4FF; --blue-dim: rgba(0,212,255,0.12); --blue-glow: rgba(0,212,255,0.25);
-      --bg: #080A0F; --bg2: #0D1018; --bg3: #111520;
-      --surface: #161C26; --surface2: #1E2635;
-      --border: rgba(255,255,255,0.06); --border-hover: rgba(0,212,255,0.2);
-      --text: #F0F4F8; --text2: #7B8599; --text3: #3E4560;
-      --green: #00E5A0; --green-dim: rgba(0,229,160,0.12);
-      --red: #FF4757; --red-dim: rgba(255,71,87,0.12);
-      --amber: #FFB020;
-      --radius: 10px; --radius-lg: 16px; --radius-xl: 24px;
-      --font-d: 'Syne', sans-serif;
-      --font-raj: 'Rajdhani', sans-serif;
-      --font-b: 'DM Sans', sans-serif;
-      --font-menu: 'PP Neue Corp Tight', sans-serif;
-      --font-mono: 'PP Neue Montreal', sans-serif;
-      --ease: cubic-bezier(0.16,1,0.3,1);
-      --ease-f: cubic-bezier(0.4,0,0.2,1);
+    :root{
+      --blue:#00D4FF;--blue-dim:rgba(0,212,255,.12);--blue-glow:rgba(0,212,255,.25);
+      --bg:#080A0F;--bg2:#0D1018;--bg3:#111520;
+      --surface:#161C26;--surface2:#1E2635;
+      --border:rgba(255,255,255,.06);--border-h:rgba(0,212,255,.2);
+      --text:#F0F4F8;--text2:#7B8599;--text3:#3E4560;
+      --green:#00E5A0;--green-dim:rgba(0,229,160,.12);
+      --red:#FF4757;--red-dim:rgba(255,71,87,.12);
+      --amber:#FFB020;--amber-dim:rgba(255,176,32,.12);
+      --r:10px;--rl:16px;--rxl:24px;
+      --fd:'Syne',sans-serif;--fr:'Rajdhani',sans-serif;--fb:'DM Sans',sans-serif;
+      --fn:'PP Neue Corp Tight','Syne',sans-serif;
+      --fmono:'PP Neue Montreal',sans-serif;
+      --ease:cubic-bezier(.16,1,.3,1);--easef:cubic-bezier(.4,0,.2,1);
     }
 
-
-    /* ══════════════════════════════════════
-       LIGHT THEME
-    ══════════════════════════════════════ */
-    [data-theme="light"] {
-      --blue:#E8580A;--blue-dim:rgba(232,88,10,.1);--blue-mid:rgba(232,88,10,.4);--blue-glow:rgba(232,88,10,.22);
+    /* ── LIGHT THEME ── */
+    [data-theme="light"]{
+      --blue:#E8580A;--blue-dim:rgba(232,88,10,.1);--blue-glow:rgba(232,88,10,.22);
       --bg:#F7F4EF;--bg2:#EDE9E3;--bg3:#E4E0D8;
       --surface:#D8D3CA;--surface2:#CBC5BB;
-      --border:rgba(0,0,0,.08);--border-h:rgba(232,88,10,.28);--border-hover:rgba(232,88,10,.28);
+      --border:rgba(0,0,0,.08);--border-h:rgba(232,88,10,.28);
       --text:#1C1208;--text2:#6B5D4F;--text3:#A89080;
       --green:#1A7A52;--green-dim:rgba(26,122,82,.1);
       --red:#CC2200;--red-dim:rgba(204,34,0,.1);
       --amber:#B8720A;--amber-dim:rgba(184,114,10,.1);
     }
-    [data-theme="light"] .nav-close-btn { color:var(--blue)!important; border-color:var(--blue)!important; }
-    [data-theme="light"] .header,
-    [data-theme="light"] .imp-header { background:rgba(247,244,239,.92)!important; border-bottom-color:rgba(0,0,0,.1)!important; }
-    [data-theme="light"] #starfield { opacity:0; }
-    [data-theme="light"] .nav-bg-panel.p1,
-    [data-theme="light"] .nav-bg-panel.first { background:var(--blue); }
-    [data-theme="light"] .nav-bg-panel.p2,
-    [data-theme="light"] .nav-bg-panel.second { background:#fff8f3; }
-    [data-theme="light"] .nav-bg-panel.p3,
-    [data-theme="light"] .nav-bg-panel:not(.first):not(.second):not(.p1):not(.p2) { background:#faf6f1; border-color:rgba(232,88,10,.12); }
-    [data-theme="light"] .imp-nav-bg2 { background:#fff8f3; }
-    [data-theme="light"] .imp-nav-bg3 { background:#faf6f1; border-color:rgba(232,88,10,.12); }
-    [data-theme="light"] .nav-link-heading,
-    [data-theme="light"] .nav-menu-heading,
-    [data-theme="light"] .imp-nav-heading { color:#1C1208; }
-    [data-theme="light"] .nav-text-link,
-    [data-theme="light"] .nav-social-link { color:#6B5D4F; }
-    [data-theme="light"] .nav-p-small,
-    [data-theme="light"] .nav-footer-label { color:#A89080; }
-    [data-theme="light"] .filter-bar { background:rgba(247,244,239,.92); border-bottom-color:rgba(0,0,0,.1); }
-    [data-theme="light"] .logo-bolt,
-    [data-theme="light"] .imp-logo-bolt { background:linear-gradient(135deg,#E8580A,#C43D00)!important; box-shadow:0 0 16px rgba(232,88,10,.3)!important; }
-    [data-theme="light"] .eyebrow-dot { background:var(--blue); box-shadow:0 0 8px var(--blue); }
-    [data-theme="light"] .product-card { background:rgba(232,225,215,.7)!important; }
-    [data-theme="light"] .adv-card { background:rgba(232,225,215,.5)!important; }
-    [data-theme="light"] .team-card { background:rgba(220,213,203,.6)!important; }
-    [data-theme="light"] .section-dark { background:rgba(237,233,227,.9); border-color:rgba(0,0,0,.07); }
-    [data-theme="light"] .footer { background:var(--bg2); border-color:rgba(0,0,0,.08); }
-    [data-theme="light"] .footer-bar { background:var(--bg2); border-color:rgba(0,0,0,.08); }
-    [data-theme="light"] body { background:var(--bg); }
-    [data-theme="light"] body::before { opacity:0; }
-    [data-theme="light"] .doc-card { background:rgba(232,225,215,.6); }
-    [data-theme="light"] .doc-card-header { background:linear-gradient(135deg,rgba(232,88,10,.06) 0%,transparent 55%); }
-    [data-theme="light"] .highlight-box { background:var(--surface); border-left-color:var(--blue); }
-    [data-theme="light"] .active-orders-banner { background:rgba(247,244,239,.95); border-top-color:rgba(0,0,0,.08); }
-    [data-theme="light"] .cart-drawer { background:var(--bg3); border-left-color:rgba(0,0,0,.1); }
-    [data-theme="light"] .user-dropdown { background:var(--bg3); }
-    [data-theme="light"] .advantages { background:var(--bg2); }
-    html { transition: background-color .25s ease; }
-    body { transition: background-color .25s ease, color .25s ease; }
+    [data-theme="light"] .header{background:rgba(247,244,239,.92)!important;border-bottom-color:rgba(0,0,0,.1)!important;}
+    [data-theme="light"] #starfield{opacity:0;}
+    [data-theme="light"] .nav-bg-panel.p1{background:var(--blue);}
+    [data-theme="light"] .nav-bg-panel.p2{background:#fff8f3;}
+    [data-theme="light"] .nav-bg-panel.p3{background:#faf6f1;border-color:rgba(232,88,10,.12);}
+    [data-theme="light"] .logo-bolt{background:linear-gradient(135deg,#FFD700,#FFA500)!important;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important;background-clip:text!important;filter:drop-shadow(0 0 8px rgba(255,180,0,.45))!important;box-shadow:none!important;}
+    [data-theme="light"] .doc-card{background:rgba(232,225,215,.7);}
+    [data-theme="light"] .doc-card-header{background:linear-gradient(135deg,rgba(232,88,10,.06) 0%,transparent 55%);}
+    [data-theme="light"] .highlight-box{background:var(--surface);border-left-color:var(--blue);}
+    [data-theme="light"] .warn-box{background:rgba(184,114,10,.08);}
+    [data-theme="light"] .success-box{background:rgba(26,122,82,.08);}
+    [data-theme="light"] .footer{background:var(--bg2);border-color:rgba(0,0,0,.08);}
+    [data-theme="light"] body{background:var(--bg);}
+    [data-theme="light"] .cookie-table th{background:rgba(0,0,0,.04);}
+    [data-theme="light"] .nav-close-btn{color:var(--blue)!important;border-color:var(--blue)!important;}
+    [data-theme="light"] .nav-menu-heading,.nav-menu-heading{color:var(--text);}
+    html{transition:background-color .25s;scroll-behavior:smooth;overflow-x:hidden;}
+    body{transition:background-color .25s,color .25s;font-family:var(--fb);background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 
-    /* Theme toggle pill */
-    .theme-toggle-row { display:flex; align-items:center; justify-content:space-between; padding:0 2em; margin-bottom:1.5em; }
-    .theme-row-label { font-family:var(--fr,'Rajdhani',sans-serif); font-size:.7rem; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.38); transition:color .25s; }
-    [data-theme="light"] .theme-row-label { color:rgba(28,18,8,.38); }
-    .theme-pill { position:relative; width:80px; height:36px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:100px; cursor:pointer; display:flex; align-items:center; padding:0 4px; transition:background .25s,border-color .25s; }
-    [data-theme="light"] .theme-pill { background:rgba(232,88,10,.1); border-color:rgba(232,88,10,.3); }
-    .theme-pill:hover { border-color:rgba(232,88,10,.5); }
-    .theme-pill-knob { position:absolute; width:28px; height:28px; background:#fff; border-radius:50%; box-shadow:0 2px 8px rgba(0,0,0,.3); transition:transform .3s cubic-bezier(.16,1,.3,1),background .25s; left:4px; }
-    [data-theme="light"] .theme-pill-knob { background:#E8580A; box-shadow:0 2px 12px rgba(232,88,10,.4); }
-    .theme-icon { position:absolute; font-size:14px; line-height:1; transition:opacity .25s; pointer-events:none; }
-    .theme-icon-moon { left:10px; opacity:1; }
-    .theme-icon-sun  { right:8px; opacity:.38; }
-    [data-theme="light"] .theme-icon-moon { opacity:.38; }
-    [data-theme="light"] .theme-icon-sun  { opacity:1; }
+    /* ── STARFIELD ── */
+    #starfield{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;}
 
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; overflow-x: hidden; }
-    body {
-      font-family: var(--font-b); background: var(--bg); color: var(--text);
-      line-height: 1.6; min-height: 100vh; display: flex; flex-direction: column;
-      -webkit-font-smoothing: antialiased; overflow-x: hidden;
-    }
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: var(--bg2); }
-    ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+    ::-webkit-scrollbar{width:5px;}
+    ::-webkit-scrollbar-track{background:var(--bg2);}
+    ::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px;}
 
-    /* ── STATIC AMBIENT BACKGROUND ── */
-    body::before {
-      content: '';
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background:
-        radial-gradient(ellipse 900px 700px at -15% 15%, rgba(0,212,255,0.05) 0%, transparent 65%),
-        radial-gradient(ellipse 700px 500px at 115% 85%, rgba(0,212,255,0.04) 0%, transparent 65%),
-        radial-gradient(ellipse 500px 400px at 50% 50%, rgba(0,212,255,0.02) 0%, transparent 70%);
-    }
+    .container{max-width:1280px;margin:0 auto;padding:0 1.5rem;position:relative;z-index:1;}
 
-    .container { max-width: 1280px; margin: 0 auto; padding: 0 1.5rem; position: relative; z-index: 1; }
-
-    /* ══════════════════
-       HEADER
-    ══════════════════ */
-    .header {
-      position: fixed; top: 0; left: 0; right: 0;
-      background: rgba(0,0,0,0.78);
-      backdrop-filter: blur(24px) saturate(1.6);
-      border-bottom: 1px solid var(--border);
-      z-index: 200;
-    }
-    .header-inner {
-      display: flex; align-items: center; justify-content: space-between;
-      height: 64px; gap: 1rem;
-    }
-    .logo {
-      display: flex; align-items: center; gap: 10px;
-      font-family: var(--font-d); font-size: 1.25rem; font-weight: 800;
-      color: var(--text); text-decoration: none; letter-spacing: 0.08em; flex-shrink: 0;
-    }
-    .logo-bolt {
-      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, var(--blue), #0088CC);
-      border-radius: 8px; font-size: 17px; box-shadow: 0 0 16px var(--blue-glow);
-    }
-    .logo-text span { color: var(--blue); }
-    .header-actions { display: flex; align-items: center; gap: 0.625rem; }
-
-    .back-btn {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      font-family: var(--font-raj); font-size: 0.8125rem; font-weight: 600;
-      letter-spacing: 0.06em; text-transform: uppercase;
-      color: var(--text2); text-decoration: none;
-      padding: 0.5rem 0.875rem; border-radius: var(--radius);
-      border: 1px solid var(--border); transition: all 0.2s;
-    }
-    .back-btn:hover { color: var(--text); border-color: var(--border-hover); background: rgba(0,212,255,0.04); }
-
-    .menu-button {
-      display: flex; align-items: center; gap: 0.625rem;
-      background: transparent; border: 1px solid var(--border);
-      color: var(--text); cursor: pointer;
-      padding: 0.5rem 0.875rem; border-radius: var(--radius);
-      font-family: var(--font-mono), var(--font-b);
-      font-size: 0.875rem; letter-spacing: 0.06em;
-      transition: border-color 0.2s, background 0.2s; overflow: hidden;
-    }
-    .menu-button:hover { border-color: var(--border-hover); background: rgba(0,212,255,0.04); }
-    .menu-button-text {
-      display: flex; flex-direction: column; align-items: flex-end;
-      height: 1.1em; overflow: hidden;
-    }
-    .menu-button-text p {
-      font-size: 0.875em; font-family: var(--font-mono), var(--font-b);
-      letter-spacing: 0.08em; text-transform: uppercase; margin: 0; line-height: 1.1;
-    }
-    /* Fix Bug4: prevent Закрыть from showing before GSAP init */
-    .menu-button-text p:nth-child(2){transform:translateY(100%);} /* hidden below overflow */
-    .menu-button-icon {
-      width: 0.9em; height: 0.9em;
-      transition: transform 0.4s cubic-bezier(0.65,0.05,0,1); flex-shrink: 0;
-    }
-    .menu-button:hover .menu-button-icon { transform: rotate(90deg); }
-
-    /* ══════════════════
-       NAV DRAWER
-    ══════════════════ */
-    .nav-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-      z-index: 300; cursor: pointer; opacity: 0; pointer-events: none;
-      backdrop-filter: blur(2px);
-    }
-    .nav-drawer {
-      position: fixed; right: 0; top: 0; bottom: 0;
-      width: 38em; max-width: 100vw;
-      z-index: 400; display: none; flex-direction: column;
-    }
-    .nav-drawer-bg { position: absolute; inset: 0; z-index: 0; }
-    .nav-bg-panel {
-      position: absolute; inset: 0;
-      border-top-left-radius: 1.5em; border-bottom-left-radius: 1.5em;
-    }
-    .nav-bg-panel.p1 { background: var(--blue); }
-    .nav-bg-panel.p2 { background: #0a1a20; }
-    .nav-bg-panel.p3 { background: #000; border: 1px solid rgba(0,212,255,0.12); }
-    .nav-drawer-inner {
-      position: relative; z-index: 1;
-      display: flex; flex-direction: column; justify-content: space-between;
-      height: 100%; padding: 4rem 0 2.5rem;
-    }
-    .nav-close-btn {
-      position:absolute; top:1.5rem; right:2rem;
-      background: none; border: 1px solid rgba(255,255,255,.06); color: rgba(255,255,255,.5);
-      width: 2.5rem; height: 2.5rem; border-radius: 50%; cursor: pointer;
-      font-size: 1rem; display: flex; align-items: center; justify-content: center; z-index:2; transition: all 0.2s;
-    }
-    .nav-close-btn:hover { border-color: var(--blue); color: var(--blue); }
-    .nav-menu-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; width: 100%; }
-    .nav-menu-item { position: relative; overflow: hidden; }
-    .nav-menu-link {
-      display: flex; align-items: baseline; justify-content: flex-end; gap: .5em;
-      width: 100%; padding: 0.6em 2em;
-      text-decoration: none; color: var(--text); position: relative; text-align: right;
-    }
-    .nav-menu-heading {
-      font-family: var(--font-menu); font-size: 4.5em; font-weight: 700; line-height: 0.85;
-      text-transform: uppercase; letter-spacing: -0.02em;
-      transition: transform 0.55s cubic-bezier(0.65,0.05,0,1);
-      position: relative; z-index: 1; color: var(--text);
-    }
-    .nav-menu-eyebrow {
-      font-family: var(--font-raj); font-size: 0.75em;
-      letter-spacing: 0.25em; text-transform: uppercase;
-      color: var(--blue); position: relative; z-index: 1;
-    }
-    .nav-menu-link-bg {
-      position: absolute; inset: 0; background: rgba(0,212,255,0.06);
-      transform: scale3d(1,0,1); transform-origin: 50% 100%;
-      transition: transform 0.55s cubic-bezier(0.65,0.05,0,1); z-index: 0;
-    }
-    .nav-menu-link:hover .nav-menu-heading { transform: translateY(-1em); transition-delay: 0.08s; color: var(--blue); }
-    .nav-menu-link:hover .nav-menu-link-bg { transform: scale3d(1,1,1); }
-    .nav-menu-link.active .nav-menu-heading { color: var(--blue); }
-    .nav-drawer-footer {
-      padding-top: 1.5em; margin: 0 2em;
-      border-top: 1px solid rgba(255,255,255,0.06);
-      display: flex; flex-direction: column; gap: 1em;
-    }
-    .nav-footer-label { font-family: var(--font-raj); font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text3); }
-    .nav-socials { display: flex; gap: 1.5em; flex-wrap: wrap; }
-    .nav-social-link { font-size: 0.875rem; color: var(--text2); text-decoration: none; position: relative; transition: color 0.2s; }
-    .nav-social-link::after { content: ''; position: absolute; left: 0; bottom: 0; width: 100%; height: 1px; background: var(--blue); transform: scaleX(0); transform-origin: right center; transition: transform 0.4s cubic-bezier(0.65,0.05,0,1); }
-    .nav-social-link:hover { color: var(--text); }
-    .nav-social-link:hover::after { transform: scaleX(1); transform-origin: left center; }
-
-    /* ══════════════════
-       PAGE HEADER
-    ══════════════════ */
-    .page-header {
-      padding-top: 5.5rem; padding-bottom: 2.5rem;
-      position: relative; overflow: hidden; z-index: 1;
-    }
-    .page-header::after {
-      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(0,212,255,0.3), transparent);
-    }
-    .page-eyebrow {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      font-family: var(--font-raj); font-size: 0.75rem; font-weight: 700;
-      letter-spacing: 0.2em; text-transform: uppercase; color: var(--blue);
-      margin-bottom: 1rem; padding: 0.35rem 1rem;
-      background: var(--blue-dim); border: 1px solid rgba(0,212,255,0.2); border-radius: 100px;
-    }
-    .eyebrow-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--blue); box-shadow: 0 0 8px var(--blue);
-      animation: dotBlink 1.5s ease-in-out infinite;
-    }
-    @keyframes dotBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-    .page-title {
-      font-family: var(--font-d); font-size: clamp(1.75rem, 4vw, 2.75rem);
-      font-weight: 800; letter-spacing: -0.04em; line-height: 1.1; margin-bottom: 0.375rem;
-    }
-    .page-desc { font-family: var(--font-raj); font-size: 0.9rem; color: var(--text2); letter-spacing: 0.05em; }
-
-    /* ══════════════════
-       LAYOUT
-    ══════════════════ */
-    .docs-layout { flex: 1; position: relative; z-index: 1; padding: 2.5rem 0 5rem; }
-    .docs-inner {
-      display: grid; grid-template-columns: 260px 1fr;
-      gap: 2.5rem; align-items: start;
-    }
-
-    /* ── SIDEBAR ── */
-    .docs-sidebar { position: sticky; top: 88px; display: flex; flex-direction: column; gap: 0.25rem; }
-    .sidebar-label {
-      font-family: var(--font-raj); font-size: 0.65rem; font-weight: 700;
-      letter-spacing: 0.2em; text-transform: uppercase; color: var(--text3);
-      padding: 0 0.75rem; margin-bottom: 0.5rem;
-    }
-    .sidebar-tab {
-      display: flex; align-items: center; gap: 0.875rem;
-      padding: 0.75rem 0.875rem;
-      background: transparent; border: 1px solid transparent;
-      border-radius: var(--radius-lg); cursor: pointer;
-      transition: all 0.25s var(--ease-f);
-      text-align: left; width: 100%; position: relative; overflow: hidden;
-    }
-    .sidebar-tab::before {
-      content: ''; position: absolute; inset: 0;
-      background: rgba(0,212,255,0.05);
-      transform: scaleX(0); transform-origin: left center;
-      transition: transform 0.3s var(--ease-f); border-radius: inherit;
-    }
-    .sidebar-tab:hover::before { transform: scaleX(1); }
-    .sidebar-tab:hover { border-color: var(--border-hover); }
-    .sidebar-tab.active {
-      background: var(--blue-dim);
-      border-color: rgba(0,212,255,0.22);
-      box-shadow: 0 0 20px rgba(0,212,255,0.06), inset 0 0 0 1px rgba(0,212,255,0.08);
-    }
-    .sidebar-tab.active::before { display: none; }
-    .sidebar-tab.active::after {
-      content: ''; position: absolute; left: 0; top: 22%; bottom: 22%;
-      width: 3px; background: var(--blue);
-      border-radius: 0 3px 3px 0; box-shadow: 0 0 8px var(--blue);
-    }
-    .tab-icon {
-      width: 34px; height: 34px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 9px; font-size: 0.9rem;
-      transition: all 0.25s; position: relative; z-index: 1;
-    }
-    .sidebar-tab.active .tab-icon { background: var(--blue-dim); border-color: rgba(0,212,255,0.3); box-shadow: 0 0 10px rgba(0,212,255,0.12); }
-    .sidebar-tab:hover:not(.active) .tab-icon { border-color: var(--border-hover); }
-    .tab-text { position: relative; z-index: 1; }
-    .tab-name {
-      font-family: var(--font-d); font-size: 0.8125rem; font-weight: 700;
-      color: var(--text2); display: block; transition: color 0.2s; line-height: 1.2;
-    }
-    .sidebar-tab.active .tab-name { color: var(--blue); }
-    .sidebar-tab:hover:not(.active) .tab-name { color: var(--text); }
-    .tab-hint {
-      font-family: var(--font-raj); font-size: 0.7rem;
-      letter-spacing: 0.04em; color: var(--text3);
-      display: block; margin-top: 0.1rem; transition: color 0.2s;
-    }
-    .sidebar-tab.active .tab-hint { color: rgba(0,212,255,0.55); }
-    .sidebar-divider { height: 1px; background: var(--border); margin: 0.5rem 0.75rem; }
-
-    /* ── CONTENT ── */
-    .doc-section { display: none; }
-    .doc-section.active { display: block; animation: contentFadeIn 0.35s var(--ease) both; }
-    @keyframes contentFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-    .doc-card {
-      background: rgba(14,18,24,0.75);
-      backdrop-filter: blur(20px) saturate(1.3);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-xl);
-      overflow: hidden;
-    }
-    .doc-card-header {
-      padding: 2rem 2.5rem 1.75rem;
-      border-bottom: 1px solid var(--border);
-      background: linear-gradient(135deg, rgba(0,212,255,0.04) 0%, transparent 55%);
-      position: relative; overflow: hidden;
-    }
-    .doc-card-header::after {
-      content: ''; position: absolute; top: -80px; right: -80px;
-      width: 220px; height: 220px;
-      background: radial-gradient(ellipse, rgba(0,212,255,0.07) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    .doc-badge {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.25rem 0.875rem;
-      background: var(--blue-dim); color: var(--blue);
-      border: 1px solid rgba(0,212,255,0.2); border-radius: 100px;
-      font-family: var(--font-raj); font-size: 0.7rem; font-weight: 700;
-      letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 1rem;
-    }
-    .doc-title {
-      font-family: var(--font-d); font-size: clamp(1.375rem, 3vw, 1.875rem);
-      font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.5rem;
-    }
-    .doc-meta { font-family: var(--font-raj); font-size: 0.75rem; color: var(--text3); letter-spacing: 0.08em; }
-    .doc-body { padding: 2rem 2.5rem; }
-
-    /* ── DOC CONTENT ── */
-    .doc-content { color: var(--text2); font-size: 0.9375rem; line-height: 1.8; }
-    .doc-content h2 {
-      font-family: var(--font-d); font-size: 1.0625rem; font-weight: 700;
-      color: var(--text); margin: 2rem 0 0.75rem; letter-spacing: -0.02em;
-      display: flex; align-items: center; gap: 0.75rem;
-    }
-    .doc-content h2::before {
-      content: ''; display: block; width: 3px; height: 1em; flex-shrink: 0;
-      background: var(--blue); border-radius: 2px; box-shadow: 0 0 8px var(--blue);
-    }
-    .doc-content h2:first-child { margin-top: 0; }
-    .doc-content p { margin-bottom: 1rem; }
-    .doc-content ul, .doc-content ol { padding-left: 0; margin-bottom: 1rem; list-style: none; }
-    .doc-content li { margin-bottom: 0.5rem; padding-left: 1.375rem; position: relative; }
-    .doc-content ul li::before {
-      content: ''; position: absolute; left: 0; top: 0.68em;
-      width: 5px; height: 5px; border-radius: 50%;
-      background: var(--blue); opacity: 0.65;
-    }
-    .doc-content ol { counter-reset: list-counter; }
-    .doc-content ol li { counter-increment: list-counter; }
-    .doc-content ol li::before {
-      content: counter(list-counter) '.';
-      position: absolute; left: 0; top: 0;
-      font-family: var(--font-raj); font-size: 0.75rem; font-weight: 700;
-      color: var(--blue); letter-spacing: 0.05em; line-height: 1.8;
-    }
-    .doc-content strong { color: var(--text); font-weight: 600; }
-    .doc-content a { color: var(--blue); text-decoration: none; }
-    .doc-content a:hover { text-decoration: underline; }
-    .highlight-box {
-      background: var(--surface); border: 1px solid rgba(0,212,255,0.12);
-      border-left: 3px solid var(--blue); border-radius: var(--radius);
-      padding: 1rem 1.25rem; margin: 1.25rem 0;
-      font-size: 0.875rem; color: var(--text2); line-height: 1.7;
-    }
-    .highlight-box strong { color: var(--blue); }
-
-    /* ══════════════════
-       FOOTER
-    ══════════════════ */
-    .footer { background: var(--bg2); border-top: 1px solid var(--border); padding: 3rem 0 0; position: relative; z-index: 1; }
-    .footer-grid { display: grid; grid-template-columns: 1.5fr repeat(3,1fr); gap: 3rem; padding-bottom: 3rem; }
-    .footer-brand-desc { font-size: 0.875rem; color: var(--text2); line-height: 1.7; margin-top: 1rem; max-width: 280px; }
-    .footer-col-title { font-family: var(--font-raj); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text3); margin-bottom: 1rem; }
-    .footer-links { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
-    .footer-links a { font-size: 0.875rem; color: var(--text2); text-decoration: none; transition: color 0.2s; }
-    .footer-links a:hover { color: var(--blue); }
-    .footer-bottom { border-top: 1px solid var(--border); padding: 1.25rem 0; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-    .footer-bottom span, .footer-bottom a { font-family: var(--font-raj); font-size: 0.8rem; color: var(--text3); text-decoration: none; transition: color 0.2s; letter-spacing: 0.05em; }
-    .footer-bottom a:hover { color: var(--blue); }
-    .footer-legal { display: flex; gap: 1.5rem; flex-wrap: wrap; }
-
-    /* ══════════════════
-       RESPONSIVE
-    ══════════════════ */
-    @media (max-width: 900px) {
-      .docs-inner { grid-template-columns: 1fr; }
-      .docs-sidebar {
-        position: static; flex-direction: row; flex-wrap: nowrap;
-        overflow-x: auto; gap: 0.5rem; padding-bottom: 0.5rem;
-        scrollbar-width: none;
-      }
-      .docs-sidebar::-webkit-scrollbar { display: none; }
-      .sidebar-label { display: none; }
-      .sidebar-tab { min-width: 150px; flex-shrink: 0; }
-      .sidebar-tab.active::after { display: none; }
-      .sidebar-divider { width: 1px; height: auto; margin: 0.25rem 0; align-self: stretch; background: var(--border); }
-    }
-    @media (max-width: 768px) {
-      .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
-      .doc-card-header { padding: 1.5rem; }
-      .doc-body { padding: 1.5rem; }
-      .nav-drawer { width: 100%; }
-      .nav-bg-panel { border-radius: 0; }
-      .nav-menu-heading { font-size: 3.5em; }
-      .nav-menu-link { padding: 0.5em 1.25em; }
-    }
-    @media (max-width: 480px) {
-      .footer-grid { grid-template-columns: 1fr; }
-      .sidebar-tab { min-width: 130px; padding: 0.625rem 0.75rem; }
-      .tab-hint { display: none; }
-    }
-  
-    /* ── Theme Segment Control ── */
+    /* ── THEME SEG ── */
     .theme-seg{display:flex;align-items:center;justify-content:space-between;padding:.875rem 2rem;border-bottom:1px solid rgba(255,255,255,.06);}
     [data-theme="light"] .theme-seg{border-bottom-color:rgba(0,0,0,.07);}
-    .theme-seg-label{font-family:var(--fr,'Rajdhani',sans-serif);font-size:.62rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.28);transition:color .25s;}
+    .theme-seg-label{font-family:var(--fr);font-size:.62rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.28);}
     [data-theme="light"] .theme-seg-label{color:rgba(0,0,0,.28);}
-    .theme-seg-ctrl{display:flex;gap:3px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:3px;transition:background .25s,border-color .25s;}
+    .theme-seg-ctrl{display:flex;gap:3px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:3px;}
     [data-theme="light"] .theme-seg-ctrl{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08);}
-    .theme-seg-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .75rem;font-family:var(--fr,'Rajdhani',sans-serif);font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;border:none;border-radius:5px;cursor:pointer;background:transparent;color:rgba(255,255,255,.32);transition:color .2s,background .2s;line-height:1;}
+    .theme-seg-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .75rem;font-family:var(--fr);font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;border:none;border-radius:5px;cursor:pointer;background:transparent;color:rgba(255,255,255,.32);transition:color .2s,background .2s;line-height:1;}
     [data-theme="light"] .theme-seg-btn{color:rgba(0,0,0,.3);}
-    .theme-seg-btn svg{flex-shrink:0;}
     .theme-seg-btn.seg-active{color:var(--blue);background:var(--blue-dim);}
-    [data-theme="light"] .theme-seg-btn.seg-active{color:var(--blue);background:var(--blue-dim);}
 
-  
-    /* ── Performance: GPU compositing for animated elements ── */
-    .nav-bg-panel,.nav-overlay,.nav-menu,.menu-button-icon{will-change:transform,opacity;}
-    #starfield canvas,.parallax__layer-img{will-change:transform;}
-    .hero-title .line,.hero-subtitle,.hero-cta{will-change:transform,opacity;}
-</style>
-<script src="/static/csrf-init.js"></script>
+    /* ── HEADER ── */
+    .header{position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,.78);backdrop-filter:blur(24px) saturate(1.6);border-bottom:1px solid var(--border);z-index:200;}
+    .header-inner{display:flex;align-items:center;justify-content:space-between;height:64px;padding:0 1.5rem;}
+    .logo{display:flex;align-items:center;gap:10px;font-family:var(--fd);font-size:1.25rem;font-weight:800;color:var(--text);text-decoration:none;letter-spacing:.08em;flex-shrink:0;}
+    .logo-bolt{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:22px;background:linear-gradient(135deg,#FFD700,#FFA500);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 8px rgba(255,190,0,.55));}
+    .logo-text span{color:var(--blue);}
+    .header-actions{display:flex;align-items:center;gap:.625rem;}
+    .back-btn{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--fr);font-size:.8125rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);text-decoration:none;padding:.5rem .875rem;border-radius:var(--r);border:1px solid var(--border);transition:all .2s;}
+    .back-btn:hover{color:var(--text);border-color:var(--border-h);background:rgba(0,212,255,.04);}
+    .menu-button{display:flex;align-items:center;gap:.625rem;background:transparent;border:1px solid var(--border);color:var(--text);cursor:pointer;padding:.5rem .875rem;border-radius:var(--r);font-family:var(--fmono),var(--fb);font-size:.875rem;letter-spacing:.06em;transition:border-color .2s,background .2s;overflow:hidden;}
+    .menu-button:hover{border-color:var(--border-h);background:rgba(0,212,255,.04);}
+    .menu-button-text{display:flex;flex-direction:column;align-items:flex-end;height:1.1em;overflow:hidden;}
+    .menu-button-text p{font-size:.875em;letter-spacing:.08em;text-transform:uppercase;margin:0;line-height:1.1;}
+    .menu-button-text p:nth-child(2){transform:translateY(100%);}
+    .menu-button-icon{width:.9em;height:.9em;transition:transform .4s cubic-bezier(.65,.05,0,1);flex-shrink:0;}
+    .menu-button:hover .menu-button-icon{transform:rotate(90deg);}
+
+    /* ── NAV DRAWER ── */
+    .nav-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;cursor:pointer;opacity:0;pointer-events:none;backdrop-filter:blur(2px);}
+    .nav-drawer{position:fixed;right:0;top:0;bottom:0;width:38em;max-width:100vw;z-index:400;display:none;flex-direction:column;}
+    .nav-drawer-bg{position:absolute;inset:0;z-index:0;}
+    .nav-bg-panel{position:absolute;inset:0;border-top-left-radius:1.5em;border-bottom-left-radius:1.5em;}
+    .nav-bg-panel.p1{background:var(--blue);}
+    .nav-bg-panel.p2{background:#0a1a20;}
+    .nav-bg-panel.p3{background:#000;border:1px solid rgba(0,212,255,.12);}
+    .nav-drawer-inner{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:space-between;height:100%;padding:4rem 0 2.5rem;}
+    .nav-close-btn{position:absolute;top:1.5rem;right:2rem;background:none;border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5);width:2.5rem;height:2.5rem;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;z-index:2;transition:all .2s;}
+    .nav-close-btn:hover{border-color:var(--blue);color:var(--blue);}
+    .nav-menu-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;width:100%;}
+    .nav-menu-item{position:relative;overflow:hidden;}
+    .nav-menu-link{display:flex;align-items:baseline;justify-content:flex-end;gap:.5em;width:100%;padding:.6em 2em;text-decoration:none;color:var(--text);position:relative;text-align:right;}
+    .nav-menu-heading{font-family:var(--fn);font-size:4.5em;font-weight:700;line-height:.85;text-transform:uppercase;letter-spacing:-.02em;transition:transform .55s cubic-bezier(.65,.05,0,1);position:relative;z-index:1;color:var(--text);}
+    .nav-menu-eyebrow{font-family:var(--fr);font-size:.75em;letter-spacing:.25em;text-transform:uppercase;color:var(--blue);position:relative;z-index:1;}
+    .nav-menu-link-bg{position:absolute;inset:0;background:rgba(0,212,255,.06);transform:scale3d(1,0,1);transform-origin:50% 100%;transition:transform .55s cubic-bezier(.65,.05,0,1);z-index:0;}
+    .nav-menu-link:hover .nav-menu-heading{transform:translateY(-1em);transition-delay:.08s;color:var(--blue);}
+    .nav-menu-link:hover .nav-menu-link-bg{transform:scale3d(1,1,1);}
+    .nav-drawer-footer{padding-top:1.5em;margin:0 2em;border-top:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;gap:1em;}
+    .nav-footer-label{font-family:var(--fr);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text3);}
+    .nav-socials{display:flex;gap:1.5em;flex-wrap:wrap;}
+    .nav-social-link{font-size:.875rem;color:var(--text2);text-decoration:none;position:relative;transition:color .2s;}
+    .nav-social-link::after{content:'';position:absolute;left:0;bottom:0;width:100%;height:1px;background:var(--blue);transform:scaleX(0);transform-origin:right center;transition:transform .4s cubic-bezier(.65,.05,0,1);}
+    .nav-social-link:hover{color:var(--text);}
+    .nav-social-link:hover::after{transform:scaleX(1);transform-origin:left center;}
+
+    /* ── PAGE HEADER ── */
+    .page-header{padding-top:5.5rem;padding-bottom:2.5rem;position:relative;overflow:hidden;z-index:1;}
+    .page-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,.3),transparent);}
+    .page-eyebrow{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--fr);font-size:.75rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--blue);margin-bottom:1rem;padding:.35rem 1rem;background:var(--blue-dim);border:1px solid rgba(0,212,255,.2);border-radius:100px;}
+    .eyebrow-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue);animation:dotBlink 1.5s ease-in-out infinite;}
+    @keyframes dotBlink{0%,100%{opacity:1;}50%{opacity:.3;}}
+    .page-title{font-family:var(--fd);font-size:clamp(1.75rem,4vw,2.75rem);font-weight:800;letter-spacing:-.04em;line-height:1.1;margin-bottom:.375rem;}
+    .page-desc{font-family:var(--fr);font-size:.9rem;color:var(--text2);letter-spacing:.05em;}
+
+    /* ── LAYOUT ── */
+    .docs-layout{flex:1;position:relative;z-index:1;padding:2.5rem 0 5rem;}
+    .docs-inner{display:grid;grid-template-columns:260px 1fr;gap:2.5rem;align-items:start;min-width:0;}
+    /* critical: prevents grid child overflow */
+    .docs-content{min-width:0;width:100%;overflow:hidden;}
+
+    /* ── SIDEBAR ── */
+    .docs-sidebar{position:sticky;top:88px;display:flex;flex-direction:column;gap:.25rem;}
+    .sidebar-label{font-family:var(--fr);font-size:.65rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--text3);padding:0 .75rem;margin-bottom:.5rem;}
+    .sidebar-tab{display:flex;align-items:center;gap:.875rem;padding:.75rem .875rem;background:transparent;border:1px solid transparent;border-radius:var(--rl);cursor:pointer;transition:all .25s var(--easef);text-align:left;width:100%;position:relative;overflow:hidden;}
+    .sidebar-tab::before{content:'';position:absolute;inset:0;background:rgba(0,212,255,.05);transform:scaleX(0);transform-origin:left center;transition:transform .3s var(--easef);border-radius:inherit;}
+    .sidebar-tab:hover::before{transform:scaleX(1);}
+    .sidebar-tab:hover{border-color:var(--border-h);}
+    .sidebar-tab.active{background:var(--blue-dim);border-color:rgba(0,212,255,.22);box-shadow:0 0 20px rgba(0,212,255,.06),inset 0 0 0 1px rgba(0,212,255,.08);}
+    .sidebar-tab.active::before{display:none;}
+    .sidebar-tab.active::after{content:'';position:absolute;left:0;top:22%;bottom:22%;width:3px;background:var(--blue);border-radius:0 3px 3px 0;box-shadow:0 0 8px var(--blue);}
+    .tab-icon{width:34px;height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--surface);border:1px solid var(--border);border-radius:9px;font-size:.9rem;transition:all .25s;position:relative;z-index:1;}
+    .sidebar-tab.active .tab-icon{background:var(--blue-dim);border-color:rgba(0,212,255,.3);box-shadow:0 0 10px rgba(0,212,255,.12);}
+    .tab-text{position:relative;z-index:1;}
+    .tab-name{font-family:var(--fd);font-size:.8125rem;font-weight:700;color:var(--text2);display:block;transition:color .2s;line-height:1.2;}
+    .sidebar-tab.active .tab-name{color:var(--blue);}
+    .sidebar-tab:hover:not(.active) .tab-name{color:var(--text);}
+    .tab-hint{font-family:var(--fr);font-size:.7rem;letter-spacing:.04em;color:var(--text3);display:block;margin-top:.1rem;transition:color .2s;}
+    .sidebar-tab.active .tab-hint{color:rgba(0,212,255,.55);}
+    .sidebar-divider{height:1px;background:var(--border);margin:.5rem .75rem;}
+
+    /* ── DOC SECTIONS ── */
+    .doc-section{display:none;min-width:0;width:100%;}
+    .doc-section.active{display:block;animation:contentFadeIn .35s var(--ease) both;}
+    @keyframes contentFadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+    .doc-card{background:rgba(14,18,24,.78);backdrop-filter:blur(20px) saturate(1.3);border:1px solid var(--border);border-radius:var(--rxl);overflow:hidden;min-width:0;max-width:100%;width:100%;box-sizing:border-box;}
+    .doc-card-header{padding:2rem 2.5rem 1.75rem;border-bottom:1px solid var(--border);background:linear-gradient(135deg,rgba(0,212,255,.04) 0%,transparent 55%);position:relative;overflow:hidden;}
+    .doc-card-header::after{content:'';position:absolute;top:-80px;right:-80px;width:220px;height:220px;background:radial-gradient(ellipse,rgba(0,212,255,.07) 0%,transparent 70%);pointer-events:none;}
+    .doc-badge{display:inline-flex;align-items:center;gap:.5rem;padding:.25rem .875rem;background:var(--blue-dim);color:var(--blue);border:1px solid rgba(0,212,255,.2);border-radius:100px;font-family:var(--fr);font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:1rem;max-width:100%;flex-wrap:wrap;}
+    .doc-title{font-family:var(--fd);font-size:clamp(1.2rem,5vw,1.875rem);font-weight:800;letter-spacing:-.03em;margin-bottom:.5rem;word-break:break-word;}
+    .doc-meta{font-family:var(--fr);font-size:.75rem;color:var(--text3);letter-spacing:.08em;word-break:break-word;}
+    .doc-body{padding:2rem 2.5rem;overflow:hidden;}
+
+    /* ── DOC CONTENT TYPOGRAPHY ── */
+    .doc-content{color:var(--text2);font-size:.9375rem;line-height:1.8;}
+    .doc-content h2{font-family:var(--fd);font-size:1.0625rem;font-weight:700;color:var(--text);margin:2rem 0 .75rem;letter-spacing:-.02em;display:flex;align-items:center;gap:.75rem;}
+    .doc-content h2::before{content:'';display:block;width:3px;height:1em;flex-shrink:0;background:var(--blue);border-radius:2px;box-shadow:0 0 8px var(--blue);}
+    .doc-content h2:first-child{margin-top:0;}
+    .doc-content p{margin-bottom:1rem;}
+    .doc-content ul,.doc-content ol{padding-left:0;margin-bottom:1rem;list-style:none;}
+    .doc-content li{margin-bottom:.5rem;padding-left:1.375rem;position:relative;}
+    .doc-content ul li::before{content:'';position:absolute;left:0;top:.68em;width:5px;height:5px;border-radius:50%;background:var(--blue);opacity:.65;}
+    .doc-content ol{counter-reset:ol-c;}
+    .doc-content ol li{counter-increment:ol-c;}
+    .doc-content ol li::before{content:counter(ol-c)'.';position:absolute;left:0;top:0;font-family:var(--fr);font-size:.75rem;font-weight:700;color:var(--blue);letter-spacing:.05em;line-height:1.8;}
+    .doc-content strong{color:var(--text);font-weight:600;}
+    .doc-content a{color:var(--blue);text-decoration:none;}
+    .doc-content a:hover{text-decoration:underline;}
+    code{font-family:'JetBrains Mono',var(--fmono),monospace;font-size:.78rem;background:rgba(0,212,255,.08);color:#00D4FF;padding:.1rem .4rem;border-radius:4px;}
+
+    .highlight-box{background:var(--surface);border:1px solid rgba(0,212,255,.12);border-left:3px solid var(--blue);border-radius:var(--r);padding:1rem 1.25rem;margin:1.25rem 0;font-size:.875rem;color:var(--text2);line-height:1.7;}
+    .highlight-box strong{color:var(--blue);}
+    .warn-box{background:rgba(255,176,32,.07);border:1px solid rgba(255,176,32,.2);border-left:3px solid var(--amber);border-radius:var(--r);padding:1rem 1.25rem;margin:1.25rem 0;font-size:.875rem;color:var(--text2);line-height:1.7;}
+    .warn-box strong{color:var(--amber);}
+    .success-box{background:var(--green-dim);border:1px solid rgba(0,229,160,.2);border-left:3px solid var(--green);border-radius:var(--r);padding:1rem 1.25rem;margin:1.25rem 0;font-size:.875rem;color:var(--text2);line-height:1.7;}
+    .success-box strong{color:var(--green);}
+
+    /* ── DOWNLOAD BTN ── */
+    .doc-download-btn{display:inline-flex;align-items:center;gap:.625rem;background:var(--blue-dim);color:var(--blue);border:1px solid rgba(0,212,255,.3);border-radius:var(--r);padding:.625rem 1.25rem;font-family:var(--fr);font-size:.8125rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;cursor:pointer;transition:all .2s;}
+    .doc-download-btn:hover{background:rgba(0,212,255,.2);border-color:rgba(0,212,255,.5);text-decoration:none;}
+
+    /* ── COOKIE TABLE ── */
+    .cookie-table-wrap{overflow-x:auto;margin:1.25rem 0;border-radius:var(--r);border:1px solid var(--border);}
+    .cookie-table{width:100%;border-collapse:collapse;font-size:.8125rem;}
+    .cookie-table th{background:rgba(0,212,255,.06);color:var(--text2);font-family:var(--fr);font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.75rem 1rem;text-align:left;border-bottom:1px solid rgba(0,212,255,.15);white-space:nowrap;}
+    .cookie-table td{padding:.65rem 1rem;border-bottom:1px solid rgba(255,255,255,.03);color:var(--text2);vertical-align:top;line-height:1.5;}
+    .cookie-table tr:last-child td{border-bottom:none;}
+    .cookie-table tr:hover td{background:rgba(255,255,255,.02);}
+    .ck-badge{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-family:var(--fr);font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+    .ck-badge.necessary{background:rgba(0,212,255,.12);color:#00D4FF;}
+    .ck-badge.functional{background:rgba(167,139,250,.12);color:#A78BFA;}
+    .ck-badge.analytics{background:rgba(52,211,153,.12);color:#34D399;}
+
+    /* ── FOOTER ── */
+    .footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 0 0;position:relative;z-index:1;}
+    .footer-grid{display:grid;grid-template-columns:1.5fr repeat(3,1fr);gap:3rem;padding-bottom:3rem;}
+    .footer-brand-desc{font-size:.875rem;color:var(--text2);line-height:1.7;margin-top:1rem;max-width:280px;}
+    .footer-col-title{font-family:var(--fr);font-size:.7rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-bottom:1rem;}
+    .footer-links{list-style:none;display:flex;flex-direction:column;gap:.5rem;}
+    .footer-links a{font-size:.875rem;color:var(--text2);text-decoration:none;transition:color .2s;}
+    .footer-links a:hover{color:var(--blue);}
+    .footer-bottom{border-top:1px solid var(--border);padding:1.25rem 0;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+    .footer-bottom span,.footer-bottom a{font-family:var(--fr);font-size:.8rem;color:var(--text3);text-decoration:none;transition:color .2s;letter-spacing:.05em;}
+    .footer-bottom a:hover{color:var(--blue);}
+    .footer-legal{display:flex;gap:1.5rem;flex-wrap:wrap;}
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:900px){
+      .docs-inner{grid-template-columns:1fr;}
+      .docs-sidebar{
+        position:static;
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:.5rem;
+        margin-bottom:.25rem;
+      }
+      .sidebar-label{display:none;}
+      .sidebar-tab{min-width:0;flex-shrink:unset;}
+      .sidebar-tab.active::after{display:none;}
+      .sidebar-divider{grid-column:1/-1;height:1px;margin:.1rem 0;align-self:stretch;}
+    }
+    @media(max-width:768px){
+      .footer-grid{grid-template-columns:1fr 1fr;gap:2rem;}
+      .doc-card-header{padding:1.25rem 1rem;}
+      .doc-body{padding:1.25rem 1rem;}
+      .doc-content{font-size:.875rem;}
+      .nav-drawer{width:100%;}
+      .nav-bg-panel{border-radius:0;}
+      .nav-menu-heading{font-size:3.5em;}
+      .nav-menu-link{padding:.5em 1.25em;}
+    }
+    @media(max-width:480px){
+      .footer-grid{grid-template-columns:1fr;}
+      .sidebar-tab{padding:.625rem .75rem;}
+      .tab-hint{font-size:.65rem;}
+      .doc-card-header{padding:1rem .875rem;}
+      .doc-body{padding:1rem .875rem;}
+      .cookie-table th,.cookie-table td{padding:.5rem .6rem;font-size:.7rem;}
+      .highlight-box,.warn-box,.success-box{padding:.875rem 1rem;}
+    }
+  </style>
+  <script src="/static/csrf-init.js"></script>
 </head>
 <body>
+
+<canvas id="starfield"></canvas>
 
 <!-- HEADER -->
 <header class="header">
   <div class="container">
     <div class="header-inner">
       <a href="/" class="logo">
-        <div class="logo-bolt">&#9889;</div>
+        <div class="logo-bolt">⚡</div>
         <span class="logo-text">Fm <span>TuN</span></span>
       </a>
       <div class="header-actions">
         <a href="/" class="back-btn">← На главную</a>
         <button class="menu-button" id="menuToggleBtn" aria-label="Открыть меню">
-          <div class="menu-button-text">
-            <p>Меню</p>
-            <p>Закрыть</p>
-          </div>
+          <div class="menu-button-text"><p>Меню</p><p>Закрыть</p></div>
           <svg class="menu-button-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
             <path d="M7.33333 16L7.33333 0L8.66667 0L8.66667 16L7.33333 16Z" fill="currentColor"/>
             <path d="M16 8.66667L0 8.66667L0 7.33333L16 7.33333L16 8.66667Z" fill="currentColor"/>
@@ -547,43 +301,25 @@
   </div>
   <div class="nav-drawer-inner">
     <div>
-  <button class="nav-close-btn" id="navCloseBtn" aria-label="Закрыть">✕</button>
+      <button class="nav-close-btn" id="navCloseBtn" aria-label="Закрыть">✕</button>
       <div class="theme-seg">
         <p class="theme-seg-label">Тема</p>
         <div class="theme-seg-ctrl" role="group">
-          <button class="theme-seg-btn seg-dark" data-seg="dark"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11 7.5A5 5 0 0 1 4.5 1a5.5 5.5 0 1 0 6.5 6.5Z" fill="currentColor"/></svg>Тёмная</button>
-          <button class="theme-seg-btn seg-light" data-seg="light"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="6" cy="6" r="2.2" fill="currentColor"/><path d="M6 .8V2.4M6 9.6v1.6M.8 6H2.4M9.6 6h1.6M2.34 2.34l1.13 1.13M8.53 8.53l1.13 1.13M9.66 2.34 8.53 3.47M3.47 8.53 2.34 9.66" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>Светлая</button>
+          <button class="theme-seg-btn" data-seg="dark"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M11 7.5A5 5 0 0 1 4.5 1a5.5 5.5 0 1 0 6.5 6.5Z" fill="currentColor"/></svg>Тёмная</button>
+          <button class="theme-seg-btn" data-seg="light"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="2.2" fill="currentColor"/><path d="M6 .8V2.4M6 9.6v1.6M.8 6H2.4M9.6 6h1.6M2.34 2.34l1.13 1.13M8.53 8.53l1.13 1.13M9.66 2.34 8.53 3.47M3.47 8.53 2.34 9.66" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>Светлая</button>
         </div>
       </div>
       <ul class="nav-menu-list">
-        <li class="nav-menu-item">
-          <a href="/" class="nav-menu-link">
-            <p class="nav-menu-heading">Главная</p>
-            <p class="nav-menu-eyebrow">01</p>
-            <div class="nav-menu-link-bg"></div>
-          </a>
-        </li>
-        <li class="nav-menu-item">
-          <a href="/products" class="nav-menu-link">
-            <p class="nav-menu-heading">Каталог</p>
-            <p class="nav-menu-eyebrow">02</p>
-            <div class="nav-menu-link-bg"></div>
-          </a>
-        </li>
-        <li class="nav-menu-item">
-          <a href="/about" class="nav-menu-link">
-            <p class="nav-menu-heading">О нас</p>
-            <p class="nav-menu-eyebrow">03</p>
-            <div class="nav-menu-link-bg"></div>
-          </a>
-        </li>
+        <li class="nav-menu-item"><a href="/" class="nav-menu-link"><p class="nav-menu-heading">Главная</p><p class="nav-menu-eyebrow">01</p><div class="nav-menu-link-bg"></div></a></li>
+        <li class="nav-menu-item"><a href="/products" class="nav-menu-link"><p class="nav-menu-heading">Каталог</p><p class="nav-menu-eyebrow">02</p><div class="nav-menu-link-bg"></div></a></li>
+        <li class="nav-menu-item"><a href="/about" class="nav-menu-link"><p class="nav-menu-heading">О нас</p><p class="nav-menu-eyebrow">03</p><div class="nav-menu-link-bg"></div></a></li>
       </ul>
     </div>
     <div class="nav-drawer-footer">
       <p class="nav-footer-label" id="navFadeItem1">Контакты</p>
       <div class="nav-socials" id="navFadeItem2">
         <a href="tel:+78001234567" class="nav-social-link">+7 (800) 123-45-67</a>
-        <a href="mailto:info@fmtun.ru">info@fmtun.ru</a>
+        <a href="mailto:info@fmtun.ru" class="nav-social-link">info@fmtun.ru</a>
         <a href="https://t.me/fmtun" class="nav-social-link">Telegram</a>
       </div>
     </div>
@@ -593,12 +329,9 @@
 <!-- PAGE HEADER -->
 <div class="page-header">
   <div class="container">
-    <div class="page-eyebrow">
-      <span class="eyebrow-dot"></span>
-      Правовая информация
-    </div>
+    <div class="page-eyebrow"><span class="eyebrow-dot"></span>Правовая информация</div>
     <h1 class="page-title">Документы</h1>
-    <p class="page-desc">Условия использования · Конфиденциальность · Оферта · Возврат</p>
+    <p class="page-desc">Соглашение · Конфиденциальность · Политика Cookie · Оферта · Возврат</p>
   </div>
 </div>
 
@@ -627,6 +360,14 @@
           </div>
         </button>
 
+        <button class="sidebar-tab" data-doc="cookies">
+          <div class="tab-icon">🍪</div>
+          <div class="tab-text">
+            <span class="tab-name">Политика Cookie</span>
+            <span class="tab-hint">Яндекс.Метрика</span>
+          </div>
+        </button>
+
         <div class="sidebar-divider"></div>
 
         <button class="sidebar-tab" data-doc="offer">
@@ -649,236 +390,288 @@
       <!-- CONTENT -->
       <div class="docs-content">
 
-        <!-- 1. СОГЛАШЕНИЕ -->
+        <!-- ══════════════════════════════════
+             1. ПОЛЬЗОВАТЕЛЬСКОЕ СОГЛАШЕНИЕ
+        ══════════════════════════════════ -->
         <div class="doc-section active" id="doc-terms">
           <div class="doc-card">
             <div class="doc-card-header">
               <div class="doc-badge">📋 Пользовательское соглашение</div>
               <h1 class="doc-title">Пользовательское соглашение</h1>
-              <div class="doc-meta">Дата последнего обновления: 1 января 2025 г.</div>
+              <div class="doc-meta">Редакция от 14 марта 2025 г. · Публичная оферта</div>
             </div>
             <div class="doc-body">
+              <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);">
+                <a href="/static/docs/user_agreement.docx" download="Пользовательское_соглашение_FmTuN.docx" class="doc-download-btn">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Скачать документ (.docx)
+                </a>
+                <span style="font-family:var(--fr);font-size:.72rem;color:var(--text3);">Официальная редакция · Соответствует ФЗ-152</span>
+              </div>
               <div class="doc-content">
-                <h2>Общие положения</h2>
-                <p>Настоящее Пользовательское соглашение (далее — «Соглашение») регулирует отношения между ИП / ООО «Fm TuN» (далее — «Продавец») и физическим лицом (далее — «Пользователь»), использующим веб-сайт fmtun.ru (далее — «Сайт»).</p>
-                <p>Используя Сайт, вы подтверждаете, что ознакомились с настоящим Соглашением и принимаете его условия в полном объёме.</p>
-                <h2>Предмет соглашения</h2>
-                <p>Продавец предоставляет Пользователю доступ к информационно-торговому сервису, позволяющему просматривать каталог товаров, оформлять заказы и совершать покупки запчастей для электросамокатов.</p>
-                <h2>Регистрация и аккаунт</h2>
+                <p>Настоящее Пользовательское соглашение (далее — «Соглашение») является публичной офертой и определяет условия использования веб-сайта <strong>Fm TuN</strong> (fmtun.ru) (далее — «Сайт»). Принимая Соглашение, Пользователь выражает полное безоговорочное согласие со всеми его условиями, включая согласие на обработку персональных данных.</p>
+
+                <h2>1. Общие положения</h2>
                 <ul>
-                  <li>При регистрации Пользователь обязуется предоставить достоверные сведения.</li>
-                  <li>Пользователь несёт ответственность за сохранность своих учётных данных.</li>
-                  <li>Продавец вправе заблокировать аккаунт при нарушении настоящего Соглашения.</li>
+                  <li>1.1. Настоящее Соглашение вступает в силу с момента размещения его на Сайте.</li>
+                  <li>1.2. Пользователь принимает условия путём продолжения использования Сайта либо нажатием кнопки «Согласен».</li>
+                  <li>1.3. Сайт использует сервис веб-аналитики Яндекс.Метрика. Аналитические Cookie устанавливаются <strong>только после явного согласия</strong> Пользователя в соответствии с ФЗ-152 и рекомендациями Роскомнадзора 2023 г.</li>
+                  <li>1.4. Собранная при помощи Cookie информация передаётся ООО «Яндекс» для обработки в обезличенном виде.</li>
                 </ul>
-                <h2>Права и обязанности сторон</h2>
-                <p><strong>Пользователь обязуется:</strong> не использовать Сайт в противоправных целях; не нарушать работу сервиса; предоставлять корректные данные при оформлении заказов.</p>
-                <p><strong>Продавец обязуется:</strong> обеспечивать доступность Сайта; обрабатывать заказы в установленные сроки; защищать персональные данные Пользователя.</p>
-                <h2>Ответственность</h2>
-                <p>Продавец не несёт ответственности за технические перебои, вызванные действиями третьих лиц или обстоятельствами непреодолимой силы. Максимальная ответственность Продавца ограничена суммой конкретного заказа.</p>
-                <h2>Изменение условий</h2>
-                <p>Продавец вправе в одностороннем порядке изменять настоящее Соглашение. Актуальная редакция всегда доступна по адресу: <a href="/terms">fmtun.ru/terms</a>.</p>
-                <h2>Контакты</h2>
-                <div class="highlight-box">
-                  По вопросам, связанным с настоящим Соглашением: <strong><a href="mailto:info@fmtun.ru">info@fmtun.ru</a></strong>
-                </div>
+
+                <h2>2. Персональные данные</h2>
+                <ul>
+                  <li>2.1. Персональные данные хранятся и обрабатываются согласно ФЗ № 152-ФЗ «О персональных данных» от 27.07.2006.</li>
+                  <li>2.2. В отношении персональных данных сохраняется конфиденциальность.</li>
+                  <li>2.3. Сайт не передаёт персональные данные третьим лицам, если это не предусмотрено законодательством РФ или необходимо для исполнения договора.</li>
+                  <li>2.4. Администрация принимает необходимые меры для защиты персональных данных.</li>
+                  <li>2.5. Все данные хранятся на серверах на территории РФ (ч. 5 ст. 18 ФЗ-152).</li>
+                </ul>
+
+                <h2>3. Обязательства Пользователя</h2>
+                <ul>
+                  <li>3.1. Не предпринимать действий, нарушающих законодательство РФ.</li>
+                  <li>3.2. Не использовать материалы Сайта без согласия правообладателей.</li>
+                  <li>3.3. При цитировании материалов давать ссылку на Сайт.</li>
+                  <li>3.4. Предоставлять достоверные сведения при регистрации и оформлении заказов.</li>
+                </ul>
+
+                <h2>4. Ответственность</h2>
+                <ul>
+                  <li>4.1. Администрация не несёт ответственности за перебои вследствие обстоятельств непреодолимой силы.</li>
+                  <li>4.2. Максимальная ответственность ограничена суммой конкретного заказа.</li>
+                </ul>
+
+                <h2>5. Прочие условия</h2>
+                <ul>
+                  <li>5.1. Все споры разрешаются в соответствии с законодательством Российской Федерации.</li>
+                  <li>5.2. Администрация вправе изменять Соглашение в одностороннем порядке. Изменения вступают в силу с момента публикации.</li>
+                </ul>
+                <div class="highlight-box">По вопросам Соглашения: <strong><a href="mailto:legal@fmtun.ru">legal@fmtun.ru</a></strong></div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 2. КОНФИДЕНЦИАЛЬНОСТЬ -->
+        <!-- ══════════════════════════════════
+             2. ПОЛИТИКА КОНФИДЕНЦИАЛЬНОСТИ
+        ══════════════════════════════════ -->
         <div class="doc-section" id="doc-privacy">
           <div class="doc-card">
             <div class="doc-card-header">
               <div class="doc-badge">🔒 Конфиденциальность</div>
               <h1 class="doc-title">Политика конфиденциальности и обработки персональных данных</h1>
-              <div class="doc-meta">Дата последнего обновления: 1 марта 2025 г. · Редакция соответствует 152-ФЗ (ред. 2024–2025)</div>
+              <div class="doc-meta">Редакция от 14 марта 2025 г. · ФЗ-152 (ред. 2024–2025) · Яндекс.Метрика</div>
             </div>
             <div class="doc-body">
               <div class="doc-content">
 
                 <h2>1. Оператор персональных данных</h2>
-                <p>Оператором персональных данных является:<br>
-                <strong>ИП / ООО «Fm TuN»</strong><br>
+                <p><strong>ИП / ООО «Fm TuN»</strong><br>
                 Юридический адрес: <mark style="background:rgba(255,200,0,.15);color:#FFD700;padding:.1rem .3rem;border-radius:3px;">[ЮРИДИЧЕСКИЙ АДРЕС]</mark><br>
                 ОГРН / ОГРНИП: <mark style="background:rgba(255,200,0,.15);color:#FFD700;padding:.1rem .3rem;border-radius:3px;">[ОГРН/ОГРНИП]</mark><br>
                 ИНН: <mark style="background:rgba(255,200,0,.15);color:#FFD700;padding:.1rem .3rem;border-radius:3px;">[ИНН]</mark><br>
-                Email: <strong><a href="mailto:privacy@fmtun.ru">privacy@fmtun.ru</a></strong><br>
-                Телефон: <strong>8 (800) 123-45-67</strong></p>
-                <p><mark style="background:rgba(255,200,0,.15);color:#FFD700;padding:.1rem .3rem;border-radius:3px;font-size:.85em;">⚠️ ЗАПОЛНИТЕ ПЕРЕД ЗАПУСКОМ:</mark> Оператор зарегистрирован в реестре операторов персональных данных Роскомнадзора (уведомление № <strong>[НОМЕР УВЕДОМЛЕНИЯ РКН]</strong> от <strong>[ДАТА]</strong>). <em style="font-size:.8em;color:#9AA3B8;">Подайте уведомление на <a href="https://pd.rkn.gov.ru" target="_blank" rel="noopener" style="color:#00D4FF;">pd.rkn.gov.ru</a> до начала обработки данных.</em></p>
+                Email: <strong><a href="mailto:privacy@fmtun.ru">privacy@fmtun.ru</a></strong></p>
+                <div class="warn-box"><strong>⚠️ Необходимо до запуска:</strong> Подать уведомление в Роскомнадзор на <a href="https://pd.rkn.gov.ru" target="_blank" rel="noopener">pd.rkn.gov.ru</a>. Обработка без уведомления нарушает ч. 1 ст. 22 ФЗ-152.</div>
 
-                <h2>2. Правовое основание обработки</h2>
-                <p>Персональные данные обрабатываются на основании Федерального закона от 27.07.2006 № 152-ФЗ «О персональных данных» и следующих оснований (ст. 6 ФЗ-152):</p>
+                <h2>2. Правовое основание (ст. 6 ФЗ-152)</h2>
                 <ul>
-                  <li>Согласие субъекта персональных данных (п. 1 ч. 1 ст. 6) — для аналитических Cookie и необязательных коммуникаций;</li>
-                  <li>Исполнение договора, стороной которого является субъект (п. 5 ч. 1 ст. 6) — для обработки заказов и авторизации;</li>
-                  <li>Соблюдение обязательств, предусмотренных законодательством РФ (п. 2 ч. 1 ст. 6).</li>
+                  <li><strong>Согласие субъекта</strong> (п. 1 ч. 1 ст. 6) — аналитические Cookie и Яндекс.Метрика;</li>
+                  <li><strong>Исполнение договора</strong> (п. 5 ч. 1 ст. 6) — обработка заказов, авторизация;</li>
+                  <li><strong>Соблюдение законодательства</strong> (п. 2 ч. 1 ст. 6).</li>
                 </ul>
 
-                <h2>3. Категории субъектов и состав персональных данных</h2>
-                <p><strong>Субъекты:</strong> посетители и зарегистрированные пользователи Сайта, покупатели.</p>
-                <p><strong>Собираемые данные:</strong></p>
+                <h2>3. Состав персональных данных</h2>
                 <ul>
-                  <li><strong>Регистрационные:</strong> имя пользователя, адрес электронной почты, номер телефона, ФИО.</li>
-                  <li><strong>Данные заказов:</strong> адрес доставки, состав заказа, стоимость, история покупок.</li>
-                  <li><strong>Технические данные:</strong> IP-адрес, тип и версия браузера, операционная система, журналы посещений, данные Cookie-файлов.</li>
+                  <li><strong>Регистрационные:</strong> имя, email, телефон, ФИО;</li>
+                  <li><strong>Данные заказов:</strong> адрес доставки, состав заказа, история;</li>
+                  <li><strong>Технические:</strong> IP-адрес, браузер, ОС, Cookie-идентификаторы, логи.</li>
                 </ul>
 
-                <h2>4. Цели обработки персональных данных</h2>
+                <h2>4. Цели обработки</h2>
                 <ul>
-                  <li>Регистрация, идентификация и аутентификация пользователей на Сайте;</li>
-                  <li>Оформление, обработка, исполнение и доставка заказов;</li>
-                  <li>Направление уведомлений о статусе заказа;</li>
-                  <li>Техническая поддержка пользователей;</li>
-                  <li>Обеспечение безопасности Сайта и предотвращение мошенничества;</li>
-                  <li>Улучшение качества сервиса на основе анонимной статистики (только с согласия);</li>
-                  <li>Соблюдение требований законодательства РФ.</li>
+                  <li>Регистрация, идентификация и аутентификация пользователей;</li>
+                  <li>Оформление, обработка, исполнение заказов;</li>
+                  <li>Уведомления о статусе заказа;</li>
+                  <li>Техническая поддержка;</li>
+                  <li>Безопасность и предотвращение мошенничества;</li>
+                  <li>Улучшение сервиса через анонимную статистику (<strong>только с согласия</strong>).</li>
                 </ul>
 
-                <h2 id="cookies">5. Cookie-файлы</h2>
-                <p>Сайт использует Cookie-файлы. В соответствии с позицией Роскомнадзора (методические рекомендации 2023 г.) Cookie-идентификаторы признаются персональными данными и подлежат защите по 152-ФЗ.</p>
-                <p><strong>Типы используемых Cookie:</strong></p>
-                <ul>
-                  <li>
-                    <strong>Строго необходимые (Strictly Necessary)</strong> — обязательные для работы Сайта. Правовое основание: исполнение договора (п. 5 ч. 1 ст. 6 ФЗ-152). Согласие не требуется.<br>
-                    <em>Примеры:</em> <code>access_token</code> (сессия авторизации), <code>csrf_token</code> (защита от CSRF-атак).<br>
-                    <em>Срок хранения:</em> до 1 часа (сессионные) или до закрытия браузера.
-                  </li>
-                  <li>
-                    <strong>Функциональные</strong> — запоминание настроек пользователя (тема оформления). Правовое основание: согласие пользователя.<br>
-                    <em>Примеры:</em> <code>import_theme</code>.<br>
-                    <em>Срок хранения:</em> до 12 месяцев.
-                  </li>
-                  <li>
-                    <strong>Аналитические</strong> — анонимная статистика посещаемости для улучшения Сайта. Правовое основание: согласие пользователя (п. 1 ч. 1 ст. 6 ФЗ-152). <strong>Устанавливаются только после вашего явного согласия.</strong><br>
-                    <em>Срок хранения:</em> до 6 месяцев.
-                  </li>
-                </ul>
-                <p><strong>Управление согласием на Cookie:</strong> при первом посещении Сайта отображается баннер с выбором. Вы можете в любой момент отозвать согласие или изменить настройки, нажав кнопку ниже или обратившись по адресу <a href="mailto:privacy@fmtun.ru">privacy@fmtun.ru</a>.</p>
-                <p style="margin-top:.75rem;">
-                  <button id="cookieResetBtn" style="background:rgba(0,212,255,.1);color:#00D4FF;border:1px solid rgba(0,212,255,.3);padding:.5rem 1.25rem;border-radius:6px;cursor:pointer;font-size:.875rem;">
-                    ⚙ Изменить настройки Cookie
-                  </button>
-                </p>
-                <p>Вы также можете управлять Cookie через настройки браузера. Отключение необходимых Cookie ограничит функциональность Сайта (вход в аккаунт будет недоступен).</p>
+                <h2 id="cookies">5. Cookie-файлы и Яндекс.Метрика</h2>
+                <p>Cookie-идентификаторы признаются персональными данными согласно позиции Роскомнадзора (рекомендации 2023 г.) и обрабатываются по ФЗ-152.</p>
+                <p><strong>Яндекс.Метрика</strong> подключается <strong>только после явного согласия</strong> на аналитические Cookie. При отзыве согласия счётчик деактивируется, <code>_ym_*</code> Cookie удаляются. Подробнее: <a href="https://yandex.ru/legal/confidential/" target="_blank" rel="noopener">yandex.ru/legal/confidential</a>.</p>
+                <p>Полная таблица Cookie — в разделе <a href="#" data-doc-link="cookies">«Политика Cookie»</a>.</p>
+                <p style="margin-top:1rem;"><button id="cookieResetBtn" style="background:rgba(0,212,255,.1);color:#00D4FF;border:1px solid rgba(0,212,255,.3);padding:.5rem 1.25rem;border-radius:6px;cursor:pointer;font-size:.875rem;">⚙ Изменить настройки Cookie</button></p>
 
                 <h2>6. Хранение и защита данных</h2>
-                <p>Все данные пользователей хранятся на серверах, расположенных на территории Российской Федерации, в соответствии с ч. 5 ст. 18 ФЗ-152 о локализации.</p>
-                <p>Применяемые меры защиты:</p>
-                <ul>
-                  <li>Пароли хранятся в виде криптографического хэша (bcrypt/PBKDF2-SHA256) — исходный пароль не хранится;</li>
-                  <li>JWT-токены авторизации передаются исключительно в HttpOnly Cookie (недоступны для JavaScript);</li>
-                  <li>Все соединения защищены протоколом TLS (HTTPS);</li>
-                  <li>Действуют ограничения по количеству запросов (rate limiting) и защита от CSRF-атак;</li>
-                  <li>Заголовки безопасности HTTP: Content-Security-Policy, X-Frame-Options, HSTS.</li>
-                </ul>
-                <p><strong>Сроки хранения:</strong> данные аккаунта — до удаления аккаунта пользователем или по истечении 3 лет неактивности; данные заказов — 5 лет (бухгалтерское законодательство); технические логи — 30 дней; согласия Cookie — 6 месяцев.</p>
+                <p>Хранение на серверах в РФ (ч. 5 ст. 18 ФЗ-152). Меры защиты: bcrypt для паролей, HttpOnly JWT, TLS/HTTPS, rate limiting, CSRF-защита, CSP/HSTS.</p>
+                <p><strong>Сроки:</strong> аккаунт — до удаления или 3 лет неактивности; заказы — 5 лет; логи — 30 дней; согласия Cookie — 6 месяцев.</p>
 
-                <h2>7. Передача данных третьим лицам</h2>
-                <p>Оператор не продаёт и не передаёт персональные данные третьим лицам, за исключением:</p>
+                <h2>7. Передача третьим лицам</h2>
                 <ul>
-                  <li>Платёжных провайдеров — для обработки транзакций (в объёме, необходимом для исполнения договора);</li>
-                  <li>Служб доставки — для доставки заказов;</li>
-                  <li>Требований законодательства и запросов уполномоченных государственных органов.</li>
+                  <li>Платёжным провайдерам — для транзакций;</li>
+                  <li>Службам доставки — для исполнения заказа;</li>
+                  <li>ООО «Яндекс» — обезличенная статистика (только с согласия);</li>
+                  <li>Уполномоченным органам — по запросу.</li>
                 </ul>
-                <p>Трансграничная передача персональных данных (на серверы за пределами РФ) <strong>не осуществляется</strong>.</p>
+                <p>Трансграничная передача персональных данных <strong>не осуществляется</strong>.</p>
 
-                <h2>8. Права субъектов персональных данных</h2>
-                <p>В соответствии со статьями 14–17 ФЗ-152 вы вправе:</p>
+                <h2>8. Права субъектов (ст. 14–17 ФЗ-152)</h2>
                 <ul>
-                  <li>Получать информацию об обработке ваших персональных данных;</li>
-                  <li>Требовать уточнения, блокирования или уничтожения неполных, устаревших или незаконно обрабатываемых данных;</li>
-                  <li>Отозвать согласие на обработку персональных данных в любой момент;</li>
+                  <li>Получать информацию об обработке своих данных;</li>
+                  <li>Требовать уточнения, блокирования или уничтожения данных;</li>
+                  <li>Отозвать согласие в любой момент;</li>
                   <li>Обжаловать действия Оператора в Роскомнадзоре (rkn.gov.ru) или в суде.</li>
                 </ul>
-                <div class="highlight-box">
-                  Для реализации своих прав направьте запрос на <strong><a href="mailto:privacy@fmtun.ru">privacy@fmtun.ru</a></strong>. Срок ответа — 10 рабочих дней (ст. 20 ФЗ-152). Запрос должен содержать ФИО, контактные данные и суть обращения.
-                </div>
-
-                <h2>9. Изменение политики</h2>
-                <p>Оператор вправе вносить изменения в настоящую Политику. Актуальная версия всегда доступна по адресу <a href="/privacy-policy">/privacy-policy</a>. При существенных изменениях пользователи будут уведомлены.</p>
+                <div class="highlight-box">Запросы: <strong><a href="mailto:privacy@fmtun.ru">privacy@fmtun.ru</a></strong>. Срок ответа — 10 рабочих дней (ст. 20 ФЗ-152).</div>
 
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 3. ОФЕРТА -->
+        <!-- ══════════════════════════════════
+             3. ПОЛИТИКА COOKIE
+        ══════════════════════════════════ -->
+        <div class="doc-section" id="doc-cookies">
+          <div class="doc-card">
+            <div class="doc-card-header">
+              <div class="doc-badge">🍪 Политика Cookie</div>
+              <h1 class="doc-title">Политика в отношении файлов Cookie</h1>
+              <div class="doc-meta">Редакция от 14 марта 2025 г. · Яндекс.Метрика · ФЗ-152 · РКН 2023</div>
+            </div>
+            <div class="doc-body">
+              <div class="doc-content">
+
+                <h2>Что такое Cookie</h2>
+                <p>Cookie — небольшие фрагменты текста, которые сервер отправляет на ваше устройство. Они хранятся в браузере и позволяют Сайту работать корректно: сохранять сессию авторизации, корзину, настройки интерфейса.</p>
+
+                <h2>Правовое основание</h2>
+                <p>Согласно рекомендациям Роскомнадзора (2023 г.) Cookie-идентификаторы являются персональными данными и обрабатываются по ФЗ-152. <strong>Аналитические Cookie устанавливаются исключительно с вашего явного согласия.</strong></p>
+
+                <div class="success-box"><strong>✓ Яндекс.Метрика соответствует ФЗ-152:</strong> Скрипт загружается только после явного согласия. При отзыве — деактивируется, <code>_ym_*</code> Cookie удаляются немедленно.</div>
+
+                <h2>Полная таблица используемых Cookie</h2>
+                <div class="cookie-table-wrap">
+                  <table class="cookie-table">
+                    <thead>
+                      <tr><th>Имя Cookie</th><th>Категория</th><th>Цель</th><th>Срок</th><th>Сторона</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td><code>access_token</code></td><td><span class="ck-badge necessary">Необходимые</span></td><td>JWT-токен сессии (HttpOnly — недоступен JS). Основание: исполнение договора (п. 5 ч. 1 ст. 6 ФЗ-152).</td><td>1 час</td><td>Первая сторона</td></tr>
+                      <tr><td><code>csrf_token</code></td><td><span class="ck-badge necessary">Необходимые</span></td><td>Защита от CSRF-атак. Согласие не требуется.</td><td>1 час</td><td>Первая сторона</td></tr>
+                      <tr><td><code>import_cookie_consent_v2</code></td><td><span class="ck-badge necessary">Необходимые</span></td><td>Хранит ваш выбор настроек Cookie (ст. 9 ФЗ-152).</td><td>6 мес.</td><td>Первая сторона</td></tr>
+                      <tr><td><code>import_cookie_session</code></td><td><span class="ck-badge necessary">Необходимые</span></td><td>ID сессии для аудит-лога согласий.</td><td>6 мес.</td><td>Первая сторона</td></tr>
+                      <tr><td><code>import_theme</code></td><td><span class="ck-badge functional">Функциональные</span></td><td>Тема оформления (тёмная/светлая). Основание: согласие.</td><td>12 мес.</td><td>Первая сторона</td></tr>
+                      <tr><td><code>_ym_uid</code></td><td><span class="ck-badge analytics">Аналитические</span></td><td>Яндекс.Метрика: уникальный ID посетителя. <strong>Только с согласия.</strong></td><td>1 год</td><td>ООО «Яндекс»</td></tr>
+                      <tr><td><code>_ym_d</code></td><td><span class="ck-badge analytics">Аналитические</span></td><td>Яндекс.Метрика: дата первого визита. <strong>Только с согласия.</strong></td><td>1 год</td><td>ООО «Яндекс»</td></tr>
+                      <tr><td><code>_ym_isad</code></td><td><span class="ck-badge analytics">Аналитические</span></td><td>Яндекс.Метрика: блокировщики рекламы. <strong>Только с согласия.</strong></td><td>2 дня</td><td>ООО «Яндекс»</td></tr>
+                      <tr><td><code>_ym_visorc</code></td><td><span class="ck-badge analytics">Аналитические</span></td><td>Яндекс.Метрика: данные Вебвизора. <strong>Только с согласия.</strong></td><td>30 мин.</td><td>ООО «Яндекс»</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <h2>Управление согласием</h2>
+                <p>При первом посещении отображается баннер с выбором категорий. Вы можете изменить или отозвать согласие в любой момент:</p>
+                <p style="margin-top:.75rem;display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;">
+                  <button id="cookieResetBtnCookies" style="background:rgba(0,212,255,.1);color:#00D4FF;border:1px solid rgba(0,212,255,.3);padding:.5rem 1.25rem;border-radius:6px;cursor:pointer;font-size:.875rem;">⚙ Изменить настройки Cookie</button>
+                  <span style="font-family:var(--fr);font-size:.72rem;color:var(--text3);">или: <a href="mailto:privacy@fmtun.ru" style="color:var(--blue);">privacy@fmtun.ru</a></span>
+                </p>
+
+                <h2>Яндекс.Метрика и законодательство РФ</h2>
+                <p>ООО «Яндекс» (ИНН 7736207543) — третье лицо, которому передаются обезличенные данные статистики исключительно при наличии согласия пользователя (п. 1 ч. 1 ст. 6 ФЗ-152). Данные обрабатываются на серверах в РФ. Трансграничная передача не осуществляется.</p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════
+             4. ОФЕРТА
+        ══════════════════════════════════ -->
         <div class="doc-section" id="doc-offer">
           <div class="doc-card">
             <div class="doc-card-header">
               <div class="doc-badge">📄 Публичная оферта</div>
               <h1 class="doc-title">Договор публичной оферты и условия продажи</h1>
-              <div class="doc-meta">Дата последнего обновления: 1 января 2025 г.</div>
+              <div class="doc-meta">Редакция от 14 марта 2025 г.</div>
             </div>
             <div class="doc-body">
               <div class="doc-content">
+                <div class="warn-box"><strong>📝 В разработке:</strong> Текст Публичной оферты будет добавлен. По вопросам условий: <a href="mailto:info@fmtun.ru">info@fmtun.ru</a></div>
+
                 <h2>Общие положения</h2>
-                <p>Настоящий документ является публичной офертой ИП / ООО «Fm TuN» и содержит все существенные условия договора купли-продажи товаров дистанционным способом.</p>
-                <p>Оформление заказа на сайте fmtun.ru является безоговорочным акцептом настоящей оферты.</p>
+                <p>Настоящий документ является публичной офертой <strong>Fm TuN</strong> в соответствии со ст. 437 ГК РФ и ПП РФ № 612 «О дистанционном способе продажи товаров». Оформление заказа является акцептом оферты.</p>
+
                 <h2>Предмет договора</h2>
-                <p>Продавец обязуется передать Покупателю товар надлежащего качества, а Покупатель — принять и оплатить его на условиях настоящей оферты.</p>
+                <p>Продавец обязуется передать товар надлежащего качества, Покупатель — принять и оплатить.</p>
+
                 <h2>Цены и оплата</h2>
                 <ul>
-                  <li>Цены указаны в рублях РФ с учётом НДС (если применимо).</li>
-                  <li>Продавец вправе изменять цены без предварительного уведомления. Цена фиксируется в момент оформления заказа.</li>
-                  <li>Оплата осуществляется онлайн через платёжный шлюз.</li>
+                  <li>Цены в рублях РФ. Цена фиксируется при оформлении заказа.</li>
+                  <li>Оплата через платёжный шлюз онлайн.</li>
                 </ul>
+
                 <h2>Доставка</h2>
-                <p>Сроки и стоимость доставки зависят от региона и выбранного способа. Подробности уточняются при оформлении заказа. Доставка осуществляется по всей территории РФ.</p>
+                <p>Сроки и стоимость доставки уточняются при оформлении. Доставка по всей России.</p>
+
                 <h2>Гарантии</h2>
-                <p>На все товары распространяется гарантия производителя. Срок гарантии указан в описании конкретного товара. Гарантийный ремонт / замена осуществляются в соответствии с законодательством РФ.</p>
-                <h2>Конфиденциальность</h2>
-                <p>Обработка персональных данных осуществляется в соответствии с <a href="/privacy-policy">Политикой конфиденциальности</a>.</p>
-                <h2>Заключительные положения</h2>
-                <div class="highlight-box">
-                  Настоящий договор регулируется законодательством Российской Федерации. Все споры разрешаются в претензионном порядке, а при недостижении согласия — в суде по месту нахождения Продавца.
-                </div>
+                <p>Гарантия производителя на все товары. Гарантийный ремонт / замена — по законодательству РФ.</p>
+
+                <div class="highlight-box">Настоящий договор регулируется законодательством РФ. Споры разрешаются в претензионном порядке, при недостижении согласия — в суде по месту нахождения Продавца.</div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 4. ВОЗВРАТ -->
+        <!-- ══════════════════════════════════
+             5. ВОЗВРАТ И ОБМЕН
+        ══════════════════════════════════ -->
         <div class="doc-section" id="doc-returns">
           <div class="doc-card">
             <div class="doc-card-header">
               <div class="doc-badge">↩️ Возврат и обмен</div>
               <h1 class="doc-title">Политика возврата и обмена товаров</h1>
-              <div class="doc-meta">Дата последнего обновления: 1 января 2025 г.</div>
+              <div class="doc-meta">Редакция от 14 марта 2025 г. · Закон о ЗПП ст. 26.1 · ПП РФ № 612</div>
             </div>
             <div class="doc-body">
               <div class="doc-content">
+
                 <h2>Право на возврат</h2>
-                <p>В соответствии со ст. 26.1 Закона «О защите прав потребителей» и Постановлением Правительства РФ № 612, вы вправе отказаться от товара надлежащего качества в течение <strong>7 дней</strong> с момента его получения.</p>
-                <h2>Условия возврата товара надлежащего качества</h2>
+                <p>В соответствии со ст. 26.1 Закона «О защите прав потребителей» и ПП РФ № 612, вы вправе отказаться от товара надлежащего качества в течение <strong>7 дней</strong> с момента получения.</p>
+
+                <h2>Условия возврата (надлежащее качество)</h2>
                 <ul>
-                  <li>Товар не был в употреблении.</li>
-                  <li>Сохранены товарный вид, потребительские свойства, пломбы, фабричные ярлыки.</li>
-                  <li>Наличие документа, подтверждающего факт покупки.</li>
-                  <li>Товар не включён в Перечень товаров надлежащего качества, не подлежащих возврату.</li>
+                  <li>Товар не был в употреблении;</li>
+                  <li>Сохранены товарный вид, ярлыки, пломбы;</li>
+                  <li>Наличие документа о покупке;</li>
+                  <li>Товар не входит в перечень невозвратных (ПП РФ № 55).</li>
                 </ul>
-                <h2>Возврат товара ненадлежащего качества</h2>
-                <p>Если товар оказался с дефектом, вы вправе требовать:</p>
+
+                <h2>Возврат ненадлежащего качества</h2>
+                <p>При наличии дефекта вы вправе требовать:</p>
                 <ul>
-                  <li>замены на аналогичный товар надлежащего качества;</li>
+                  <li>замены на аналогичный товар;</li>
                   <li>соразмерного уменьшения цены;</li>
-                  <li>безвозмездного устранения недостатков в разумный срок;</li>
+                  <li>безвозмездного устранения недостатков;</li>
                   <li>возврата уплаченной суммы.</li>
                 </ul>
-                <h2>Срок возврата денежных средств</h2>
-                <p>Деньги возвращаются на банковскую карту в течение <strong>10 рабочих дней</strong> с момента получения возвращённого товара и подтверждения его соответствия условиям возврата.</p>
+
+                <h2>Срок возврата денег</h2>
+                <p>На банковскую карту в течение <strong>10 рабочих дней</strong> с момента получения возвращённого товара.</p>
+
                 <h2>Как оформить возврат</h2>
                 <ol>
-                  <li>Свяжитесь с нами по email: <strong><a href="mailto:returns@fmtun.ru">returns@fmtun.ru</a></strong></li>
-                  <li>Укажите номер заказа и причину возврата.</li>
-                  <li>Мы вышлем инструкцию по отправке товара.</li>
+                  <li>Напишите: <strong><a href="mailto:returns@fmtun.ru">returns@fmtun.ru</a></strong></li>
+                  <li>Укажите номер заказа и причину.</li>
+                  <li>Получите инструкцию по отправке.</li>
                   <li>Отправьте товар на указанный адрес.</li>
                 </ol>
-                <h2>Расходы на доставку при возврате</h2>
+
                 <div class="highlight-box">
-                  При возврате товара <strong>надлежащего качества</strong> расходы на доставку несёт Покупатель.<br>
-                  При возврате товара <strong>с дефектом</strong> расходы на обратную доставку несёт Продавец.
+                  Возврат <strong>надлежащего качества</strong> — доставка за счёт Покупателя.<br>
+                  Возврат <strong>с дефектом</strong> — доставка за счёт Продавца.
                 </div>
               </div>
             </div>
@@ -895,8 +688,8 @@
   <div class="container">
     <div class="footer-grid">
       <div>
-        <a href="/" class="logo" style="font-size:1.1rem;letter-spacing:0.08em">
-          <div class="logo-bolt">&#9889;</div>
+        <a href="/" class="logo" style="font-size:1.1rem;">
+          <div class="logo-bolt">⚡</div>
           <span class="logo-text">Fm <span>TuN</span></span>
         </a>
         <p class="footer-brand-desc">Премиум запчасти для электросамокатов. Оригинальные комплектующие с гарантией качества.</p>
@@ -913,17 +706,18 @@
       <div>
         <div class="footer-col-title">Документы</div>
         <ul class="footer-links">
-          <li><a href="/terms">Пользовательское соглашение</a></li>
-          <li><a href="/privacy-policy">Политика конфиденциальности</a></li>
-          <li><a href="/offer">Договор оферты</a></li>
-          <li><a href="/returns">Возврат и обмен</a></li>
+          <li><a href="/legal?doc=terms">Пользовательское соглашение</a></li>
+          <li><a href="/legal?doc=privacy">Политика конфиденциальности</a></li>
+          <li><a href="/legal?doc=cookies">Политика Cookie</a></li>
+          <li><a href="/legal?doc=offer">Договор оферты</a></li>
+          <li><a href="/legal?doc=returns">Возврат и обмен</a></li>
         </ul>
       </div>
       <div>
         <div class="footer-col-title">Контакты</div>
-        <div style="font-family:var(--font-raj);font-size:.875rem;color:var(--text2);line-height:2;letter-spacing:.04em">
+        <div style="font-family:var(--fr);font-size:.875rem;color:var(--text2);line-height:2;">
           <div>📞 8 (800) 123-45-67</div>
-          <div>✉️ <a href="mailto:info@fmtun.ru">info@fmtun.ru</a></div>
+          <div>✉️ <a href="mailto:info@fmtun.ru" style="color:var(--blue);text-decoration:none;">info@fmtun.ru</a></div>
           <div>🕐 Ежедневно 9:00–21:00</div>
         </div>
       </div>
@@ -931,191 +725,205 @@
     <div class="footer-bottom">
       <span>© 2025 Fm TuN. Все права защищены.</span>
       <div class="footer-legal">
-        <a href="/terms">Соглашение</a>
-        <a href="/privacy-policy">Конфиденциальность</a>
-        <a href="/offer">Оферта</a>
-        <a href="/returns">Возврат</a>
+        <a href="/legal?doc=terms">Соглашение</a>
+        <a href="/legal?doc=privacy">Конфиденциальность</a>
+        <a href="/legal?doc=cookies">Cookie</a>
+        <a href="/legal?doc=offer">Оферта</a>
+        <a href="/legal?doc=returns">Возврат</a>
       </div>
     </div>
   </div>
 </footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/CustomEase.min.js"></script>
 <script nonce="{{ request.state.csp_nonce }}">
-/* ════════════════════
-   NAV DRAWER — GSAP
-════════════════════ */
-(function() {
-  if (typeof gsap === 'undefined') return;
-  gsap.registerPlugin(CustomEase);
-  CustomEase.create("menuEase", "0.65, 0.01, 0.05, 0.99");
-
-  const drawer    = document.getElementById('navDrawer');
-  const overlay   = document.getElementById('navOverlay');
-  const toggleBtn = document.getElementById('menuToggleBtn');
-  const closeBtn  = document.getElementById('navCloseBtn');
-  const bgPanels  = drawer.querySelectorAll('.nav-bg-panel');
-  const menuLinks = drawer.querySelectorAll('.nav-menu-link');
-  const menuItems = drawer.querySelectorAll('.nav-menu-item');
-  const btnTexts  = toggleBtn.querySelectorAll('.menu-button-text p');
-  const btnIcon   = toggleBtn.querySelector('.menu-button-icon');
-  const fadeItems = [
-    document.getElementById('navFadeItem1'),
-    document.getElementById('navFadeItem2'),
-  ].filter(Boolean);
-
-  let isOpen = false;
-
-  gsap.set(drawer,    { display: 'none', xPercent: 0 });
-  gsap.set(bgPanels,  { xPercent: 101 });
-  gsap.set(menuItems, { yPercent: 140, rotate: 8, opacity: 0 });
-  gsap.set(fadeItems, { autoAlpha: 0, yPercent: 40 });
-  gsap.set(overlay,   { autoAlpha: 0, pointerEvents: 'none' });
-  gsap.set(btnTexts[0], { yPercent: 0 });
-  gsap.set(btnTexts[1], { yPercent: 100 });
-
-  function openNav() {
-    isOpen = true;
-    drawer.setAttribute('data-nav', 'open');
-    document.body.style.overflow = 'hidden';
-    gsap.set(drawer, { display: 'flex' });
-    gsap.timeline({ defaults: { ease: 'menuEase', duration: 0.7 } })
-      .to(overlay,   { autoAlpha: 1, duration: 0.5, onStart: () => overlay.style.pointerEvents = 'all' })
-      .to(bgPanels,  { xPercent: 0, stagger: 0.1, duration: 0.6 }, '<')
-      .to(btnTexts[0], { yPercent: -100, duration: 0.5 }, '<')
-      .to(btnTexts[1], { yPercent: 0, duration: 0.5 }, '<+=0.12')
-      .to(btnIcon,   { rotate: 315, duration: 0.5 }, '<')
-      .to(menuItems, { yPercent: 0, rotate: 0, opacity: 1, stagger: 0.06, duration: 0.55 }, '<+=0.3')
-      .to(fadeItems, { autoAlpha: 1, yPercent: 0, stagger: 0.05, duration: 0.4 }, '<+=0.15');
+/* ════════════════════════════
+   STARFIELD (идентично auth.html)
+════════════════════════════ */
+(function(){
+  var c = document.getElementById('starfield'), ctx = c.getContext('2d');
+  var W, H, stars = [], COUNT = window.innerWidth < 768 ? 55 : 90, TRAIL = 12;
+  var _FPS = 1000/24, _lastT = 0, _sfId = null, _sfStop = false;
+  function resize(){ W = c.width = innerWidth; H = c.height = innerHeight; }
+  function make(){
+    var a = Math.random()*Math.PI*2, spd = Math.random()*.14+.03;
+    return {x:Math.random()*W, y:Math.random()*H, vx:Math.cos(a)*spd, vy:Math.sin(a)*spd,
+      r:Math.random()*1.1+.35, alpha:Math.random()*.5+.3,
+      tw:Math.random()*Math.PI*2, tws:Math.random()*.008+.003, trail:[]};
   }
-
-  function closeNav() {
-    isOpen = false;
-    drawer.setAttribute('data-nav', 'closed');
-    overlay.style.pointerEvents = 'none';
-    document.body.style.overflow = '';
-    gsap.timeline({ defaults: { ease: 'menuEase', duration: 0.55 } })
-      .to(overlay,  { autoAlpha: 0, duration: 0.4 })
-      .to(drawer,   { xPercent: 110, duration: 0.5 }, '<')
-      .to(btnTexts[0], { yPercent: 0, duration: 0.4 }, '<')
-      .to(btnTexts[1], { yPercent: 100, duration: 0.4 }, '<')
-      .to(btnIcon,  { rotate: 0, duration: 0.4 }, '<')
-      .set(drawer,    { display: 'none', xPercent: 0 })
-      .set(bgPanels,  { xPercent: 101 })
-      .set(menuItems, { yPercent: 140, rotate: 8, opacity: 0 })
-      .set(fadeItems, { autoAlpha: 0, yPercent: 40 });
+  function init(){ resize(); stars = Array.from({length:COUNT}, make); }
+  function draw(now){
+    if(now - _lastT < _FPS){ if(!_sfStop) _sfId = requestAnimationFrame(draw); return; }
+    _lastT = now;
+    ctx.fillStyle = 'rgba(8,10,15,.28)'; ctx.fillRect(0,0,W,H);
+    for(var i = 0; i < stars.length; i++){
+      var s = stars[i];
+      s.trail.push({x:s.x, y:s.y}); if(s.trail.length > TRAIL) s.trail.shift();
+      s.x += s.vx; s.y += s.vy; s.tw += s.tws;
+      if(s.x < -10) s.x = W+10; if(s.x > W+10) s.x = -10;
+      if(s.y < -10) s.y = H+10; if(s.y > H+10) s.y = -10;
+      for(var t = 1; t < s.trail.length; t++){
+        var p = s.trail[t-1], q = s.trail[t], frac = t/s.trail.length;
+        ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y);
+        ctx.strokeStyle = 'rgba(0,212,255,'+(s.alpha*frac*.35)+')';
+        ctx.lineWidth = s.r*frac; ctx.stroke();
+      }
+      var tw = Math.sin(s.tw)*.5+.5;
+      ctx.beginPath(); ctx.arc(s.x,s.y,s.r*(1+tw*.3),0,Math.PI*2);
+      ctx.fillStyle = 'rgba(180,230,255,'+(s.alpha*(.6+tw*.4))+')'; ctx.fill();
+    }
+    if(!_sfStop) _sfId = requestAnimationFrame(draw);
   }
-
-  toggleBtn.addEventListener('click', () => isOpen ? closeNav() : openNav());
-  closeBtn.addEventListener('click', closeNav);
-  overlay.addEventListener('click', closeNav);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && isOpen) closeNav(); });
-  menuLinks.forEach(link => link.addEventListener('click', () => { if (isOpen) closeNav(); }));
+  document.addEventListener('visibilitychange', function(){
+    if(document.hidden){ _sfStop=true; if(_sfId){cancelAnimationFrame(_sfId);_sfId=null;} }
+    else{ _sfStop=false; _sfId=requestAnimationFrame(draw); }
+  });
+  window.addEventListener('resize', resize);
+  init(); _sfId = requestAnimationFrame(draw);
 })();
 
-/* ════════════════════
+/* ════════════════════════════
+   NAV DRAWER — GSAP
+════════════════════════════ */
+try {
+(function(){
+  if(typeof gsap==='undefined') return;
+  var ease = 'power3.inOut';
+  try {
+    if(typeof CustomEase !== 'undefined'){
+      gsap.registerPlugin(CustomEase);
+      CustomEase.create('menuEase','0.65, 0.01, 0.05, 0.99');
+      ease = 'menuEase';
+    }
+  } catch(e2){};
+  var drawer=document.getElementById('navDrawer'),
+      overlay=document.getElementById('navOverlay'),
+      toggleBtn=document.getElementById('menuToggleBtn'),
+      closeBtn=document.getElementById('navCloseBtn'),
+      bgPanels=drawer.querySelectorAll('.nav-bg-panel'),
+      menuLinks=drawer.querySelectorAll('.nav-menu-link'),
+      menuItems=drawer.querySelectorAll('.nav-menu-item'),
+      btnTexts=toggleBtn.querySelectorAll('.menu-button-text p'),
+      btnIcon=toggleBtn.querySelector('.menu-button-icon'),
+      fadeItems=[document.getElementById('navFadeItem1'),document.getElementById('navFadeItem2')].filter(Boolean),
+      isOpen=false;
+
+  gsap.set(drawer,{display:'none',xPercent:0});
+  gsap.set(bgPanels,{xPercent:101});
+  gsap.set(menuItems,{yPercent:140,rotate:8,opacity:0});
+  gsap.set(fadeItems,{autoAlpha:0,yPercent:40});
+  gsap.set(overlay,{autoAlpha:0,pointerEvents:'none'});
+  if(btnTexts[0]) gsap.set(btnTexts[0],{yPercent:0});
+  if(btnTexts[1]) gsap.set(btnTexts[1],{yPercent:100});
+
+  function openNav(){
+    isOpen=true; drawer.setAttribute('data-nav','open'); document.body.style.overflow='hidden';
+    gsap.set(drawer,{display:'flex'});
+    gsap.timeline({defaults:{ease:ease,duration:.7}})
+      .to(overlay,{autoAlpha:1,duration:.5,onStart:function(){overlay.style.pointerEvents='all';}})
+      .to(bgPanels,{xPercent:0,stagger:.1,duration:.6},'<')
+      .to(btnTexts[0],{yPercent:-100,duration:.5},'<')
+      .to(btnTexts[1],{yPercent:0,duration:.5},'<+=.12')
+      .to(btnIcon,{rotate:315,duration:.5},'<')
+      .to(menuItems,{yPercent:0,rotate:0,opacity:1,stagger:.06,duration:.55},'<+=.3')
+      .to(fadeItems,{autoAlpha:1,yPercent:0,stagger:.05,duration:.4},'<+=.15');
+  }
+  function closeNav(){
+    isOpen=false; drawer.setAttribute('data-nav','closed');
+    overlay.style.pointerEvents='none'; document.body.style.overflow='';
+    gsap.timeline({defaults:{ease:ease,duration:.55}})
+      .to(overlay,{autoAlpha:0,duration:.4})
+      .to(drawer,{xPercent:110,duration:.5},'<')
+      .to(btnTexts[0],{yPercent:0,duration:.4},'<')
+      .to(btnTexts[1],{yPercent:100,duration:.4},'<')
+      .to(btnIcon,{rotate:0,duration:.4},'<')
+      .set(drawer,{display:'none',xPercent:0})
+      .set(bgPanels,{xPercent:101})
+      .set(menuItems,{yPercent:140,rotate:8,opacity:0})
+      .set(fadeItems,{autoAlpha:0,yPercent:40});
+  }
+  toggleBtn.addEventListener('click',function(){ isOpen?closeNav():openNav(); });
+  closeBtn.addEventListener('click',closeNav);
+  overlay.addEventListener('click',closeNav);
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&isOpen) closeNav(); });
+  menuLinks.forEach(function(l){ l.addEventListener('click',function(){ if(isOpen) closeNav(); }); });
+})();
+} catch(e) { /* GSAP nav error suppressed on mobile */ }
+
+/* ════════════════════════════
    DOCUMENT TABS
-════════════════════ */
-(function() {
-  const tabs     = document.querySelectorAll('.sidebar-tab');
-  const sections = document.querySelectorAll('.doc-section');
+════════════════════════════ */
+(function(){
+  var tabs     = document.querySelectorAll('.sidebar-tab');
+  var sections = document.querySelectorAll('.doc-section');
+  var slugs    = {terms:'/legal?doc=terms',privacy:'/legal?doc=privacy',cookies:'/legal?doc=cookies',offer:'/legal?doc=offer',returns:'/legal?doc=returns'};
+  var titles   = {terms:'Пользовательское соглашение — Fm TuN',privacy:'Политика конфиденциальности — Fm TuN',cookies:'Политика Cookie — Fm TuN',offer:'Договор оферты — Fm TuN',returns:'Возврат и обмен — Fm TuN'};
 
-  const urlSlugs = {
-    terms:   '/terms',
-    privacy: '/privacy-policy',
-    offer:   '/offer',
-    returns: '/returns',
-  };
-  const pageTitles = {
-    terms:   'Пользовательское соглашение — Fm TuN',
-    privacy: 'Политика конфиденциальности — Fm TuN',
-    offer:   'Договор оферты — Fm TuN',
-    returns: 'Возврат и обмен — Fm TuN',
-  };
-
-  function activate(docType) {
-    tabs.forEach(t => t.classList.remove('active'));
-    sections.forEach(s => s.classList.remove('active'));
-    const tab = document.querySelector('.sidebar-tab[data-doc="' + docType + '"]');
-    const sec = document.getElementById('doc-' + docType);
-    if (tab) tab.classList.add('active');
-    if (sec) sec.classList.add('active');
-    document.title = pageTitles[docType] || 'Документы — Fm TuN';
+  function activate(d){
+    tabs.forEach(function(t){ t.classList.remove('active'); });
+    sections.forEach(function(s){ s.classList.remove('active'); });
+    var tab = document.querySelector('.sidebar-tab[data-doc="'+d+'"]');
+    var sec = document.getElementById('doc-'+d);
+    if(tab) tab.classList.add('active');
+    if(sec) sec.classList.add('active');
+    document.title = titles[d] || 'Документы — Fm TuN';
   }
 
-  tabs.forEach(function(tab) {
-    tab.addEventListener('click', function() {
-      const docType = tab.dataset.doc;
-      activate(docType);
-      if (history.replaceState) {
-        history.replaceState(null, '', urlSlugs[docType] || '/legal');
-      }
+  tabs.forEach(function(tab){
+    tab.addEventListener('click', function(){
+      var d = tab.dataset.doc;
+      activate(d);
+      if(history.replaceState) history.replaceState(null,'', slugs[d]||'/legal');
     });
   });
 
-  // Detect initial doc from URL
-  const path = window.location.pathname;
-  const param = new URLSearchParams(window.location.search).get('doc');
-  let initial = 'terms';
-  if      (param && ['terms','privacy','offer','returns'].includes(param)) initial = param;
-  else if (path.includes('privacy')) initial = 'privacy';
-  else if (path.includes('offer'))   initial = 'offer';
-  else if (path.includes('returns')) initial = 'returns';
+  // внутренние ссылки между разделами (например, из privacy → cookies)
+  document.addEventListener('click', function(e){
+    var el = e.target.closest('[data-doc-link]');
+    if(el){ e.preventDefault(); activate(el.getAttribute('data-doc-link')); }
+  });
 
-  activate(initial);
+  // определить начальный раздел из URL
+  var param = new URLSearchParams(window.location.search).get('doc');
+  var path  = window.location.pathname;
+  var init  = 'terms';
+  if(param && slugs[param])              init = param;
+  else if(path.includes('privacy'))      init = 'privacy';
+  else if(path.includes('cookie'))       init = 'cookies';
+  else if(path.includes('offer'))        init = 'offer';
+  else if(path.includes('returns'))      init = 'returns';
+  activate(init);
 })();
 </script>
+
 <script nonce="{{ request.state.csp_nonce }}">
-/* ══ THEME SYSTEM ══ */
+/* ════════════════════════════
+   THEME SYSTEM
+════════════════════════════ */
 (function(){
-  var KEY='fmtun_theme';
-  function updateSegs(t){
+  var KEY = 'fmtun_theme';
+  function applyTheme(t){
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem(KEY, t);
     document.querySelectorAll('.theme-seg-btn').forEach(function(b){
       b.classList.toggle('seg-active', b.getAttribute('data-seg')===t);
     });
   }
-  function applyTheme(t){
-    document.documentElement.setAttribute('data-theme',t);
-    localStorage.setItem(KEY,t);
-    updateSegs(t);
-    // legacy knob support
-    document.querySelectorAll('.theme-pill-knob').forEach(function(k){
-      k.style.transform = t==='light'?'translateX(44px)':'translateX(0)';
-    });
-  }
   applyTheme(localStorage.getItem(KEY)||'dark');
-  window.importToggleTheme=function(forced){
-    applyTheme(forced||(document.documentElement.getAttribute('data-theme')==='light'?'dark':'light'));
+  window.importToggleTheme = function(f){
+    applyTheme(f||(document.documentElement.getAttribute('data-theme')==='light'?'dark':'light'));
   };
-  document.addEventListener('DOMContentLoaded',function(){
+  document.addEventListener('DOMContentLoaded', function(){
     applyTheme(localStorage.getItem(KEY)||'dark');
     document.querySelectorAll('.theme-seg-btn').forEach(function(b){
-      b.addEventListener('click',function(){ window.importToggleTheme(b.getAttribute('data-seg')); });
+      b.addEventListener('click', function(){ window.importToggleTheme(b.getAttribute('data-seg')); });
     });
-    // legacy pill
-    document.querySelectorAll('.theme-pill').forEach(function(p){ p.addEventListener('click',window.importToggleTheme); });
-    // Cookie reset button (CSP-safe replacement for inline onclick)
-    var cookieResetBtn = document.getElementById('cookieResetBtn');
-    if (cookieResetBtn) cookieResetBtn.addEventListener('click', function() { if (window.cookieConsent) window.cookieConsent.reset(); });
+    var r1 = document.getElementById('cookieResetBtn');
+    var r2 = document.getElementById('cookieResetBtnCookies');
+    if(r1) r1.addEventListener('click', function(){ if(window.cookieConsent) window.cookieConsent.reset(); });
+    if(r2) r2.addEventListener('click', function(){ if(window.cookieConsent) window.cookieConsent.reset(); });
   });
 })();
 </script>
-
-<div class="cookie-banner" id="cookieBanner" role="dialog" aria-label="Уведомление об использовании Cookie" aria-live="polite">
-  <div class="cookie-inner">
-    <div class="cookie-icon" aria-hidden="true">&#127850;</div>
-    <div class="cookie-text">
-      <strong>Мы используем Cookie-файлы</strong>
-      <p>Необходимые Cookie обеспечивают работу сайта (авторизация, корзина). С вашего согласия мы также используем аналитические Cookie. Подробнее — в <a href="/privacy-policy#cookies" target="_blank">Политике конфиденциальности</a>.</p>
-    </div>
-    <div class="cookie-actions">
-      <button class="btn-ca" id="cookieAccept">Принять все</button>
-      <button class="btn-cd" id="cookieDecline">Только необходимые</button>
-      <button class="btn-cdet" id="cookieDetails">Подробнее</button>
-    </div>
-  </div>
-</div>
 <script src="/static/cookie-consent.js" defer></script>
 </body>
 </html>

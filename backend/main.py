@@ -1094,6 +1094,13 @@ async def admin_add_product_page(request: Request):
         return RedirectResponse("/auth?next=/admin", status_code=302)
     return templates.TemplateResponse("add_product.html", {"request": request})
 
+@app.get("/legal")
+async def legal_page(request: Request, doc: str = "terms"):
+    """Единый маршрут для правовых документов. /legal?doc=terms|privacy|cookies|offer|returns"""
+    allowed = {"terms", "privacy", "cookies", "offer", "returns"}
+    doc_type = doc if doc in allowed else "terms"
+    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": doc_type})
+
 @app.get("/privacy-policy")
 async def privacy_policy_page(request: Request):
     return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "privacy"})
@@ -1282,7 +1289,7 @@ async def logout(response: Response):
 
 # ─── 152-ФЗ: Логирование согласий на обработку Cookie ────────────────────────
 class CookieConsentLog(BaseModel):
-    consent_type: Literal["all", "necessary"]   # тип согласия
+    consent_type: Literal["all", "necessary", "partial"]   # тип согласия
     session_id: str = Field(max_length=128)      # идентификатор сессии браузера
 
 @app.post("/api/cookie-consent")

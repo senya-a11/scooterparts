@@ -284,7 +284,7 @@
       position:relative;text-align:right;
     }
     .nav-menu-heading{
-      font-family:var(--font-menu);
+      font-family:var(--font-d);
       font-size:4.5em;
       font-weight:700;
       line-height:0.85;
@@ -453,6 +453,14 @@
     .add-btn:hover{box-shadow:0 0 20px var(--blue-glow);transform:scale(1.04)}
     .add-btn:disabled{background:var(--surface2);color:var(--text3);cursor:not-allowed;transform:none}
     .add-btn.add-btn-added{background:var(--surface2)!important;color:var(--text3)!important;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+
+    /* ── WISHLIST BUTTON ── */
+    .wishlist-btn{position:absolute;top:.6rem;right:.6rem;z-index:6;background:rgba(0,0,0,.55);border:none;border-radius:50%;width:2rem;height:2rem;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.1rem;line-height:1;opacity:.5;transition:opacity .2s,color .2s,transform .15s;color:var(--text)}
+    .wishlist-btn:hover{opacity:1;transform:scale(1.15)}
+    .wishlist-btn.active{opacity:1;color:#00D4FF}
+    .wishlist-detail-btn{display:flex;align-items:center;gap:.45rem;padding:.6rem 1.125rem;background:rgba(0,212,255,.08);color:var(--blue);border:1px solid rgba(0,212,255,.25);border-radius:var(--radius);cursor:pointer;font-family:var(--font-raj);font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:all .2s;white-space:nowrap}
+    .wishlist-detail-btn:hover{background:rgba(0,212,255,.18);border-color:var(--blue)}
+    .wishlist-detail-btn.active{background:rgba(0,212,255,.18);border-color:var(--blue);color:#00D4FF}
 
     .product-badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.75rem}
     .product-badge{display:inline-flex;align-items:center;gap:4px;padding:.22rem .6rem;border-radius:100px;font-family:var(--font-raj);font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;backdrop-filter:blur(8px);transition:transform .15s}
@@ -716,8 +724,22 @@
         </li>
         <li class="nav-menu-item">
           <a href="/tracking" class="nav-menu-link">
-            <p class="nav-menu-heading" style="color:var(--blue)">Заказы</p>
+            <p class="nav-menu-heading">Отслеживание</p>
             <p class="nav-menu-eyebrow">04</p>
+            <div class="nav-menu-link-bg"></div>
+          </a>
+        </li>
+        <li class="nav-menu-item">
+          <a href="/cart" class="nav-menu-link">
+            <p class="nav-menu-heading">Корзина</p>
+            <p class="nav-menu-eyebrow">05</p>
+            <div class="nav-menu-link-bg"></div>
+          </a>
+        </li>
+        <li class="nav-menu-item">
+          <a href="/account" class="nav-menu-link" id="prodNavAuthLink">
+            <p class="nav-menu-heading" id="prodNavAuthLabel">Войти</p>
+            <p class="nav-menu-eyebrow">06</p>
             <div class="nav-menu-link-bg"></div>
           </a>
         </li>
@@ -1147,6 +1169,7 @@
    STATE
 ════════════════════════════════════════ */
 let currentUser=null, cart=[], allProducts=[], currentCat='all', searchTerm='';
+let wishlistIds = new Set();
 
 const catPillsEl   = document.getElementById('catPills');
 const productsGrid = document.getElementById('productsGrid');
@@ -1312,8 +1335,9 @@ function renderProducts() {
     // Weight badge скрыт из каталога — только для админки
     const weightBadge = '';
 
+    const isWished = wishlistIds.has(p.id);
     return `<div class="product-card" data-product-id="${p.id}" style="animation-delay:${Math.min(idx*.045,.4)}s;cursor:pointer">
-      <div class="product-img" style="position:relative">${imgHtml}${discBadge}</div>
+      <div class="product-img" style="position:relative">${imgHtml}${discBadge}<button class="wishlist-btn${isWished?' active':''}" data-wishlist-id="${p.id}" title="${isWished?'Убрать из избранного':'В избранное'}">${isWished?'♥':'♡'}</button></div>
       <div class="product-body">
         ${badgesHtml}
         <div class="product-cat">${getName(p.category)}</div>
@@ -1363,6 +1387,9 @@ function renderProducts() {
       return;
     }
     // Product card open (skip if clicking inside slider or add-btn)
+    // Wishlist toggle delegation
+    const wBtn = e.target.closest('.wishlist-btn[data-wishlist-id]');
+    if (wBtn) { e.stopPropagation(); toggleWishlist(parseInt(wBtn.dataset.wishlistId), wBtn); return; }
     const card = e.target.closest('.product-card[data-product-id]');
     if (card && !e.target.closest('.card-slider-wrap') && !e.target.closest('.add-btn')) {
       openProductDetail(parseInt(card.dataset.productId));
@@ -1443,21 +1470,50 @@ async function loadActiveOrders() {
 async function checkAuth() {
   try {
     const r = await fetch('/api/me',{credentials:'include'});
-    if(r.ok){currentUser=await r.json();updateAuthUI();loadCart();
+    if(r.ok){currentUser=await r.json();updateAuthUI();loadCart();loadWishlist();
       // Перезагружаем товары с учётом личной скидки (если она есть)
       if((currentUser.personal_discount||0) > 0) loadProducts();
     }
   } catch {}
 }
 
+async function loadWishlist() {
+  try {
+    const r = await fetch('/api/wishlist',{credentials:'include'});
+    if(r.ok){ const data=await r.json(); wishlistIds=new Set((data.items||data||[]).map(i=>i.product_id||i.id)); renderProducts(); }
+  } catch {}
+}
+
+async function toggleWishlist(productId, btn) {
+  if (!currentUser) { window.location.href='/auth?next='+encodeURIComponent(window.location.pathname); return; }
+  const inWishlist = wishlistIds.has(productId);
+  try {
+    const r = await fetch(`/api/wishlist/${productId}`,{method:inWishlist?'DELETE':'POST',credentials:'include'});
+    if(r.ok){
+      if(inWishlist) wishlistIds.delete(productId); else wishlistIds.add(productId);
+      // Update all wishlist buttons for this product
+      document.querySelectorAll(`.wishlist-btn[data-wishlist-id="${productId}"]`).forEach(b=>{
+        b.classList.toggle('active',!inWishlist); b.textContent=inWishlist?'♡':'♥';
+      });
+      // Update detail modal button
+      const detBtn=document.querySelector(`.wishlist-detail-btn[data-wishlist-id="${productId}"]`);
+      if(detBtn){ detBtn.classList.toggle('active',!inWishlist); detBtn.textContent=inWishlist?'♡ В избранное':'♥ В избранном'; }
+      showToast('success', inWishlist?'Убрано из избранного':'Добавлено в избранное');
+    } else if(r.status===401){ window.location.href='/auth?next='+encodeURIComponent(window.location.pathname); }
+  } catch { showToast('error','Ошибка'); }
+}
+
 function updateAuthUI() {
   userMenu.innerHTML='';
+  const navAuthLbl = document.getElementById('prodNavAuthLabel');
+  const navAuthLnk = document.getElementById('prodNavAuthLink');
   if (currentUser) {
     const initial=(currentUser.username||'?')[0].toUpperCase();
     userMenu.innerHTML=`<div class="user-dropdown-wrap">
       <button class="user-btn" id="userMenuBtn"><div class="user-avatar">${initial}</div><span>${currentUser.username}</span><span>▾</span></button>
       <div class="user-dropdown" id="userDropdown">
         <div class="user-info-box"><div class="user-info-name">${currentUser.username}</div><div class="user-info-email">${currentUser.email}</div></div>
+        <a href="/account" class="drop-item">👤 Личный кабинет</a>
         ${currentUser.is_admin?'<a href="/admin" class="drop-item">⚙️ Панель admin</a>':''}
         ${currentUser.is_manager&&!currentUser.is_admin?'<a href="/admin" class="drop-item">📋 Панель менеджера</a>':''}
         <button class="drop-item danger" id="logoutBtnHeader">← Выйти</button>
@@ -1465,11 +1521,15 @@ function updateAuthUI() {
     </div>`;
     document.getElementById('userMenuBtn').addEventListener('click',e=>{e.stopPropagation();document.getElementById('userDropdown').classList.toggle('active');});
     const lb=document.getElementById('logoutBtnHeader');if(lb)lb.addEventListener('click',logout);
+    if(navAuthLbl)navAuthLbl.textContent='Личный кабинет';
+    if(navAuthLnk)navAuthLnk.href='/account';
   } else {
     userMenu.innerHTML=`<button class="btn btn-primary btn-sm" id="headerLoginBtn">Войти</button>`;
     document.getElementById('headerLoginBtn').addEventListener('click',function(){
       window.location.href='/auth?next='+encodeURIComponent(window.location.pathname);
     });
+    if(navAuthLbl)navAuthLbl.textContent='Войти';
+    if(navAuthLnk)navAuthLnk.href='/auth';
   }
 }
 document.addEventListener('click',()=>document.getElementById('userDropdown')?.classList.remove('active'));
@@ -1905,6 +1965,9 @@ function renderProductDetail(p) {
         <button class="add-to-cart-btn" data-action="add-to-cart" ${!inStock?'disabled':''}>
           ${currentStock > 0 ? '🛒 Добавить в корзину' : isPreorderItem ? '⏳ Предзаказ' : '✕ Нет в наличии'}
         </button>
+        <button class="wishlist-detail-btn${wishlistIds.has(p.id)?' active':''}" data-action="toggle-wishlist" data-wishlist-id="${p.id}" style="margin-top:.625rem;width:100%">
+          ${wishlistIds.has(p.id)?'♥ В избранном':'♡ В избранное'}
+        </button>
         <button class="add-install-btn" data-action="buy-with-install" style="margin-top:.625rem;width:100%;padding:.6rem;font-family:var(--font-raj);font-size:.82rem;font-weight:700;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);border-radius:10px;color:var(--blue);cursor:pointer;letter-spacing:.03em;transition:background .15s" title="Купить с установкой в Москве">
           🔧 Купить с установкой
         </button>
@@ -2061,6 +2124,9 @@ productDetailContent.addEventListener('click', function(e) {
   // add to cart
   const cartBtn = e.target.closest('[data-action="add-to-cart"]');
   if (cartBtn && !cartBtn.disabled) { addToCartFromDetail(); return; }
+  // wishlist
+  const wlBtn = e.target.closest('[data-action="toggle-wishlist"]');
+  if (wlBtn) { toggleWishlist(parseInt(wlBtn.dataset.wishlistId), wlBtn); return; }
   // buy with installation
   const installBtn = e.target.closest('[data-action="buy-with-install"]');
   if (installBtn) { openInstallModal(); return; }

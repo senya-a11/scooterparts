@@ -77,7 +77,8 @@
       --white:#1C1208; --gray:#8B7D6F; --gray-light:#A89080;
     }
     html { scroll-behavior:smooth; overflow-x:hidden; }
-    body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; overflow-x:hidden; }
+    body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; overflow-x:hidden; min-height:100vh; display:flex; flex-direction:column; }
+    footer { margin-top:auto; }
 
     /* ── PARALLAX HERO ── */
     .parallax { width:100%; position:relative; overflow:hidden; }
@@ -356,7 +357,9 @@
       <li class="imp-nav-item"><a href="/" class="imp-nav-link"><p class="imp-nav-heading">Главная</p><p class="imp-nav-num">01</p><div class="imp-nav-bg-hover"></div></a></li>
       <li class="imp-nav-item"><a href="/products" class="imp-nav-link"><p class="imp-nav-heading">Каталог</p><p class="imp-nav-num">02</p><div class="imp-nav-bg-hover"></div></a></li>
       <li class="imp-nav-item"><a href="/about" class="imp-nav-link active"><p class="imp-nav-heading">О нас</p><p class="imp-nav-num">03</p><div class="imp-nav-bg-hover"></div></a></li>
-      <li class="imp-nav-item"><a href="/tracking" class="imp-nav-link"><p class="imp-nav-heading" style="color:var(--blue)">Заказы</p><p class="imp-nav-num">04</p><div class="imp-nav-bg-hover"></div></a></li>
+      <li class="imp-nav-item"><a href="/tracking" class="imp-nav-link"><p class="imp-nav-heading">Отслеживание</p><p class="imp-nav-num">04</p><div class="imp-nav-bg-hover"></div></a></li>
+      <li class="imp-nav-item"><a href="/cart" class="imp-nav-link"><p class="imp-nav-heading">Корзина</p><p class="imp-nav-num">05</p><div class="imp-nav-bg-hover"></div></a></li>
+      <li class="imp-nav-item"><a href="/account" class="imp-nav-link" id="aboutNavAuthLink"><p class="imp-nav-heading" id="aboutNavAuthLabel">Войти</p><p class="imp-nav-num">06</p><div class="imp-nav-bg-hover"></div></a></li>
     </ul>
     <div class="imp-nav-footer">
       <p style="font-family:'Rajdhani',sans-serif;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:.75rem">Контакты</p>
@@ -379,6 +382,22 @@
   overlay&&overlay.addEventListener('click',close);
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&isOpen)close();});
   document.querySelectorAll('.imp-nav-link').forEach(function(l){l.addEventListener('click',function(){if(isOpen)close();});});
+  // Update auth link based on login state
+  (async function(){
+    try{
+      var r=await fetch('/api/user',{credentials:'include'});
+      if(r.ok){
+        var d=await r.json();
+        var lbl=document.getElementById('aboutNavAuthLabel');
+        var lnk=document.getElementById('aboutNavAuthLink');
+        if(lbl)lbl.textContent=d.username||'Кабинет';
+        if(lnk)lnk.href='/account';
+      } else {
+        var lnk2=document.getElementById('aboutNavAuthLink');
+        if(lnk2)lnk2.href='/auth';
+      }
+    }catch(e){}
+  })();
 })();
 </script>
 

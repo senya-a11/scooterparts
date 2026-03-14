@@ -276,8 +276,10 @@
       text-decoration:none;color:var(--text);
       position:relative;text-align:right;
     }
+    .nav-menu-item.mobile-only{display:none;}
+    @media(max-width:768px){.nav-menu-item.mobile-only{display:block;}}
     .nav-menu-heading{
-      font-family:var(--font-menu);
+      font-family:var(--font-d);
       font-size:4.5em;
       font-weight:700;
       line-height:0.85;
@@ -626,8 +628,22 @@
         </li>
         <li class="nav-menu-item">
           <a href="/tracking" class="nav-menu-link">
-            <p class="nav-menu-heading" style="color:var(--blue)">Заказы</p>
+            <p class="nav-menu-heading">Отслеживание</p>
             <p class="nav-menu-eyebrow">04</p>
+            <div class="nav-menu-link-bg"></div>
+          </a>
+        </li>
+        <li class="nav-menu-item mobile-only">
+          <a href="/cart" class="nav-menu-link" style="pointer-events:auto;">
+            <p class="nav-menu-heading" style="color:var(--blue)">Корзина</p>
+            <p class="nav-menu-eyebrow">05</p>
+            <div class="nav-menu-link-bg"></div>
+          </a>
+        </li>
+        <li class="nav-menu-item mobile-only">
+          <a href="/auth" class="nav-menu-link" id="cartNavAuthLink">
+            <p class="nav-menu-heading" id="cartNavAuthLabel">Войти</p>
+            <p class="nav-menu-eyebrow">06</p>
             <div class="nav-menu-link-bg"></div>
           </a>
         </li>
@@ -971,6 +987,8 @@ async function checkAuth() {
 
 function updateAuthUI() {
   const userMenu = document.getElementById('userMenu');
+  const navAuthLbl = document.getElementById('cartNavAuthLabel');
+  const navAuthLnk = document.getElementById('cartNavAuthLink');
   if (!userMenu) return;
   userMenu.innerHTML = '';
   if (currentUser) {
@@ -979,6 +997,7 @@ function updateAuthUI() {
       <button class="user-btn" id="userMenuBtn"><div class="user-avatar">${initial}</div><span>${currentUser.username}</span><span>▾</span></button>
       <div class="user-dropdown" id="userDropdown">
         <div class="user-info-box"><div class="user-info-name">${currentUser.username}</div><div class="user-info-email">${currentUser.email}</div></div>
+        <a href="/account" class="drop-item">👤 Личный кабинет</a>
         ${currentUser.is_admin ? '<a href="/admin" class="drop-item">⚙️ Панель admin</a>' : ''}
         <button class="drop-item danger" id="logoutBtnHeader">← Выйти</button>
       </div>
@@ -989,8 +1008,12 @@ function updateAuthUI() {
     });
     const lb = document.getElementById('logoutBtnHeader');
     if (lb) lb.addEventListener('click', logout);
+    if(navAuthLbl) navAuthLbl.textContent = 'Личный кабинет';
+    if(navAuthLnk) navAuthLnk.href = '/account';
   } else {
     userMenu.innerHTML = `<a href="/auth?next=/cart" class="btn btn-primary btn-sm">Войти</a>`;
+    if(navAuthLbl) navAuthLbl.textContent = 'Войти';
+    if(navAuthLnk) navAuthLnk.href = '/auth?next=/cart';
   }
 }
 

@@ -876,6 +876,16 @@ class Database:
             ''')
             print("✅ v25: promo в orders, wishlists, product_reviews готовы")
 
+            # ── Документы поставщика ──
+            await conn.execute('''
+                CREATE TABLE IF NOT EXISTS supplier_documents (
+                    id SERIAL PRIMARY KEY,
+                    doc_type VARCHAR(64) NOT NULL UNIQUE,
+                    filename VARCHAR(255) NOT NULL,
+                    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+
             # --- Начальные категории ---
             for slug, name, emoji, desc in DEFAULT_CATEGORIES:
                 exists = await conn.fetchval(
@@ -4038,6 +4048,71 @@ async def remove_from_wishlist(product_id: int, user_id: str = Depends(get_curre
     except Exception as e:
         logger.error("remove_from_wishlist error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+# ============================================================
+# ДОКУМЕНТЫ ПОСТАВЩИКА
+# ============================================================
+
+DOCS_UPLOAD_DIR = UPLOAD_DIR / "docs"
+DOCS_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+ALLOWED_DOC_TYPES = {"partner", "warranty"}
+
+
+@app.get("/api/supplier-docs")
+async def get_supplier_docs():
+    """Получить список загруженных документов поставщика"""
+    try:
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT doc_type, filename, uploaded_at FROM supplier_documents ORDER BY doc_type"
+            )
+            return [{"doc_type": r["doc_type"], "filename": r["filename"], "url": f"/static/uploads/docs/{r['filename']}", "uploaded_at": r["uploaded_at"].isoformat() if r["uploaded_at"] else None} for r in rows]
+    except Exception as e:
+        logger.error("get_supplier_docs error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.post("/api/supplier-docs/{doc_type}")
+async def upload_supplier_doc(
+    doc_type: str,
+    file: UploadFile = File(...),
+    admin: dict = Depends(verify_admin)
+):
+    """Загрузить документ поставщика (только для admin)"""
+    if doc_type not in ALLOWED_DOC_TYPES:
+        raise HTTPException(status_code=400, detail="Недопустимый тип документа")
+    # Validate file type
+    allowed_exts = {".pdf", ".jpg", ".jpeg", ".png"}
+    suffix = Path(file.filename).suffix.lower() if file.filename else ""
+    if suffix not in allowed_exts:
+        raise HTTPException(status_code=400, detail="Разрешены только PDF и изображения")
+    # Save file
+    safe_name = f"{doc_type}{suffix}"
+    dest = DOCS_UPLOAD_DIR / safe_name
+    try:
+        content = await file.read()
+        if len(content) > 10 * 1024 * 1024:  # 10 MB limit
+            raise HTTPException(status_code=400, detail="Файл слишком большой (макс 10 МБ)")
+        async with aiofiles.open(dest, "wb") as f:
+            await f.write(content)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("upload_supplier_doc file write error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Ошибка сохранения файла")
+    # Upsert DB record
+    try:
+        async with db.pool.acquire() as conn:
+            await conn.execute('''
+                INSERT INTO supplier_documents (doc_type, filename, uploaded_at)
+                VALUES ($1, $2, NOW())
+                ON CONFLICT (doc_type) DO UPDATE SET filename=$2, uploaded_at=NOW()
+            ''', doc_type, safe_name)
+        return {"message": "Документ загружен", "filename": safe_name, "url": f"/static/uploads/docs/{safe_name}"}
+    except Exception as e:
+        logger.error("upload_supplier_doc db error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Ошибка базы данных")
 
 
 # ============================================================

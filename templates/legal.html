@@ -313,6 +313,9 @@
         <li class="nav-menu-item"><a href="/" class="nav-menu-link"><p class="nav-menu-heading">Главная</p><p class="nav-menu-eyebrow">01</p><div class="nav-menu-link-bg"></div></a></li>
         <li class="nav-menu-item"><a href="/products" class="nav-menu-link"><p class="nav-menu-heading">Каталог</p><p class="nav-menu-eyebrow">02</p><div class="nav-menu-link-bg"></div></a></li>
         <li class="nav-menu-item"><a href="/about" class="nav-menu-link"><p class="nav-menu-heading">О нас</p><p class="nav-menu-eyebrow">03</p><div class="nav-menu-link-bg"></div></a></li>
+        <li class="nav-menu-item"><a href="/tracking" class="nav-menu-link"><p class="nav-menu-heading">Отслеживание</p><p class="nav-menu-eyebrow">04</p><div class="nav-menu-link-bg"></div></a></li>
+        <li class="nav-menu-item"><a href="/cart" class="nav-menu-link"><p class="nav-menu-heading">Корзина</p><p class="nav-menu-eyebrow">05</p><div class="nav-menu-link-bg"></div></a></li>
+        <li class="nav-menu-item"><a href="/auth" class="nav-menu-link" id="legalNavAuthLink"><p class="nav-menu-heading" id="legalNavAuthLabel">Войти</p><p class="nav-menu-eyebrow">06</p><div class="nav-menu-link-bg"></div></a></li>
       </ul>
     </div>
     <div class="nav-drawer-footer">
@@ -1233,6 +1236,19 @@ try {
     if(r1) r1.addEventListener('click', function(){ if(window.cookieConsent) window.cookieConsent.reset(); });
     if(r2) r2.addEventListener('click', function(){ if(window.cookieConsent) window.cookieConsent.reset(); });
   });
+})();
+</script>
+<script nonce="{{ request.state.csp_nonce }}">
+(async function(){
+  try{
+    var r=await fetch('/api/me',{credentials:'include'});
+    if(r.ok){
+      var lbl=document.getElementById('legalNavAuthLabel');
+      var lnk=document.getElementById('legalNavAuthLink');
+      if(lbl)lbl.textContent='Личный кабинет';
+      if(lnk)lnk.href='/account';
+    }
+  }catch(e){}
 })();
 </script>
 <script src="/static/cookie-consent.js" defer></script>

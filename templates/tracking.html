@@ -1098,13 +1098,13 @@ function renderOrders(orders){
     tabs.forEach(function(t, idx){
       var tabId='dtab-'+o.id+'-'+t.key;
       var isFirst = idx===0;
-      tabNavHtml += '<button class="order-dtab-btn'+(isFirst?' active':'')+'" onclick="switchDeliveryTab(this,\''+tabId+'\',\''+o.id+'\')" style="border-color:'+(isFirst?t.color:'var(--border)')+';color:'+(isFirst?t.color:'var(--text2)')+'">'+ t.icon+' '+t.label+'</button>';
+      tabNavHtml += '<button class="order-dtab-btn'+(isFirst?' active':'')+'" data-dtab-pane="'+tabId+'" data-dtab-order="'+o.id+'" data-dtab-color="'+t.color+'" style="border-color:'+(isFirst?t.color:'var(--border)')+';color:'+(isFirst?t.color:'var(--text2)')+'">'+ t.icon+' '+t.label+'</button>';
       tabPanesHtml += renderDeliveryTab(tabId, t.label, t.items, getTimelineHtml(o.status, isFirst?(o.delay_note||''):'', t.flow, t.labels));
     });
 
     var canCancel = (o.status === 'created' || o.status === 'processing');
     var cancelBtn = canCancel
-      ? '<button class="btn btn-ghost btn-sm cancel-order-btn" data-order-id="'+o.id+'" style="color:var(--red);border-color:var(--red);opacity:.75;font-size:.75rem;padding:.3rem .7rem;" onclick="event.stopPropagation();cancelOrder('+o.id+')">✕ Отменить</button>'
+      ? '<button class="btn btn-ghost btn-sm cancel-order-btn" data-cancel-order="'+o.id+'" style="color:var(--red);border-color:var(--red);opacity:.75;font-size:.75rem;padding:.3rem .7rem;">✕ Отменить</button>'
       : '';
     html+=
       '<div class="order-card" id="order-'+o.id+'">'+
@@ -1138,12 +1138,11 @@ function renderOrders(orders){
 }
 
 function switchDeliveryTab(btn, paneId, orderId){
-  // Update buttons
   var nav = document.getElementById('dtab-nav-'+orderId);
   if(nav) nav.querySelectorAll('.order-dtab-btn').forEach(function(b){ b.classList.remove('active'); b.style.borderColor='var(--border)'; b.style.color='var(--text2)'; });
   btn.classList.add('active');
-  // Get pane color from first tab's inline style
-  // Show pane
+  var color = btn.getAttribute('data-dtab-color')||'var(--blue)';
+  btn.style.borderColor=color; btn.style.color=color;
   var card = document.getElementById('order-'+orderId);
   if(card) card.querySelectorAll('.order-dtab-pane').forEach(function(p){ p.style.display = p.id===paneId ? '' : 'none'; });
 }
@@ -1191,8 +1190,15 @@ document.addEventListener('DOMContentLoaded',function(){
       document.querySelectorAll('.theme-seg-btn').forEach(function(x){x.classList.toggle('seg-active',x.getAttribute('data-seg')===t);});
     });
   });
-  // Order card toggle — единственный listener
+  // Event delegation for all order interactions
   document.getElementById('ordersContainer').addEventListener('click',function(e){
+    // Cancel order button
+    var cb=e.target.closest('[data-cancel-order]');
+    if(cb){e.stopPropagation();cancelOrder(parseInt(cb.getAttribute('data-cancel-order')));return;}
+    // Delivery sub-tab button
+    var tb=e.target.closest('[data-dtab-pane]');
+    if(tb){e.stopPropagation();switchDeliveryTab(tb,tb.getAttribute('data-dtab-pane'),tb.getAttribute('data-dtab-order'));return;}
+    // Order card toggle
     var h=e.target.closest('[data-toggle-order]');
     if(h)toggleOrder(h.getAttribute('data-toggle-order'));
   });

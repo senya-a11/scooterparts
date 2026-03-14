@@ -617,19 +617,26 @@
             <div class="manual-item-row" style="display:flex;flex-direction:column;gap:.375rem;margin-bottom:.625rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.625rem">
               <div style="display:grid;grid-template-columns:3fr 1fr 1.2fr 0.8fr auto;gap:.5rem">
                 <input type="text" class="form-input manual-item-name" placeholder="Название товара" style="font-size:.8125rem">
-                <input type="number" class="form-input manual-item-qty" placeholder="Кол-во" value="1" min="1" style="font-size:.8125rem" oninput="recalcManualTotal()">
-                <input type="number" class="form-input manual-item-price" placeholder="Цена ₽" min="0" style="font-size:.8125rem" oninput="recalcManualTotal()">
+                <input type="number" class="form-input manual-item-qty" placeholder="Кол-во" value="1" min="1" style="font-size:.8125rem">
+                <input type="number" class="form-input manual-item-price" placeholder="Цена ₽" min="0" style="font-size:.8125rem">
                 <input type="number" class="form-input manual-item-weight" placeholder="кг" min="0" step="0.001" style="font-size:.8125rem">
-                <button class="manual-item-del" onclick="this.closest('.manual-item-row').remove();recalcManualTotal()" style="background:rgba(255,59,92,.12);border:1px solid rgba(255,59,92,.2);color:var(--red);border-radius:7px;padding:.35rem .6rem;cursor:pointer;font-size:.8rem">✕</button>
+                <button class="manual-item-del" style="background:rgba(255,59,92,.12);border:1px solid rgba(255,59,92,.2);color:var(--red);border-radius:7px;padding:.35rem .6rem;cursor:pointer;font-size:.8rem">✕</button>
               </div>
-              <input type="text" class="form-input manual-item-comment" placeholder="Комментарий к позиции (необязательно)" style="font-size:.78rem;color:var(--text2)">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+                <select class="form-select manual-item-delivery" style="font-size:.8125rem">
+                  <option value="in_stock">📦 В наличии</option>
+                  <option value="preorder_auto">🚗 Автодоставка</option>
+                  <option value="preorder_air">✈️ Авиадоставка</option>
+                </select>
+                <input type="text" class="form-input manual-item-comment" placeholder="Комментарий к позиции" style="font-size:.78rem;color:var(--text2)">
+              </div>
             </div>
           </div>
           <button id="addManualItemRowBtn" class="btn btn-ghost btn-sm" style="margin-bottom:.75rem">+ Добавить позицию</button>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
             <div class="form-group" style="margin:0">
               <label class="form-label">Стоимость доставки ₽</label>
-              <input type="number" class="form-input" id="manualOrderDeliveryCost" placeholder="0" min="0" step="0.01" oninput="recalcManualTotal()">
+              <input type="number" class="form-input" id="manualOrderDeliveryCost" placeholder="0" min="0" step="0.01">
             </div>
             <div style="background:var(--surface2);border:1px solid var(--border-h);border-radius:10px;padding:.625rem 1rem;display:flex;flex-direction:column;justify-content:center">
               <div style="font-size:.75rem;color:var(--text2);margin-bottom:.25rem">Итого к оплате</div>
@@ -2648,20 +2655,29 @@
     div.style.cssText = 'display:flex;flex-direction:column;gap:.375rem;margin-bottom:.625rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.625rem';
     div.innerHTML = '<div style="display:grid;grid-template-columns:3fr 1fr 1.2fr 0.8fr auto;gap:.5rem">'
       + '<input type="text" class="form-input manual-item-name" placeholder="Название товара" style="font-size:.8125rem">'
-      + '<input type="number" class="form-input manual-item-qty" placeholder="Кол-во" value="1" min="1" style="font-size:.8125rem" oninput="recalcManualTotal()">'
-      + '<input type="number" class="form-input manual-item-price" placeholder="Цена ₽" min="0" style="font-size:.8125rem" oninput="recalcManualTotal()">'
+      + '<input type="number" class="form-input manual-item-qty" placeholder="Кол-во" value="1" min="1" style="font-size:.8125rem">'
+      + '<input type="number" class="form-input manual-item-price" placeholder="Цена ₽" min="0" style="font-size:.8125rem">'
       + '<input type="number" class="form-input manual-item-weight" placeholder="кг" min="0" step="0.001" style="font-size:.8125rem">'
       + '<button class="manual-item-del" style="background:rgba(255,59,92,.12);border:1px solid rgba(255,59,92,.2);color:var(--red);border-radius:7px;padding:.35rem .6rem;cursor:pointer;font-size:.8rem">✕</button>'
       + '</div>'
-      + '<input type="text" class="form-input manual-item-comment" placeholder="Комментарий к позиции (необязательно)" style="font-size:.78rem;color:var(--text2)">';
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">'
+      + '<select class="form-select manual-item-delivery" style="font-size:.8125rem">'
+      + '<option value="in_stock">📦 В наличии</option>'
+      + '<option value="preorder_auto">🚗 Автодоставка</option>'
+      + '<option value="preorder_air">✈️ Авиадоставка</option>'
+      + '</select>'
+      + '<input type="text" class="form-input manual-item-comment" placeholder="Комментарий к позиции" style="font-size:.78rem;color:var(--text2)">'
+      + '</div>';
     document.getElementById('manualOrderItems').appendChild(div);
   }
 
-  // CSP-safe: event delegation for manual-item-del buttons (static + dynamic rows)
+  // CSP-safe: event delegation for manual-item-del buttons and input events (static + dynamic rows)
   document.getElementById('manualOrderItems')?.addEventListener('click', function(e) {
     const btn = e.target.closest('.manual-item-del');
     if (btn) { btn.closest('.manual-item-row')?.remove(); recalcManualTotal(); }
   });
+  document.getElementById('manualOrderItems')?.addEventListener('input', recalcManualTotal);
+  document.getElementById('manualOrderDeliveryCost')?.addEventListener('input', recalcManualTotal);
   document.getElementById('addManualItemRowBtn')?.addEventListener('click', addManualItemRow);
 
   // ── User autocomplete for ФИО ──
@@ -2722,7 +2738,9 @@
         quantity: parseInt(row.querySelector('.manual-item-qty')?.value)||1,
         price: parseFloat(row.querySelector('.manual-item-price')?.value)||0,
         weight_kg: parseFloat(row.querySelector('.manual-item-weight')?.value) || null,
-        comment: row.querySelector('.manual-item-comment')?.value.trim() || null
+        comment: row.querySelector('.manual-item-comment')?.value.trim() || null,
+        order_type: (row.querySelector('.manual-item-delivery')?.value || 'in_stock') === 'in_stock' ? 'in_stock' : 'preorder',
+        delivery_type: row.querySelector('.manual-item-delivery')?.value === 'preorder_auto' ? 'auto' : row.querySelector('.manual-item-delivery')?.value === 'preorder_air' ? 'air' : null
       };
     }).filter(i => i.product_name && i.price > 0);
     if (!items.length) { document.getElementById('manualOrderMsg').innerHTML = '<div class="msg msg-error">Добавьте хотя бы одну позицию с ценой</div>'; return; }

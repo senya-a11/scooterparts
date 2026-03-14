@@ -118,6 +118,16 @@
     /* EMPTY */
     .empty-state{text-align:center;padding:3rem 1rem;color:var(--text2);}
     .empty-icon{font-size:2.5rem;margin-bottom:1rem;}
+    /* WISHLIST GRID */
+    .wishlist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;}
+    .wl-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;}
+    .wl-card-img{width:100%;height:140px;object-fit:cover;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:2.5rem;}
+    .wl-card-img img{width:100%;height:100%;object-fit:cover;}
+    .wl-card-body{padding:.875rem;flex:1;display:flex;flex-direction:column;gap:.5rem;}
+    .wl-card-name{font-size:.875rem;font-weight:600;color:var(--text);line-height:1.35;}
+    .wl-card-price{font-family:'JetBrains Mono',monospace;font-size:.9rem;font-weight:700;color:var(--blue);}
+    .wl-card-remove{margin-top:auto;background:none;border:1px solid var(--border);color:var(--text3);border-radius:6px;padding:.35rem .75rem;font-size:.78rem;cursor:pointer;transition:all .15s;}
+    .wl-card-remove:hover{border-color:var(--red);color:var(--red);}
     /* SPINNER */
     .spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;}
     @keyframes spin{to{transform:rotate(360deg);}}
@@ -178,6 +188,7 @@
         <div class="tabs">
           <button class="tab-btn active" data-tab="profile">Профиль</button>
           <button class="tab-btn" data-tab="orders">История заказов</button>
+          <button class="tab-btn" data-tab="wishlist">Избранное</button>
           <button class="tab-btn" data-tab="security">Безопасность</button>
           <button class="tab-btn" data-tab="danger">Аккаунт</button>
         </div>
@@ -216,6 +227,14 @@
             <div id="ordersList">
               <div class="loading-center"><div class="spinner"></div></div>
             </div>
+          </div>
+        </div>
+
+        <!-- ИЗБРАННОЕ -->
+        <div class="tab-panel" id="tab-wishlist">
+          <div class="account-card">
+            <div class="card-title">Избранное</div>
+            <div id="wishlistList"><div class="loading-center"><div class="spinner"></div></div></div>
           </div>
         </div>
 
@@ -305,6 +324,7 @@
       var panel = gi('tab-' + btn.dataset.tab);
       if(panel) panel.classList.add('active');
       if(btn.dataset.tab === 'orders') loadOrders();
+      if(btn.dataset.tab === 'wishlist') loadWishlist();
     });
   });
 
@@ -441,6 +461,48 @@
       html += '</div>';
       ol.innerHTML = html;
     }catch(ex){ol.innerHTML='<div class="empty-state"><div class="empty-icon">⚠</div><p>Ошибка загрузки</p></div>';}
+  }
+
+  // Wishlist
+  async function loadWishlist(){
+    var wl = gi('wishlistList');
+    if(!wl) return;
+    wl.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+    try{
+      var r = await fetch('/api/wishlist', {credentials:'include'});
+      if(!r.ok){wl.innerHTML='<div class="empty-state"><div class="empty-icon">🔒</div><p>Войдите в аккаунт</p></div>';return;}
+      var data = await r.json();
+      var items = data.items || data || [];
+      if(!items.length){wl.innerHTML='<div class="empty-state"><div class="empty-icon">♡</div><p>Список избранного пуст</p><a href="/products" class="btn btn-primary" style="margin-top:1rem">Перейти в каталог</a></div>';return;}
+      var html='<div class="wishlist-grid">';
+      items.forEach(function(item){
+        var imgHtml = item.image_url
+          ? '<img src="'+escHtml(item.image_url)+'" alt="'+escHtml(item.name||'')+'">'
+          : '<span>📦</span>';
+        var pid = item.product_id || item.id;
+        html += '<div class="wl-card" data-wl-id="'+pid+'">'+
+          '<div class="wl-card-img">'+imgHtml+'</div>'+
+          '<div class="wl-card-body">'+
+            '<div class="wl-card-name">'+escHtml(item.name||'Товар')+'</div>'+
+            '<div class="wl-card-price">'+fmt(item.price||0)+' ₽</div>'+
+            '<button class="wl-card-remove" data-remove-id="'+pid+'">✕ Удалить</button>'+
+          '</div>'+
+        '</div>';
+      });
+      html += '</div>';
+      wl.innerHTML = html;
+      wl.querySelectorAll('[data-remove-id]').forEach(function(btn){
+        btn.addEventListener('click', async function(){
+          var pid = parseInt(btn.dataset.removeId);
+          btn.disabled=true;
+          try{
+            var rd = await fetch('/api/wishlist/'+pid,{method:'DELETE',credentials:'include'});
+            if(rd.ok){ var card=wl.querySelector('[data-wl-id="'+pid+'"]'); if(card)card.remove(); if(!wl.querySelector('.wl-card')) loadWishlist(); }
+          }catch(e){}
+          btn.disabled=false;
+        });
+      });
+    }catch(ex){wl.innerHTML='<div class="empty-state"><div class="empty-icon">⚠</div><p>Ошибка загрузки</p></div>';}
   }
 
   // Delete account

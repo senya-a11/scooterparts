@@ -503,7 +503,7 @@
         </li>
         <li class="nav-menu-item">
           <a href="/tracking" class="nav-menu-link" style="pointer-events:auto;">
-            <p class="nav-link-heading" style="color:var(--blue)">Заказы</p><p class="nav-eyebrow">04</p><div class="nav-link-bg"></div>
+            <p class="nav-link-heading" style="color:var(--blue)">Отслеживание</p><p class="nav-eyebrow">04</p><div class="nav-link-bg"></div>
           </a>
         </li>
         <!-- mobile-only -->
@@ -844,8 +844,8 @@ function renderUser(){
       '</div>';
     gi('uBtn').onclick=function(e){e.stopPropagation();gi('uDrop').classList.toggle('active');};
   document.addEventListener('click',function(e){if(e.target&&e.target.id==='trackLogoutBtn')doLogout();});
-    if(navLabel)navLabel.textContent=me.username;
-    if(navAt){navAt.onclick=function(){if(window._closeNav)window._closeNav();setTimeout(function(){doLogout();},400);};}
+    if(navLabel)navLabel.textContent='Личный кабинет';
+    if(navAt){navAt.onclick=function(){if(window._closeNav)window._closeNav();setTimeout(function(){window.location.href='/account';},300);};}
   }else{
     userMenu.innerHTML='<a href="/auth?next='+encodeURIComponent(window.location.pathname)+'" class="btn btn-primary btn-sm">Войти</a>';
     if(navLabel)navLabel.textContent='Войти';

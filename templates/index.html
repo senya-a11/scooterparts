@@ -380,10 +380,20 @@
     .footer-bottom a:hover{color:var(--blue)}
     .footer-legal-links{display:flex;gap:1.5rem;flex-wrap:wrap}
 
+    /* ── SUPPLIER SECTION ── */
+    .supplier-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;max-width:900px;margin:0 auto}
+    .supplier-docs-grid{display:grid;grid-template-columns:1fr 1fr;gap:.875rem}
+    .supplier-doc-card{background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:12px;padding:1.25rem;text-align:center}
+    .supplier-doc-status{font-size:.7rem;color:var(--text3);margin-top:.25rem}
+    .supplier-doc-link{font-size:.7rem;color:var(--blue);margin-top:.25rem;text-decoration:none;display:block}
+    .supplier-doc-link:hover{text-decoration:underline}
+
     /* ── RESPONSIVE ── */
     @media(max-width:768px){
       /* Десктопные элементы хедера — скрыты на мобильном */
       .cart-btn-header,#userMenu{display:none!important}
+      /* Поиск в хедере — скрыт на мобильном */
+      .header-actions form{display:none!important}
       /* Мобильные пункты меню — показаны */
       .nav-menu-item.mobile-only{display:block}
       .nav-menu{width:100%;padding-top:5.5rem;padding-bottom:2.5rem}
@@ -397,9 +407,12 @@
       .product-actions{flex-direction:column}
       .qty-selector{width:100%;justify-content:space-between}
       .add-to-cart-btn{width:100%}
+      .supplier-grid{grid-template-columns:1fr;gap:2rem}
+      .supplier-docs-grid{grid-template-columns:1fr 1fr}
     }
     @media(max-width:480px){
       .footer-grid{grid-template-columns:1fr}
+      .supplier-docs-grid{grid-template-columns:1fr}
       .hero-stats{flex-direction:column;gap:1.5rem}
       .hero-stat::after{display:none}
     }
@@ -589,19 +602,19 @@
         </li>
         <li class="nav-menu-item">
           <a href="/tracking" class="nav-menu-link">
-            <p class="nav-link-heading">Заказы</p><p class="nav-eyebrow">04</p><div class="nav-link-bg"></div>
+            <p class="nav-link-heading">Отслеживание</p><p class="nav-eyebrow">04</p><div class="nav-link-bg"></div>
           </a>
         </li>
         <!-- mobile-only: Корзина -->
         <li class="nav-menu-item mobile-only">
           <button class="nav-menu-link" id="navCartTrigger">
-            <p class="nav-link-heading">Корзина</p><p class="nav-eyebrow">04</p><div class="nav-link-bg"></div>
+            <p class="nav-link-heading">Корзина</p><p class="nav-eyebrow">05</p><div class="nav-link-bg"></div>
           </button>
         </li>
-        <!-- mobile-only: Войти / имя пользователя — обновляется через JS -->
+        <!-- mobile-only: Войти / Личный кабинет — обновляется через JS -->
         <li class="nav-menu-item mobile-only">
           <button class="nav-menu-link" id="navAuthTrigger">
-            <p class="nav-link-heading" id="navAuthLabel">Войти</p><p class="nav-eyebrow" id="navAuthNum">05</p><div class="nav-link-bg"></div>
+            <p class="nav-link-heading" id="navAuthLabel">Войти</p><p class="nav-eyebrow" id="navAuthNum">06</p><div class="nav-link-bg"></div>
           </button>
         </li>
       </ul>
@@ -648,7 +661,7 @@
 <!-- ── OFFICIAL SUPPLIER BLOCK ── -->
 <section class="section" style="background:rgba(0,212,255,.03);border-top:1px solid rgba(0,212,255,.08);border-bottom:1px solid rgba(0,212,255,.08)">
   <div class="container">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;max-width:900px;margin:0 auto">
+    <div class="supplier-grid">
       <div>
         <div class="section-tag">Партнёрство</div>
         <h2 class="section-title" style="margin-bottom:1rem">Официальный поставщик</h2>
@@ -670,27 +683,16 @@
           </div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.875rem" id="supplierDocs">
-        <!-- Documents will be added here by admin. Placeholder: -->
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:12px;padding:1.25rem;text-align:center">
-          <div style="font-size:2rem;margin-bottom:.5rem">📋</div>
-          <div style="font-size:.78rem;font-weight:700;color:var(--text)">Сертификат ISO</div>
-          <div style="font-size:.7rem;color:var(--text3);margin-top:.25rem">Документ будет добавлен</div>
-        </div>
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:12px;padding:1.25rem;text-align:center">
+      <div class="supplier-docs-grid" id="supplierDocs">
+        <div class="supplier-doc-card" id="supplierDocPartner">
           <div style="font-size:2rem;margin-bottom:.5rem">🏭</div>
           <div style="font-size:.78rem;font-weight:700;color:var(--text)">Партнёрский договор</div>
-          <div style="font-size:.7rem;color:var(--text3);margin-top:.25rem">Документ будет добавлен</div>
+          <div class="supplier-doc-status" id="supplierDocPartnerStatus">Документ будет добавлен</div>
         </div>
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:12px;padding:1.25rem;text-align:center">
+        <div class="supplier-doc-card" id="supplierDocWarranty">
           <div style="font-size:2rem;margin-bottom:.5rem">🛡️</div>
           <div style="font-size:.78rem;font-weight:700;color:var(--text)">Гарантийные условия</div>
-          <div style="font-size:.7rem;color:var(--text3);margin-top:.25rem">Документ будет добавлен</div>
-        </div>
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:12px;padding:1.25rem;text-align:center">
-          <div style="font-size:2rem;margin-bottom:.5rem">📦</div>
-          <div style="font-size:.78rem;font-weight:700;color:var(--text)">Лицензия дистрибьютора</div>
-          <div style="font-size:.7rem;color:var(--text3);margin-top:.25rem">Документ будет добавлен</div>
+          <div class="supplier-doc-status" id="supplierDocWarrantyStatus">Документ будет добавлен</div>
         </div>
       </div>
     </div>
@@ -941,19 +943,19 @@ function renderUser(){
       '</div>';
     gi('uBtn').onclick=function(e){e.stopPropagation();gi('uDrop').classList.toggle('active');};
 
-    /* ── Мобильный пункт: имя пользователя, клик = выход ── */
-    if(navLabel)navLabel.textContent=me.username;
+    /* ── Мобильный пункт: Личный кабинет → /account ── */
+    if(navLabel)navLabel.textContent='Личный кабинет';
     if(navAt){
       navAt.onclick=function(){
         if(window._closeNav)window._closeNav();
-        setTimeout(function(){doLogout();},400);
+        setTimeout(function(){window.location.href='/account';},300);
       };
     }
   }else{
     /* ── Десктоп: кнопка «Войти» ── */
     userMenu.innerHTML='<a href="/auth?next='+encodeURIComponent(window.location.pathname)+'" class="btn btn-primary btn-sm">Войти</a>';
 
-    /* ── Мобильный пункт: «Войти», клик = открыть модал ── */
+    /* ── Мобильный пункт: «Войти» → /auth ── */
     if(navLabel)navLabel.textContent='Войти';
     if(navAt){
       navAt.onclick=function(){
@@ -1286,7 +1288,34 @@ detModal.onclick=function(e){if(e.target===detModal)detModal.classList.remove('a
   loadProducts();
   loadStats();
   await checkAuth();
+  loadSupplierDocs();
 })();
+
+async function loadSupplierDocs(){
+  try{
+    var r=await fetch('/api/supplier-docs');
+    if(!r.ok)return;
+    var docs=await r.json();
+    var byType={};
+    docs.forEach(function(d){byType[d.doc_type]=d;});
+    var partnerStatus=document.getElementById('supplierDocPartnerStatus');
+    var warrantyStatus=document.getElementById('supplierDocWarrantyStatus');
+    if(partnerStatus){
+      if(byType.partner){
+        partnerStatus.innerHTML='<a class="supplier-doc-link" href="'+byType.partner.url+'" target="_blank" rel="noopener">📄 Посмотреть документ</a>';
+      }else{
+        partnerStatus.textContent='Документ будет добавлен';
+      }
+    }
+    if(warrantyStatus){
+      if(byType.warranty){
+        warrantyStatus.innerHTML='<a class="supplier-doc-link" href="'+byType.warranty.url+'" target="_blank" rel="noopener">📄 Посмотреть документ</a>';
+      }else{
+        warrantyStatus.textContent='Документ будет добавлен';
+      }
+    }
+  }catch(e){}
+}
 </script>
 <script nonce="{{ request.state.csp_nonce }}">
 /* ══ THEME SYSTEM ══ */

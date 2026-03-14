@@ -375,6 +375,7 @@
         <button class="admin-nav-btn" data-sec="add-product">➕ Добавить товар</button>
         <button class="admin-nav-btn" data-sec="add-product-specs">🔧 Со спецами</button>
         <button class="admin-nav-btn" data-sec="delivery-settings">🚚 Доставка</button>
+        <button class="admin-nav-btn" data-sec="supplier-docs">📄 Документы</button>
         <button class="admin-nav-btn" data-sec="auto-discount">🏷️ Скидки</button>
         <button class="admin-nav-btn" data-sec="promo-codes">🎁 Промокоды</button>
         <button class="admin-nav-btn" data-sec="installation">🔧 Установка</button>
@@ -401,6 +402,7 @@
         <button class="mobile-nav-item" data-sec="add-product">➕ Добавить товар</button>
         <button class="mobile-nav-item" data-sec="add-product-specs">🔧 Со спецами</button>
         <button class="mobile-nav-item" data-sec="delivery-settings">🚚 Доставка</button>
+        <button class="mobile-nav-item" data-sec="supplier-docs">📄 Документы</button>
         <button class="mobile-nav-item" data-sec="installation">🔧 Установка</button>
       </div>
     </div>
@@ -1276,6 +1278,35 @@
           ✈️ Авиа: <code>Цена = max(вес_кг, 1) × ставка_¥ × курс_¥</code><br>
           <span style="color:var(--text3)">Если поля пустые — цена рассчитывается вручную. Вес указывается у каждого товара.</span>
         </div>
+      </div>
+    </div>
+
+    <!-- ─── ДОКУМЕНТЫ ПОСТАВЩИКА ─── -->
+    <div class="admin-section" id="sec-supplier-docs">
+      <h2 class="section-title">📄 Документы поставщика</h2>
+      <div id="supplierDocsMsg"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:900px">
+
+        <!-- Партнёрский договор -->
+        <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem">
+          <div style="font-family:var(--font-d);font-size:1rem;font-weight:700;margin-bottom:1rem">🏭 Партнёрский договор</div>
+          <div id="partnerDocStatus" style="font-size:.8125rem;color:var(--text2);margin-bottom:.875rem">Загрузка…</div>
+          <input type="file" id="partnerDocFile" accept=".pdf,.jpg,.jpeg,.png" style="display:none">
+          <button class="btn btn-ghost" onclick="document.getElementById('partnerDocFile').click()" style="width:100%;margin-bottom:.5rem">📎 Выбрать файл</button>
+          <div id="partnerDocSelected" style="font-size:.8125rem;color:var(--text2);margin-bottom:.5rem"></div>
+          <button class="btn btn-primary" id="uploadPartnerDocBtn" style="width:100%" disabled>⬆ Загрузить</button>
+        </div>
+
+        <!-- Гарантийные условия -->
+        <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem">
+          <div style="font-family:var(--font-d);font-size:1rem;font-weight:700;margin-bottom:1rem">🛡️ Гарантийные условия</div>
+          <div id="warrantyDocStatus" style="font-size:.8125rem;color:var(--text2);margin-bottom:.875rem">Загрузка…</div>
+          <input type="file" id="warrantyDocFile" accept=".pdf,.jpg,.jpeg,.png" style="display:none">
+          <button class="btn btn-ghost" onclick="document.getElementById('warrantyDocFile').click()" style="width:100%;margin-bottom:.5rem">📎 Выбрать файл</button>
+          <div id="warrantyDocSelected" style="font-size:.8125rem;color:var(--text2);margin-bottom:.5rem"></div>
+          <button class="btn btn-primary" id="uploadWarrantyDocBtn" style="width:100%" disabled>⬆ Загрузить</button>
+        </div>
+
       </div>
     </div>
 
@@ -3130,6 +3161,69 @@
     // Загружаем настройки при переходе на вкладку
     document.querySelectorAll('[data-sec="delivery-settings"]').forEach(btn => {
       btn.addEventListener('click', loadDeliverySettings);
+    });
+
+    // ── Supplier Documents ──
+    async function loadSupplierDocsStatus() {
+      try {
+        const r = await fetch('/api/supplier-docs');
+        const docs = r.ok ? await r.json() : [];
+        const byType = {};
+        docs.forEach(d => { byType[d.doc_type] = d; });
+        const partnerEl = document.getElementById('partnerDocStatus');
+        const warrantyEl = document.getElementById('warrantyDocStatus');
+        if(partnerEl) partnerEl.innerHTML = byType.partner
+          ? `✅ Загружен: <a href="${byType.partner.url}" target="_blank" style="color:var(--accent)">${byType.partner.filename}</a>`
+          : '⚠️ Не загружен';
+        if(warrantyEl) warrantyEl.innerHTML = byType.warranty
+          ? `✅ Загружен: <a href="${byType.warranty.url}" target="_blank" style="color:var(--accent)">${byType.warranty.filename}</a>`
+          : '⚠️ Не загружен';
+      } catch(e) {}
+    }
+
+    function setupDocUpload(fileInputId, selectedId, uploadBtnId, docType) {
+      const fileInput = document.getElementById(fileInputId);
+      const selectedEl = document.getElementById(selectedId);
+      const uploadBtn = document.getElementById(uploadBtnId);
+      if(!fileInput || !uploadBtn) return;
+      fileInput.addEventListener('change', function() {
+        if(fileInput.files.length) {
+          selectedEl.textContent = '📎 ' + fileInput.files[0].name;
+          uploadBtn.disabled = false;
+        } else {
+          selectedEl.textContent = '';
+          uploadBtn.disabled = true;
+        }
+      });
+      uploadBtn.addEventListener('click', async function() {
+        const file = fileInput.files[0];
+        if(!file) return;
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = '…';
+        const fd = new FormData();
+        fd.append('file', file);
+        try {
+          const r = await fetch('/api/supplier-docs/' + docType, {method:'POST', credentials:'include', body: fd});
+          const d = await r.json();
+          if(r.ok) {
+            const msg = document.getElementById('supplierDocsMsg');
+            if(msg) { msg.innerHTML='<div style="padding:.625rem 1rem;border-radius:8px;background:var(--green-dim);color:var(--green);margin-bottom:1rem">✅ Документ загружен</div>'; setTimeout(()=>msg.innerHTML='',3000); }
+            fileInput.value=''; selectedEl.textContent='';
+            await loadSupplierDocsStatus();
+          } else {
+            const msg = document.getElementById('supplierDocsMsg');
+            if(msg) { msg.innerHTML='<div style="padding:.625rem 1rem;border-radius:8px;background:var(--red-dim);color:var(--red);margin-bottom:1rem">✗ '+escH(d.detail||'Ошибка')+'</div>'; setTimeout(()=>msg.innerHTML='',4000); }
+          }
+        } catch(e) {}
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = '⬆ Загрузить';
+      });
+    }
+
+    setupDocUpload('partnerDocFile','partnerDocSelected','uploadPartnerDocBtn','partner');
+    setupDocUpload('warrantyDocFile','warrantyDocSelected','uploadWarrantyDocBtn','warranty');
+    document.querySelectorAll('[data-sec="supplier-docs"]').forEach(btn => {
+      btn.addEventListener('click', loadSupplierDocsStatus);
     });
 
     // ── Installation Requests ──

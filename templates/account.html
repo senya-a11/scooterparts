@@ -269,12 +269,12 @@
           <div class="account-card">
             <div class="card-title">Выйти из аккаунта</div>
             <p class="danger-desc">Выйти со всех устройств (завершить сессию).</p>
-            <button class="btn btn-ghost" onclick="doLogout()">← Выйти</button>
+            <button class="btn btn-ghost" id="logoutBtn">← Выйти</button>
           </div>
           <div class="account-card danger-zone">
             <div class="card-title">⚠ Удалить аккаунт</div>
             <p class="danger-desc">Это действие необратимо. Все ваши данные, заказы и история будут удалены навсегда. Корзина также будет очищена.</p>
-            <button class="btn btn-danger" onclick="confirmDeleteAccount()">Удалить аккаунт</button>
+            <button class="btn btn-danger" id="deleteAccountBtn">Удалить аккаунт</button>
             <div id="deleteMsg"></div>
           </div>
         </div>
@@ -355,11 +355,12 @@
         '</button>'+
         '<div id="uDrop" style="position:absolute;right:0;top:calc(100% + .5rem);background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.5rem;min-width:160px;display:none;z-index:100">'+
           (me.is_admin?'<a href="/admin" style="display:block;padding:.5rem .75rem;color:var(--text);text-decoration:none;border-radius:6px;font-size:.875rem">⚙ Админка</a>':'')+
-          '<button onclick="doLogout()" style="width:100%;text-align:left;background:none;border:none;padding:.5rem .75rem;color:var(--red);cursor:pointer;border-radius:6px;font-size:.875rem">← Выйти</button>'+
+          '<button id="dropLogoutBtn" style="width:100%;text-align:left;background:none;border:none;padding:.5rem .75rem;color:var(--red);cursor:pointer;border-radius:6px;font-size:.875rem">← Выйти</button>'+
         '</div>'+
       '</div>';
     gi('uBtn').onclick = function(e){e.stopPropagation();var d=gi('uDrop');d.style.display=d.style.display==='none'?'block':'none';};
     document.addEventListener('click', function(){var d=gi('uDrop');if(d)d.style.display='none';});
+    var dlb=gi('dropLogoutBtn');if(dlb)dlb.addEventListener('click',doLogout);
   }
 
   function renderProfileHeader(){
@@ -519,6 +520,10 @@
   function doLogout(){
     fetch('/api/logout',{method:'POST',credentials:'include'}).finally(function(){window.location.href='/';});
   }
+
+  // Attach static button listeners (CSP-safe: no inline onclick)
+  var _lb=gi('logoutBtn');if(_lb)_lb.addEventListener('click',doLogout);
+  var _db=gi('deleteAccountBtn');if(_db)_db.addEventListener('click',confirmDeleteAccount);
 
   init();
   </script>

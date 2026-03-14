@@ -2368,7 +2368,9 @@ async def get_user_orders(user_id: str = Depends(get_current_user)):
                            json_build_object(
                              'product_name', oi.product_name,
                              'quantity', oi.quantity,
-                             'price', oi.price
+                             'price', oi.price,
+                             'order_type', COALESCE(oi.order_type, 'in_stock'),
+                             'delivery_type', oi.delivery_type
                            ) ORDER BY oi.id
                          ) FILTER (WHERE oi.id IS NOT NULL),
                          '[]'

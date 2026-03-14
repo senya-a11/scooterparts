@@ -251,6 +251,13 @@
           <div data-tabs-fade class="form-group"><label class="form-label">Пароль</label><div class="input-wrap"><input class="form-input" type="password" placeholder="••••••••" autocomplete="current-password"><button class="pw-toggle" type="button" aria-label="Показать пароль"><svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-slash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-8-10-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button></div></div>
           <div data-tabs-fade class="form-footer"><a href="#" class="form-link" id="toRestore">Забыли пароль?</a></div>
           <button data-tabs-fade class="btn-submit">Войти →</button>
+          <div id="resendVerifyBanner" style="display:none;margin-top:1rem;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25);border-radius:8px;padding:.75rem 1rem;flex-direction:column;gap:.5rem;">
+            <p style="margin:0;font-size:.85rem;color:#F0F4F8;">📧 Введите email для повторной отправки письма:</p>
+            <div style="display:flex;gap:.5rem;">
+              <input id="resendEmailInput" type="email" placeholder="your@email.com" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:.4rem .7rem;color:var(--text);font-size:.85rem;">
+              <button id="resendVerifyBtn" style="background:var(--blue);color:#080A0F;border:none;border-radius:6px;padding:.4rem .9rem;font-weight:700;cursor:pointer;font-size:.85rem;white-space:nowrap;">Отправить повторно</button>
+            </div>
+          </div>
           <div data-tabs-fade class="form-footer" style="margin-top:.75rem">Нет аккаунта? <a href="#" class="form-link" id="toRegister">Зарегистрироваться</a></div>
         </div>
         <div data-tabs="content-item">
@@ -266,6 +273,10 @@
             <span style="font-size:.72rem;color:#7B8599;line-height:1.55;word-break:break-word;overflow-wrap:break-word;">Продолжая регистрацию, я соглашаюсь с <a href="/legal?doc=terms" target="_blank" style="color:#00D4FF;text-decoration:none;">Правилами пользования сайтом и обработки персональных данных</a> и <a href="/legal?doc=offer" target="_blank" style="color:#00D4FF;text-decoration:none;">Публичной офертой</a></span>
           </label>
           <button data-tabs-fade class="btn-submit">Создать аккаунт →</button>
+          <div id="verifyEmailInfo" style="display:none;margin-top:1rem;background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.25);border-radius:8px;padding:.9rem 1rem;flex-direction:column;gap:.25rem;">
+            <p style="margin:0;font-size:.9rem;color:#00E5A0;font-weight:600;">✅ Аккаунт создан!</p>
+            <p style="margin:0;font-size:.82rem;color:#F0F4F8;">Письмо с подтверждением отправлено на <strong class="verify-email-addr"></strong>. Перейдите по ссылке в письме, чтобы активировать аккаунт.</p>
+          </div>
           <div data-tabs-fade class="form-footer">Уже есть аккаунт? <a href="#" class="form-link" id="toLogin">Войти</a></div>
         </div>
         <div data-tabs="content-item">
@@ -424,6 +435,13 @@ var NEXT_URL = (function(){
   return p || '/';
 })();
 
+// ── Show success toast if redirected after email verification ──
+(function(){
+  if(new URLSearchParams(location.search).get('verified')==='1'){
+    setTimeout(function(){ authToast('success','Email подтверждён! Теперь вы можете войти.'); },400);
+  }
+})();
+
 // ── Toast helper ──
 function authToast(type, msg) {
   var el = document.getElementById('authToast');
@@ -456,6 +474,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
   // ── LOGIN ──
   var loginBtn = loginTab.querySelector('.btn-submit');
+  var _loginEmail = '';
   loginBtn.addEventListener('click', async function(){
     var username = loginTab.querySelector('input[type="text"]').value.trim();
     var password = loginTab.querySelector('input[type="password"]').value;
@@ -467,6 +486,23 @@ document.addEventListener('DOMContentLoaded',function(){
       var d = await r.json();
       if(r.ok){ authToast('success','Добро пожаловать!');
         setTimeout(function(){ window.location.href=NEXT_URL; },600); }
+      else if(r.status===403 && d.detail && d.detail.indexOf('email')!==-1){
+        authToast('error', d.detail);
+        loginBtn.disabled=false; loginBtn.textContent='Войти →';
+        var resendBanner = document.getElementById('resendVerifyBanner');
+        if(resendBanner){ resendBanner.style.display='flex'; }
+        _loginEmail = '';
+        // Попробуем найти email по username через заголовок формы
+        document.getElementById('resendVerifyBtn').onclick = async function(){
+          var emailInput = document.getElementById('resendEmailInput').value.trim();
+          if(!emailInput){ authToast('error','Введите email'); return; }
+          this.disabled=true; this.textContent='Отправляем…';
+          var rr = await fetch('/api/resend-verification',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:emailInput})});
+          var dd = await rr.json();
+          authToast(rr.ok?'success':'error', dd.message||dd.detail||'Готово');
+          this.disabled=false; this.textContent='Отправить повторно';
+        };
+      }
       else{ authToast('error',d.detail||'Неверный логин или пароль'); loginBtn.disabled=false; loginBtn.textContent='Войти →'; }
     }catch(e){ authToast('error','Ошибка соединения'); loginBtn.disabled=false; loginBtn.textContent='Войти →'; }
   });
@@ -486,12 +522,12 @@ document.addEventListener('DOMContentLoaded',function(){
       var r = await fetch('/api/register',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({username:username,email:email,full_name:(fname+' '+lname).trim(),password:password,privacy_accepted:true})});
       var d = await r.json();
-      if(r.ok){ authToast('success','Аккаунт создан! Входим…');
-        // auto-login
-        var lr = await fetch('/api/login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({username:username,password:password})});
-        if(lr.ok){ /* cookie set by server */ }
-        setTimeout(function(){ window.location.href=NEXT_URL; },800); }
+      if(r.ok){ authToast('success','Аккаунт создан! Проверьте email для подтверждения.');
+        regBtn.disabled=false; regBtn.textContent='Создать аккаунт →';
+        // Show info banner to check email
+        var verifyInfo = document.getElementById('verifyEmailInfo');
+        if(verifyInfo){ verifyInfo.style.display='flex'; verifyInfo.querySelector('.verify-email-addr').textContent=email; }
+      }
       else{ authToast('error',d.detail||'Ошибка регистрации'); regBtn.disabled=false; regBtn.textContent='Создать аккаунт →'; }
     }catch(e){ authToast('error','Ошибка соединения'); regBtn.disabled=false; regBtn.textContent='Создать аккаунт →'; }
   });

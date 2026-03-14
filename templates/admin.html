@@ -371,6 +371,7 @@
         <button class="admin-nav-btn" data-sec="categories">🏷️ Категории</button>
         <button class="admin-nav-btn" data-sec="orders">🛒 Заказы</button>
         <button class="admin-nav-btn" data-sec="top-clients">👥 Клиенты</button>
+        <button class="admin-nav-btn" data-sec="users-list">👤 Пользователи</button>
         <button class="admin-nav-btn" data-sec="crm">📝 CRM</button>
         <button class="admin-nav-btn" data-sec="add-product">➕ Добавить товар</button>
         <button class="admin-nav-btn" data-sec="add-product-specs">🔧 Со спецами</button>
@@ -398,6 +399,7 @@
         <button class="mobile-nav-item" data-sec="categories">🏷️ Категории</button>
         <button class="mobile-nav-item" data-sec="orders">🛒 Заказы</button>
         <button class="mobile-nav-item" data-sec="top-clients">👥 Клиенты</button>
+        <button class="mobile-nav-item" data-sec="users-list">👤 Пользователи</button>
         <button class="mobile-nav-item" data-sec="crm">📝 CRM</button>
         <button class="mobile-nav-item" data-sec="add-product">➕ Добавить товар</button>
         <button class="mobile-nav-item" data-sec="add-product-specs">🔧 Со спецами</button>
@@ -425,7 +427,10 @@
     <div class="admin-section" id="sec-products">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
         <h2 class="section-title" style="margin-bottom:0">📦 Товары</h2>
-        <button class="btn btn-primary" id="addProductBtn">➕ Добавить товар</button>
+        <div style="display:flex;gap:.5rem">
+          <button class="btn btn-ghost btn-sm" onclick="loadProducts()">🔄 Обновить</button>
+          <button class="btn btn-primary" id="addProductBtn">➕ Добавить товар</button>
+        </div>
       </div>
       <div id="productsMsg"></div>
       <div class="table-wrap">
@@ -438,7 +443,10 @@
 
     <!-- ─── CATEGORIES ─── -->
     <div class="admin-section" id="sec-categories">
-      <h2 class="section-title">🏷️ Управление категориями</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.75rem">
+        <h2 class="section-title" style="margin-bottom:0">🏷️ Управление категориями</h2>
+        <button class="btn btn-ghost btn-sm" onclick="loadCategories()">🔄 Обновить</button>
+      </div>
       <div id="catMsg"></div>
 
       <!-- Add category form -->
@@ -583,16 +591,18 @@
 
     <!-- ─── MANUAL ORDER MODAL ─── -->
     <div class="modal-overlay" id="manualOrderModal">
-      <div class="modal-box" style="max-width:580px">
+      <div class="modal-box" style="max-width:620px">
         <div class="modal-header">
           <h3 class="modal-title">➕ Создать заказ вручную</h3>
           <button class="modal-close" id="closeManualOrderBtn">✕</button>
         </div>
         <div class="modal-body">
           <div id="manualOrderMsg"></div>
-          <div class="form-group">
-            <label class="form-label">Клиент (ID пользователя или оставьте пустым)</label>
-            <input type="text" class="form-input" id="manualOrderUserId" placeholder="UUID клиента (необязательно)">
+          <div class="form-group" style="position:relative">
+            <label class="form-label">ФИО клиента</label>
+            <input type="text" class="form-input" id="manualOrderCustomerName" placeholder="Начните вводить имя..." autocomplete="off" oninput="debouncedUserSearch(this.value)">
+            <input type="hidden" id="manualOrderUserId">
+            <div id="userAutocompleteDropdown" style="display:none;position:absolute;z-index:999;top:100%;left:0;right:0;background:var(--bg2);border:1px solid var(--border-h);border-radius:8px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
           </div>
           <div class="form-group">
             <label class="form-label">Адрес доставки</label>
@@ -605,16 +615,27 @@
           <div style="font-family:var(--font-d);font-size:.8125rem;font-weight:700;margin:.875rem 0 .5rem">Позиции заказа</div>
           <div id="manualOrderItems">
             <div class="manual-item-row" style="display:flex;flex-direction:column;gap:.375rem;margin-bottom:.625rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.625rem">
-              <div style="display:grid;grid-template-columns:3fr 1fr 1.2fr auto;gap:.5rem">
+              <div style="display:grid;grid-template-columns:3fr 1fr 1.2fr 0.8fr auto;gap:.5rem">
                 <input type="text" class="form-input manual-item-name" placeholder="Название товара" style="font-size:.8125rem">
-                <input type="number" class="form-input manual-item-qty" placeholder="Кол-во" value="1" min="1" style="font-size:.8125rem">
-                <input type="number" class="form-input manual-item-price" placeholder="Цена ₽" min="0" style="font-size:.8125rem">
-                <button class="manual-item-del" style="background:rgba(255,59,92,.12);border:1px solid rgba(255,59,92,.2);color:var(--red);border-radius:7px;padding:.35rem .6rem;cursor:pointer;font-size:.8rem">✕</button>
+                <input type="number" class="form-input manual-item-qty" placeholder="Кол-во" value="1" min="1" style="font-size:.8125rem" oninput="recalcManualTotal()">
+                <input type="number" class="form-input manual-item-price" placeholder="Цена ₽" min="0" style="font-size:.8125rem" oninput="recalcManualTotal()">
+                <input type="number" class="form-input manual-item-weight" placeholder="кг" min="0" step="0.001" style="font-size:.8125rem">
+                <button class="manual-item-del" onclick="this.closest('.manual-item-row').remove();recalcManualTotal()" style="background:rgba(255,59,92,.12);border:1px solid rgba(255,59,92,.2);color:var(--red);border-radius:7px;padding:.35rem .6rem;cursor:pointer;font-size:.8rem">✕</button>
               </div>
               <input type="text" class="form-input manual-item-comment" placeholder="Комментарий к позиции (необязательно)" style="font-size:.78rem;color:var(--text2)">
             </div>
           </div>
-          <button id="addManualItemRowBtn" class="btn btn-ghost btn-sm" style="margin-bottom:1rem">+ Добавить позицию</button>
+          <button id="addManualItemRowBtn" class="btn btn-ghost btn-sm" style="margin-bottom:.75rem">+ Добавить позицию</button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Стоимость доставки ₽</label>
+              <input type="number" class="form-input" id="manualOrderDeliveryCost" placeholder="0" min="0" step="0.01" oninput="recalcManualTotal()">
+            </div>
+            <div style="background:var(--surface2);border:1px solid var(--border-h);border-radius:10px;padding:.625rem 1rem;display:flex;flex-direction:column;justify-content:center">
+              <div style="font-size:.75rem;color:var(--text2);margin-bottom:.25rem">Итого к оплате</div>
+              <div id="manualOrderTotal" style="font-size:1.25rem;font-weight:700;color:var(--blue);font-family:var(--font-mono)">0.00 ₽</div>
+            </div>
+          </div>
           <div style="display:flex;gap:.75rem">
             <button class="btn btn-primary" style="flex:1" id="saveManualOrderBtn">💾 Создать заказ</button>
             <button class="btn btn-ghost" id="cancelManualOrderBtn">Отмена</button>
@@ -625,7 +646,10 @@
 
     <!-- ─── AUTO DISCOUNT ─── -->
     <div class="admin-section" id="sec-auto-discount">
-      <h2 class="section-title">🏷️ Авто-скидка</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.75rem">
+        <h2 class="section-title" style="margin-bottom:0">🏷️ Авто-скидка</h2>
+        <button class="btn btn-ghost btn-sm" onclick="loadDeliverySettings&&loadDeliverySettings();showToast('success','Настройки обновлены')">🔄 Обновить</button>
+      </div>
       <div class="msg msg-info" style="margin-bottom:1.5rem">
         Автоматически применяется ко всем клиентам. Клиенты с персональной (ручной) скидкой в CRM — исключены.
       </div>
@@ -664,7 +688,10 @@
 
     <!-- ─── PROMO CODES ─── -->
     <div class="admin-section" id="sec-promo-codes">
-      <h2 class="section-title">🎁 Промокоды</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.75rem">
+        <h2 class="section-title" style="margin-bottom:0">🎁 Промокоды</h2>
+        <button class="btn btn-ghost btn-sm" onclick="loadPromoCodes()">🔄 Обновить</button>
+      </div>
       <div class="msg msg-info" style="margin-bottom:1.5rem">
         Клиент вводит промокод в корзине — цена пересчитывается автоматически.
       </div>
@@ -726,7 +753,10 @@
 
     <!-- ─── TOP CLIENTS ─── -->
     <div class="admin-section" id="sec-top-clients">
-      <h2 class="section-title">👥 Топ клиенты</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.75rem">
+        <h2 class="section-title" style="margin-bottom:0">👥 Топ клиенты</h2>
+        <button class="btn btn-ghost btn-sm" onclick="loadTopClients()">🔄 Обновить</button>
+      </div>
       <div class="msg msg-info" style="margin-bottom:1.5rem">
         📈 Здесь показаны самые активные покупатели по сумме покупок, количеству заказов и дате последней покупки.
       </div>
@@ -751,11 +781,43 @@
       </div>
     </div>
 
+    <!-- ─── USERS LIST ─── -->
+    <div class="admin-section" id="sec-users-list">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.75rem">
+        <h2 class="section-title" style="margin-bottom:0">👤 Пользователи</h2>
+        <button class="btn btn-ghost btn-sm" onclick="loadUsersList()">🔄 Обновить</button>
+      </div>
+      <div style="display:flex;gap:.625rem;margin-bottom:1rem;flex-wrap:wrap">
+        <input type="text" class="form-input" id="usersSearchInput" placeholder="Поиск по ФИО / логину / email..." style="flex:1;min-width:200px" oninput="clearTimeout(_usersSearchTimer);_usersSearchTimer=setTimeout(()=>loadUsersList(1),400)">
+        <button class="btn btn-primary btn-sm" onclick="loadUsersList(1)">Найти</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="admin-table">
+          <thead><tr>
+            <th>ID</th>
+            <th>Логин</th>
+            <th>Email</th>
+            <th>ФИО</th>
+            <th>Телефон</th>
+            <th>Email ✓</th>
+            <th>Роль</th>
+            <th>Скидка</th>
+            <th>Дата регистрации</th>
+          </tr></thead>
+          <tbody id="usersListTableBody">
+            <tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="usersListPagination" style="display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap;align-items:center"></div>
+    </div>
+
     <!-- ─── CRM WITH NOTES ─── -->
     <div class="admin-section" id="sec-crm">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.75rem">
         <h2 class="section-title" style="margin-bottom:0">📝 CRM — Управление клиентами</h2>
         <div style="display:flex;gap:.625rem">
+          <button class="btn btn-ghost btn-sm" onclick="loadCRM()">🔄 Обновить</button>
           <button class="btn btn-ghost btn-sm" id="createUserManualBtn">👤 Создать аккаунт</button>
           <a href="/api/admin/crm/export-csv" class="btn btn-ghost btn-sm" download>📥 Экспорт Excel</a>
         </div>
@@ -1502,6 +1564,7 @@
     if (name === 'orders') loadOrders();
     if (name === 'dashboard') loadDashboard();
     if (name === 'top-clients') loadTopClients();
+    if (name === 'users-list') loadUsersList(1);
     if (name === 'crm') loadCRM();
     if (name === 'add-product') loadCategoriesForSelect();
     if (name === 'installation') loadInstallationRequests();
@@ -2567,14 +2630,27 @@
   }
 
   // ── Manual Order ──
+  function recalcManualTotal() {
+    let sum = 0;
+    document.querySelectorAll('#manualOrderItems .manual-item-row').forEach(row => {
+      const qty   = parseFloat(row.querySelector('.manual-item-qty')?.value  || 0);
+      const price = parseFloat(row.querySelector('.manual-item-price')?.value || 0);
+      sum += qty * price;
+    });
+    sum += parseFloat(document.getElementById('manualOrderDeliveryCost')?.value || 0);
+    const el = document.getElementById('manualOrderTotal');
+    if (el) el.textContent = sum.toFixed(2) + ' ₽';
+  }
+
   function addManualItemRow() {
     const div = document.createElement('div');
     div.className = 'manual-item-row';
     div.style.cssText = 'display:flex;flex-direction:column;gap:.375rem;margin-bottom:.625rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.625rem';
-    div.innerHTML = '<div style="display:grid;grid-template-columns:3fr 1fr 1.2fr auto;gap:.5rem">'
+    div.innerHTML = '<div style="display:grid;grid-template-columns:3fr 1fr 1.2fr 0.8fr auto;gap:.5rem">'
       + '<input type="text" class="form-input manual-item-name" placeholder="Название товара" style="font-size:.8125rem">'
-      + '<input type="number" class="form-input manual-item-qty" placeholder="Кол-во" value="1" min="1" style="font-size:.8125rem">'
-      + '<input type="number" class="form-input manual-item-price" placeholder="Цена ₽" min="0" style="font-size:.8125rem">'
+      + '<input type="number" class="form-input manual-item-qty" placeholder="Кол-во" value="1" min="1" style="font-size:.8125rem" oninput="recalcManualTotal()">'
+      + '<input type="number" class="form-input manual-item-price" placeholder="Цена ₽" min="0" style="font-size:.8125rem" oninput="recalcManualTotal()">'
+      + '<input type="number" class="form-input manual-item-weight" placeholder="кг" min="0" step="0.001" style="font-size:.8125rem">'
       + '<button class="manual-item-del" style="background:rgba(255,59,92,.12);border:1px solid rgba(255,59,92,.2);color:var(--red);border-radius:7px;padding:.35rem .6rem;cursor:pointer;font-size:.8rem">✕</button>'
       + '</div>'
       + '<input type="text" class="form-input manual-item-comment" placeholder="Комментарий к позиции (необязательно)" style="font-size:.78rem;color:var(--text2)">';
@@ -2584,32 +2660,69 @@
   // CSP-safe: event delegation for manual-item-del buttons (static + dynamic rows)
   document.getElementById('manualOrderItems')?.addEventListener('click', function(e) {
     const btn = e.target.closest('.manual-item-del');
-    if (btn) btn.closest('.manual-item-row')?.remove();
+    if (btn) { btn.closest('.manual-item-row')?.remove(); recalcManualTotal(); }
   });
   document.getElementById('addManualItemRowBtn')?.addEventListener('click', addManualItemRow);
 
+  // ── User autocomplete for ФИО ──
+  let _userSearchTimer = null;
+  function debouncedUserSearch(val) {
+    clearTimeout(_userSearchTimer);
+    const dd = document.getElementById('userAutocompleteDropdown');
+    if (!val || val.length < 2) { if(dd) dd.style.display='none'; return; }
+    _userSearchTimer = setTimeout(async () => {
+      try {
+        const r = await fetch('/api/admin/users-autocomplete?search=' + encodeURIComponent(val), {credentials:'include'});
+        const data = await r.json();
+        if (!dd) return;
+        if (!data.length) { dd.style.display='none'; return; }
+        dd.innerHTML = data.map(u =>
+          `<div data-uid="${u.id}" data-name="${escH(u.full_name)}" style="padding:.5rem .75rem;cursor:pointer;font-size:.875rem;border-bottom:1px solid var(--border)">
+            <span style="color:var(--text)">${escH(u.full_name)}</span>
+            <span style="color:var(--text2);margin-left:.5rem;font-size:.78rem">${escH(u.username)} · ${escH(u.email)}</span>
+          </div>`
+        ).join('');
+        dd.style.display = 'block';
+        dd.querySelectorAll('div[data-uid]').forEach(item => {
+          item.addEventListener('click', () => {
+            document.getElementById('manualOrderCustomerName').value = item.dataset.name;
+            document.getElementById('manualOrderUserId').value = item.dataset.uid;
+            dd.style.display = 'none';
+          });
+        });
+      } catch(e) { /* ignore */ }
+    }, 300);
+  }
+  document.addEventListener('click', e => {
+    const dd = document.getElementById('userAutocompleteDropdown');
+    if (dd && !dd.contains(e.target) && e.target.id !== 'manualOrderCustomerName') dd.style.display = 'none';
+  });
+
   document.getElementById('createOrderManualBtn')?.addEventListener('click', () => {
     document.getElementById('manualOrderMsg').innerHTML = '';
+    document.getElementById('manualOrderCustomerName').value = '';
+    document.getElementById('manualOrderUserId').value = '';
+    document.getElementById('manualOrderDeliveryCost').value = '';
+    document.getElementById('manualOrderTotal').textContent = '0.00 ₽';
     document.getElementById('manualOrderModal').classList.add('active');
   });
   document.getElementById('closeManualOrderBtn')?.addEventListener('click', () => document.getElementById('manualOrderModal').classList.remove('active'));
   document.getElementById('cancelManualOrderBtn')?.addEventListener('click', () => document.getElementById('manualOrderModal').classList.remove('active'));
 
   document.getElementById('saveManualOrderBtn')?.addEventListener('click', async function() {
-    const userId  = document.getElementById('manualOrderUserId').value.trim() || null;
-    const address = document.getElementById('manualOrderAddress').value.trim();
-    const comment = document.getElementById('manualOrderComment').value.trim();
+    const userId       = document.getElementById('manualOrderUserId').value.trim() || null;
+    const customerName = document.getElementById('manualOrderCustomerName').value.trim();
+    const address      = document.getElementById('manualOrderAddress').value.trim();
+    const comment      = document.getElementById('manualOrderComment').value.trim();
+    const deliveryCost = parseFloat(document.getElementById('manualOrderDeliveryCost').value || 0);
     const itemRows = document.querySelectorAll('#manualOrderItems .manual-item-row');
     const items = Array.from(itemRows).map(row => {
-      const nameEl    = row.querySelector('.manual-item-name');
-      const qtyEl     = row.querySelector('.manual-item-qty');
-      const priceEl   = row.querySelector('.manual-item-price');
-      const commentEl = row.querySelector('.manual-item-comment');
       return {
-        product_name: nameEl?.value.trim() || '',
-        quantity: parseInt(qtyEl?.value)||1,
-        price: parseFloat(priceEl?.value)||0,
-        comment: commentEl?.value.trim() || null
+        product_name: row.querySelector('.manual-item-name')?.value.trim() || '',
+        quantity: parseInt(row.querySelector('.manual-item-qty')?.value)||1,
+        price: parseFloat(row.querySelector('.manual-item-price')?.value)||0,
+        weight_kg: parseFloat(row.querySelector('.manual-item-weight')?.value) || null,
+        comment: row.querySelector('.manual-item-comment')?.value.trim() || null
       };
     }).filter(i => i.product_name && i.price > 0);
     if (!items.length) { document.getElementById('manualOrderMsg').innerHTML = '<div class="msg msg-error">Добавьте хотя бы одну позицию с ценой</div>'; return; }
@@ -2617,7 +2730,7 @@
     try {
       const r = await fetch('/api/admin/orders', {credentials:'include', method:'POST',
         headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({user_id: userId, address, comment, items})
+        body: JSON.stringify({user_id: userId, customer_name: customerName, address, comment, delivery_cost: deliveryCost, items})
       });
       const d = await r.json();
       if (r.ok) {
@@ -2629,6 +2742,61 @@
     finally { this.disabled = false; this.textContent = '💾 Создать заказ'; }
   });
 
+
+  // ── Users List ──
+  let _usersSearchTimer = null;
+  let _usersPage = 1;
+  async function loadUsersList(page) {
+    _usersPage = page || _usersPage || 1;
+    const search = document.getElementById('usersSearchInput')?.value.trim() || '';
+    const tbody  = document.getElementById('usersListTableBody');
+    const pager  = document.getElementById('usersListPagination');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка...</td></tr>';
+    try {
+      const r = await fetch(`/api/admin/users?search=${encodeURIComponent(search)}&page=${_usersPage}&limit=50`, {credentials:'include'});
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const data = await r.json();
+      if (!tbody) return;
+      if (!data.users.length) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text3)">Пользователи не найдены</td></tr>';
+        if (pager) pager.innerHTML = '';
+        return;
+      }
+      tbody.innerHTML = data.users.map(u => {
+        const role = u.is_admin ? '<span style="color:#FFB020;font-weight:700">Admin</span>' :
+                     u.is_manager ? '<span style="color:#00D4FF">Manager</span>' :
+                     '<span style="color:var(--text3)">User</span>';
+        const verified = u.email_verified
+          ? '<span style="color:#00E5A0" title="Email подтверждён">✅</span>'
+          : '<span style="color:var(--red)" title="Не подтверждён">✗</span>';
+        const createdAt = u.created_at ? new Date(u.created_at).toLocaleDateString('ru-RU') : '—';
+        const shortId = u.id.split('-')[0] + '…';
+        return `<tr>
+          <td><span title="${escH(u.id)}" style="font-family:var(--font-mono);font-size:.75rem;cursor:pointer;color:var(--blue)" onclick="navigator.clipboard.writeText('${escH(u.id)}');showToast('success','ID скопирован')">${shortId}</span></td>
+          <td>${escH(u.username)}</td>
+          <td style="font-size:.8rem">${escH(u.email)}</td>
+          <td>${escH(u.full_name||'—')}</td>
+          <td style="font-size:.8rem">${escH(u.phone||'—')}</td>
+          <td style="text-align:center">${verified}</td>
+          <td>${role}</td>
+          <td style="text-align:center">${u.personal_discount ? u.personal_discount+'%' : '—'}</td>
+          <td style="font-size:.8rem">${createdAt}</td>
+        </tr>`;
+      }).join('');
+      // Pagination
+      if (pager) {
+        const totalPages = Math.ceil(data.total / data.limit);
+        if (totalPages <= 1) { pager.innerHTML = `<span style="color:var(--text2);font-size:.85rem">Всего: ${data.total}</span>`; return; }
+        let html = `<span style="color:var(--text2);font-size:.85rem;margin-right:.5rem">Всего: ${data.total}</span>`;
+        for (let p = 1; p <= totalPages; p++) {
+          html += `<button class="btn btn-sm ${p===_usersPage?'btn-primary':'btn-ghost'}" onclick="loadUsersList(${p})">${p}</button>`;
+        }
+        pager.innerHTML = html;
+      }
+    } catch(e) {
+      if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--red)">Ошибка загрузки: ' + escH(e.message) + '</td></tr>';
+    }
+  }
 
   // ── Top Clients: Load Top Customers ──
   async function loadTopClients() {

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png?v=6">
+  <link rel="icon" type="image/svg+xml" href="/static/favicon/favicon.svg?v=6">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png?v=6">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png?v=6">
+  <link rel="shortcut icon" href="/static/favicon/favicon.ico?v=6">
+  <meta name="theme-color" content="#080A0F">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 — Страница не найдена — Fm TuN</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style nonce="{{ request.state.csp_nonce }}">
+    @font-face{font-family:'PP Neue Corp Tight';src:url('https://cdn.prod.website-files.com/673af51dea86ab95d124c3ee/673b0f5784f7060c0ac05534_PPNeueCorp-TightUltrabold.otf') format('opentype');font-weight:700;font-display:swap;}
+    :root{
+      --blue:#00D4FF;--blue-dim:rgba(0,212,255,.12);--blue-glow:rgba(0,212,255,.25);
+      --bg:#080A0F;--bg2:#0D1018;--surface:#161C26;
+      --border:rgba(255,255,255,.06);
+      --text:#F0F4F8;--text2:#7B8599;--text3:#3E4560;
+      --red:#FF4757;
+      --fd:'Syne',sans-serif;--fr:'Rajdhani',sans-serif;--fb:'DM Sans',sans-serif;
+      --fn:'PP Neue Corp Tight','Syne',sans-serif;
+      --r:10px;--rl:16px;
+    }
+    [data-theme="light"]{
+      --blue:#E8580A;--blue-dim:rgba(232,88,10,.1);--blue-glow:rgba(232,88,10,.22);
+      --bg:#F7F4EF;--bg2:#EDE9E3;--surface:#D8D3CA;
+      --border:rgba(0,0,0,.08);
+      --text:#1C1208;--text2:#6B5D4F;--text3:#A89080;
+      --red:#CC2200;
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    html{scroll-behavior:smooth;overflow-x:hidden;}
+    body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;-webkit-font-smoothing:antialiased;}
+    .page{text-align:center;padding:2rem;max-width:520px;}
+    .code{font-family:var(--fn);font-size:clamp(6rem,20vw,10rem);font-weight:700;line-height:1;
+      background:linear-gradient(135deg,var(--blue),rgba(0,212,255,.4));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+      filter:drop-shadow(0 0 40px var(--blue-glow));margin-bottom:.5rem;}
+    [data-theme="light"] .code{background:linear-gradient(135deg,var(--blue),rgba(232,88,10,.5));-webkit-background-clip:text;background-clip:text;}
+    .title{font-family:var(--fd);font-size:1.75rem;font-weight:700;margin-bottom:.75rem;}
+    .desc{color:var(--text2);font-size:1rem;line-height:1.65;margin-bottom:2.5rem;}
+    .actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;}
+    .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.75rem 1.5rem;font-family:var(--fr);font-size:.9375rem;font-weight:700;border-radius:var(--r);border:none;cursor:pointer;text-decoration:none;transition:all .2s;letter-spacing:.03em;}
+    .btn-primary{background:var(--blue);color:#000;box-shadow:0 0 24px var(--blue-glow);}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 40px var(--blue-glow);}
+    a.btn-primary{color:#000 !important;}
+    .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);}
+    .btn-ghost:hover{color:var(--text);border-color:var(--blue);}
+    .bolt{font-size:2rem;margin-bottom:1rem;display:block;}
+  </style>
+</head>
+<body>
+  <script nonce="{{ request.state.csp_nonce }}">
+    (function(){var t=localStorage.getItem('fmtun_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();
+  </script>
+  <div class="page">
+    <span class="bolt">⚡</span>
+    <div class="code">404</div>
+    <h1 class="title">Страница не найдена</h1>
+    <p class="desc">Похоже, такой страницы не существует или она была перемещена. Возможно, ссылка устарела.</p>
+    <div class="actions">
+      <a href="/" class="btn btn-primary">На главную →</a>
+      <a href="/products" class="btn btn-ghost">Каталог товаров</a>
+    </div>
+  </div>
+</body>
+</html>

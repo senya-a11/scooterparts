@@ -361,7 +361,7 @@
     <div class="imp-nav-footer">
       <p style="font-family:'Rajdhani',sans-serif;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:.75rem">Контакты</p>
       <div style="display:flex;gap:1.5rem;flex-wrap:wrap">
-        <a href="mailto:info@fmtun.ru" style="color:rgba(255,255,255,.5);font-size:.875rem;text-decoration:none;font-family:'Rajdhani',sans-serif">info@fmtun.ru</a>
+        <a href="mailto:ilya.georgievskiy@gmail.com" style="color:rgba(255,255,255,.5);font-size:.875rem;text-decoration:none;font-family:'Rajdhani',sans-serif">ilya.georgievskiy@gmail.com</a>
         <a href="https://t.me/FM_Tuning" style="color:rgba(255,255,255,.5);font-size:.875rem;text-decoration:none;font-family:'Rajdhani',sans-serif" target="_blank" rel="noopener noreferrer">Telegram</a>
       </div>
     </div>
@@ -415,9 +415,9 @@
         </div>
       </div>
       <div class="about-body reveal">
-        <p>Fm TuN — магазин запчастей и аксессуаров для электросамокатов с 2021 года. Мы первыми начали системно завозить в Россию компоненты премиум-класса напрямую от производителей — без посредников, по честным ценам.</p>
-        <p>Всё началось с личной истории: наш основатель сам не мог найти нормальные запчасти в наличии в РФ — и решил это исправить. Сегодня у нас сотни довольных клиентов и собственный партнёрский сервис в Москве.</p>
-        <p>Наша миссия — чтобы каждый электросамокат в России ездил исправно, безопасно и долго.</p>
+        <p>Fm TuN — магазин запчастей и аксессуаров для электротранспорта с 2023 года. Мы первыми начали системно завозить в Россию компоненты премиум-класса напрямую от производителей — без посредников, по честным ценам.</p>
+        <p>Всё началось с личной истории: наш основатель сам не мог найти нормальные запчасти в наличии в РФ — и решил это исправить. Сегодня у нас сотни довольных клиентов и собственный сервис в Москве.</p>
+        <p>Наша миссия — сделать доступным и безопасным покупку запчастей для электротранспорта по всей России.</p>
       </div>
     </div>
   </div>
@@ -486,9 +486,9 @@
     </div>
 
     <div class="service-info">
-      <div class="si-card reveal"><div class="si-card__icon">&#128295;</div><div class="si-card__title">Любые виды ремонта</div><div class="si-card__text">Замена двигателей, контроллеров, батарей, тормозных систем. Диагностика любой сложности.</div></div>
-      <div class="si-card reveal"><div class="si-card__icon">&#9889;</div><div class="si-card__title">Установка запчастей</div><div class="si-card__text">Профессиональный монтаж деталей из нашего магазина. Гарантия на все работы.</div></div>
-      <div class="si-card reveal"><div class="si-card__icon">&#128757;</div><div class="si-card__title">7 лет опыта</div><div class="si-card__text">Xiaomi, Ninebot, Kugoo, Vsett и другие бренды. Мастера знают самокаты насквозь.</div></div>
+      <div class="si-card reveal"><div class="si-card__icon">&#128295;</div><div class="si-card__title">Любые виды ремонта</div><div class="si-card__text">Замена двигателей, контроллеров, тормозных систем. Диагностика любой сложности, обслуживание, гидроизоляция.</div></div>
+      <div class="si-card reveal"><div class="si-card__icon">&#9889;</div><div class="si-card__title">Сборка custom</div><div class="si-card__text">Профессиональный монтаж деталей из нашего магазина, сборка акб, установка vecs. Постройка и разработка рамы с 0 и многие другие уникальные комплектующие. Гарантия на все работы.</div></div>
+      <div class="si-card reveal"><div class="si-card__icon">&#128757;</div><div class="si-card__title">7 лет опыта</div><div class="si-card__text">Xiaomi, Ninebot, Kugoo, syccyba, spead, savage, ultron, dualtron и другие бренды. Мастера знают самокаты насквозь.</div></div>
     </div>
 
     <div class="addr-bar reveal">
@@ -500,7 +500,7 @@
       <div class="addr-bar__sep"></div>
       <div>
         <div class="addr-bar__label">Режим работы</div>
-        <div class="addr-bar__val">Пн–Сб, 10:00 — 20:00</div>
+        <div class="addr-bar__val">Вт–Вс, 11:00 — 19:00</div>
       </div>
       <a href="https://t.me/fmsworkshops" class="addr-cta" target="_blank" rel="noopener noreferrer">
         Записаться в сервис
@@ -518,10 +518,10 @@
     <div class="section-label reveal">История</div>
     <h2 class="about-heading reveal" style="max-width:600px">Как мы стали<br><em>первыми.</em></h2>
     <div class="timeline">
-      <div class="tl-item reveal"><div class="tl-dot"></div><div class="tl-year">2021</div><div class="tl-title">Запуск</div><div class="tl-text">Илья случайно зашёл в тему запчастей — купил Vsett для себя, потому что за установку брали много, а в наличии в РФ не было ни у кого. Понял, что спрос огромный — и запустил Fm TuN.</div></div>
-      <div class="tl-item reveal"><div class="tl-dot"></div><div class="tl-year">2022</div><div class="tl-title">Прямые поставки</div><div class="tl-text">Первые прямые договоры с заводами в Китае. Убрали посредников — снизили цены на 20–30%. Переехали на собственный склад.</div></div>
-      <div class="tl-item reveal"><div class="tl-dot"></div><div class="tl-year">2023</div><div class="tl-title">Партнёрство с Fast Motion</div><div class="tl-text">Эдуард — владелец крупнейшего сервиса в Москве — стал партнёром. Объединили поставки и ремонт под одной крышей.</div></div>
-      <div class="tl-item reveal"><div class="tl-dot"></div><div class="tl-year">2024 — сейчас</div><div class="tl-title">Новая платформа</div><div class="tl-text">Запустили полноценный сайт с предзаказами, CRM и персональными скидками. Продолжаем расти.</div></div>
+      <div class="tl-item reveal"><div class="tl-dot"></div><div class="tl-year">2023</div><div class="tl-title">Запуск</div><div class="tl-text">Илья случайно зашёл в тему запчастей — купил Vsett для себя, потому что за установку брали много, а в наличии в РФ не было ни у кого. Понял, что спрос огромный — и запустил Fm TuN.</div></div>
+      <div class="tl-item reveal"><div class="tl-dot"></div><div class="tl-year">2024</div><div class="tl-title">Прямые поставки</div><div class="tl-text">Первые прямые договоры с заводами в Китае. Убрали посредников — снизили цены на 20–30%. Переехали на собственный склад.</div></div>
+      <div class="tl-item reveal"><div class="tl-dot"></div><div class="tl-year">2025</div><div class="tl-title">Партнёрство с Fast Motion</div><div class="tl-text">Вход в FASTMOTION - самую большую команду в России по тематике электротранспорта. Объединили поставки и ремонт под одной крышей.</div></div>
+      <div class="tl-item reveal"><div class="tl-dot"></div><div class="tl-year">2026 — сейчас</div><div class="tl-title">Новая платформа</div><div class="tl-text">Запустили полноценный сайт с предзаказами. Продолжаем расти.</div></div>
     </div>
   </div>
 </section>
@@ -552,13 +552,13 @@
       <div class="team-card reveal">
         <div class="team-card__role">CEO &amp; Основатель</div>
         <div class="team-card__name">Илья Георгиевский</div>
-        <div class="team-card__bio">Самокатчик по призванию. Пришёл в бизнес случайно: купил Vsett для себя, когда в РФ не было в наличии ни у кого. Понял, что так жить нельзя — и запустил Fm TuN.</div>
+        <div class="team-card__bio">Самокатчик по призванию. Пришёл в бизнес случайно: купив Vsett для себя, осознал, что сложно приобрести безопасно и быстро хорошие комплектующие — и запустил Fm TuN.</div>
         <div class="team-card__accent"></div>
       </div>
       <div class="team-card reveal">
         <div class="team-card__role">Партнёр &amp; Сервис</div>
         <div class="team-card__name">Эдуард<br><span style="font-size:.95rem;opacity:.65;font-weight:600">Fast Motion</span></div>
-        <div class="team-card__bio">Владелец одного из крупнейших сервисных центров в Москве. 7 лет в деле. Партнёрство с Fm TuN позволяет получать запчасти и профессиональный монтаж в одном окне.</div>
+        <div class="team-card__bio">Владелец одного из крупнейших сервисных центров в Москве. 7 лет в деле. Драгоценный партнер и гуру по электротранспорту руководит установкой вам ваших комплектующих.</div>
         <div class="team-card__accent"></div>
       </div>
     </div>
@@ -572,11 +572,11 @@
         </a>
       </div>
       <div class="contacts-links reveal">
-        <div class="contact-item"><div class="contact-item__label">Email</div><div class="contact-item__value">info@fmtun.ru</div></div>
+        <div class="contact-item"><div class="contact-item__label">Email</div><div class="contact-item__value">ilya.georgievskiy@gmail.com</div></div>
         <div class="contact-item"><div class="contact-item__label">Telegram магазин</div><div class="contact-item__value"><a href="https://t.me/FM_Tuning" style="color:var(--blue);text-decoration:none" target="_blank" rel="noopener noreferrer">@FM_Tuning</a></div></div>
         <div class="contact-item"><div class="contact-item__label">Telegram сервис</div><div class="contact-item__value"><a href="https://t.me/fmsworkshops" style="color:var(--blue);text-decoration:none" target="_blank" rel="noopener noreferrer">@fmsworkshops</a></div></div>
         <div class="contact-item"><div class="contact-item__label">Адрес сервиса</div><div class="contact-item__value" style="font-size:.95rem">М. Университет — ул. Строителей 4 стр. 2</div></div>
-        <div class="contact-item"><div class="contact-item__label">Режим работы</div><div class="contact-item__value">Пн–Пт, 9:00 — 20:00</div></div>
+        <div class="contact-item"><div class="contact-item__label">Режим работы</div><div class="contact-item__value">Вт–Вс, 11:00 — 19:00</div></div>
       </div>
     </div>
   </div>

@@ -398,7 +398,7 @@
     [data-theme="light"] .cat-pill{background:#fff;border-color:rgba(0,0,0,.15);color:var(--text);}
     [data-theme="light"] .cat-pill:hover{background:rgba(255,255,255,.9);border-color:rgba(232,88,10,.3);color:var(--text);}
     [data-theme="light"] .cat-pill.active{background:var(--blue-dim);border-color:rgba(232,88,10,.4);color:var(--blue);box-shadow:0 0 12px rgba(232,88,10,.1);}
-    .products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:1.25rem;align-items:start}
+    .products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;align-items:start}
 
     /* ── GLASSMORPHISM PRODUCT CARD ── */
     .product-card{
@@ -444,7 +444,8 @@
     .product-cat{font-family:var(--font-raj);font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);margin-bottom:.375rem}
     .product-name{font-family:var(--font-d);font-size:.975rem;font-weight:700;margin-bottom:.5rem;line-height:1.3}
     .product-desc{font-size:.8125rem;color:var(--text2);line-height:1.5;flex:1;margin-bottom:1rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-    .product-footer{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-top:auto}
+    .product-footer{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-top:auto;flex-wrap:wrap}
+    .price-row{display:flex;flex-direction:column;gap:.18rem;flex-shrink:1;min-width:0}
     .product-price{font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;letter-spacing:-.01em}
     .add-btn{padding:.5rem 1.125rem;background:var(--blue);color:#000;border:none;border-radius:var(--radius);cursor:pointer;font-family:var(--font-raj);font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:all .2s;white-space:nowrap;flex-shrink:0}
     .add-btn.btn-specs{background:rgba(0,212,255,.12);color:var(--blue);border:1px solid rgba(0,212,255,.4)}
@@ -467,14 +468,14 @@
     .product-weight-badge{display:inline-flex;align-items:center;gap:.25rem;margin:.3rem 0 .2rem;font-family:var(--font-raj);font-size:.65rem;font-weight:600;letter-spacing:.06em;color:rgba(255,255,255,.4)}
 
     /* ── DOUBLE PRICE ── */
-    .price-row{display:flex;flex-direction:column;gap:.18rem}
+    .price-row{display:flex;flex-direction:column;gap:.18rem;flex-shrink:1;min-width:0}
     .price-in-stock{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;letter-spacing:-.01em;color:var(--text)}
     .price-in-stock.striked{text-decoration:line-through;opacity:.45;font-size:.92rem}
     .price-in-stock-discounted{font-family:'JetBrains Mono',monospace;font-size:1.2rem;font-weight:700;color:var(--red)}
-    .price-preorder-tag{display:inline-flex;align-items:center;gap:.35rem;background:linear-gradient(135deg,rgba(255,176,32,.14),rgba(255,140,0,.06));border:1px solid rgba(255,176,32,.35);border-radius:6px;padding:.22rem .55rem;margin-top:.1rem;width:fit-content}
+    .price-preorder-tag{display:inline-flex;align-items:center;gap:.35rem;background:linear-gradient(135deg,rgba(255,176,32,.14),rgba(255,140,0,.06));border:1px solid rgba(255,176,32,.35);border-radius:6px;padding:.22rem .55rem;margin-top:.1rem;width:fit-content;white-space:nowrap}
     .price-preorder-tag::before{content:'⏳';font-size:.65rem;line-height:1}
     .price-preorder-label{font-family:var(--font-raj);font-size:.65rem;font-weight:700;color:rgba(255,176,32,.7);letter-spacing:.08em;text-transform:uppercase}
-    .price-preorder-val{font-family:'JetBrains Mono',monospace;font-size:.95rem;font-weight:700;color:var(--amber);letter-spacing:-.01em}
+    .price-preorder-val{font-family:'JetBrains Mono',monospace;font-size:.95rem;font-weight:700;color:var(--amber);letter-spacing:-.01em;white-space:nowrap}
     .badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.8}
 
     .state-box{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:1rem;padding:5rem 2rem;color:var(--text3)}
@@ -727,7 +728,7 @@
       <p class="nav-footer-label" id="navFadeItem1">Контакты</p>
       <div class="nav-socials" id="navFadeItem2">
         <a href="tel:+78001234567" class="nav-social-link">+7 (800) 123-45-67</a>
-        <a href="mailto:info@fmtun.ru">info@fmtun.ru</a>
+        <a href="mailto:ilya.georgievskiy@gmail.com">ilya.georgievskiy@gmail.com</a>
         <a href="https://t.me/fmtun" class="nav-social-link">Telegram</a>
       </div>
     </div>
@@ -835,7 +836,7 @@
         <div class="footer-col-title">Контакты</div>
         <div style="font-family:var(--font-raj);font-size:.875rem;color:var(--text2);line-height:2;letter-spacing:.04em">
           <div>📞 8 (800) 123-45-67</div>
-          <div>✉️ <a href="mailto:info@fmtun.ru">info@fmtun.ru</a></div>
+          <div>✉️ <a href="mailto:ilya.georgievskiy@gmail.com">ilya.georgievskiy@gmail.com</a></div>
           <div>🕐 Ежедневно 9:00–21:00</div>
         </div>
       </div>

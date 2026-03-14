@@ -234,6 +234,8 @@ class OrderCreate(BaseModel):
     comment: Optional[str] = None
     # Тип заказа для товаров с предзаказом, если не сохранён в cart_items
     items_overrides: Optional[list] = None
+    # Промокод (опционально)
+    promo_code: Optional[str] = None
 
 
 class PaymentCreate(BaseModel):
@@ -839,7 +841,40 @@ class Database:
                 print("✅ Миграция v24: item_comment в order_items")
             except Exception as e:
                 print(f"⚠️ Миграция v24 (item_comment): {e}")
-            print("✅ v24: promo_codes, auto_discount, item_comment готовы")
+            # ── v25: Промокод в заказе, вишлист ──
+            try:
+                await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS promo_code VARCHAR(50) DEFAULT NULL")
+                await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS promo_discount DECIMAL(10,2) DEFAULT 0")
+                print("✅ Миграция v25: promo_code, promo_discount в orders")
+            except Exception as e:
+                print(f"⚠️ Миграция v25 (promo): {e}")
+            # ── v25: Вишлист ──
+            await conn.execute('''
+                CREATE TABLE IF NOT EXISTS wishlists (
+                    id SERIAL PRIMARY KEY,
+                    user_id UUID NOT NULL,
+                    product_id INTEGER NOT NULL,
+                    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(user_id, product_id),
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+                )
+            ''')
+            # ── v25: Отзывы на товары ──
+            await conn.execute('''
+                CREATE TABLE IF NOT EXISTS product_reviews (
+                    id SERIAL PRIMARY KEY,
+                    product_id INTEGER NOT NULL,
+                    user_id UUID NOT NULL,
+                    rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+                    review_text TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(product_id, user_id),
+                    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            ''')
+            print("✅ v25: promo в orders, wishlists, product_reviews готовы")
 
             # --- Начальные категории ---
             for slug, name, emoji, desc in DEFAULT_CATEGORIES:
@@ -1220,7 +1255,7 @@ async def register(user_data: UserRegister):
             await conn.execute(
                 "INSERT INTO users (id,username,email,full_name,phone,password_hash,privacy_accepted,privacy_accepted_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
                 user_id, user_data.username, user_data.email, user_data.full_name,
-                user_data.phone, password_hash, True, datetime.utcnow()
+                user_data.phone, password_hash, True, datetime.now(timezone.utc)
             )
             return {"message": "Аккаунт создан успешно", "user_id": user_id}
     except HTTPException:
@@ -2097,11 +2132,37 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(get_curre
                 price = round(raw * (1 - eff_disc / 100)) if eff_disc > 0 else raw
                 total += price * i['quantity']
 
+            # Применяем промокод (если передан)
+            promo_discount = 0.0
+            applied_promo = None
+            if order_data.promo_code:
+                promo_code_upper = order_data.promo_code.strip().upper()
+                promo_row = await conn.fetchrow(
+                    "SELECT * FROM promo_codes WHERE code=$1 AND is_active=TRUE", promo_code_upper
+                )
+                if promo_row:
+                    from datetime import datetime as _dt
+                    promo_expired = promo_row['expires_at'] and promo_row['expires_at'] < _dt.now(timezone.utc).replace(tzinfo=None)
+                    promo_exhausted = promo_row['max_uses'] and promo_row['used_count'] >= promo_row['max_uses']
+                    if not promo_expired and not promo_exhausted:
+                        if promo_row['discount_type'] == 'percent':
+                            promo_discount = round(total * float(promo_row['discount_value']) / 100, 2)
+                        else:
+                            promo_discount = min(float(promo_row['discount_value']), total)
+                        applied_promo = promo_code_upper
+                        # Инкрементируем счётчик использований
+                        await conn.execute(
+                            "UPDATE promo_codes SET used_count = used_count + 1 WHERE id = $1",
+                            promo_row['id']
+                        )
+            total_final = max(0.0, total - promo_discount)
+
             order_id = await conn.fetchval('''
-                INSERT INTO orders (user_id, total_amount, delivery_address, comment, status, payment_status)
-                VALUES ($1, $2, $3, $4, 'created', 'pending')
+                INSERT INTO orders (user_id, total_amount, delivery_address, comment, status, payment_status, promo_code, promo_discount)
+                VALUES ($1, $2, $3, $4, 'created', 'pending', $5, $6)
                 RETURNING id
-            ''', user_id, total, order_data.delivery_address, order_data.comment)
+            ''', user_id, total_final, order_data.delivery_address, order_data.comment,
+                applied_promo, promo_discount)
 
             for item in cart_items:
                 # Определяем название и цену товара
@@ -2168,7 +2229,9 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(get_curre
             return {
                 "message": "Заказ создан",
                 "order_id": order_id,
-                "total": total,
+                "total": total_final,
+                "promo_discount": promo_discount,
+                "promo_code": applied_promo,
                 "status": "created"
             }
     except HTTPException:
@@ -2235,6 +2298,51 @@ async def get_active_orders_count():
             return {"count": count or 0}
     except Exception as e:
         logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.post("/api/orders/{order_id}/cancel")
+async def cancel_order(order_id: int, user_id: str = Depends(get_current_user)):
+    """Отменить заказ пользователем (только статусы created и processing)"""
+    try:
+        async with db.pool.acquire() as conn:
+            order = await conn.fetchrow(
+                "SELECT id, status, user_id FROM orders WHERE id=$1 AND user_id=$2",
+                order_id, user_id
+            )
+            if not order:
+                raise HTTPException(status_code=404, detail="Заказ не найден")
+            if order['status'] not in ('created', 'processing'):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Нельзя отменить заказ в статусе «{}»".format(order['status'])
+                )
+            # Возвращаем сток для товаров in_stock
+            items = await conn.fetch(
+                "SELECT product_id, specification_id, quantity, order_type FROM order_items WHERE order_id=$1",
+                order_id
+            )
+            for item in items:
+                if item['order_type'] != 'preorder':
+                    if item['specification_id']:
+                        await conn.execute(
+                            "UPDATE product_specifications SET stock = stock + $1 WHERE id = $2",
+                            item['quantity'], item['specification_id']
+                        )
+                    else:
+                        await conn.execute(
+                            "UPDATE products SET stock = stock + $1 WHERE id = $2",
+                            item['quantity'], item['product_id']
+                        )
+            await conn.execute(
+                "UPDATE orders SET status='cancelled', updated_at=CURRENT_TIMESTAMP WHERE id=$1",
+                order_id
+            )
+            return {"message": "Заказ отменён", "order_id": order_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("cancel_order error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
@@ -2845,6 +2953,20 @@ async def create_order_manual(request: Request, admin=Depends(verify_admin)):
                     float(item['weight_kg']) if item.get('weight_kg') else None,
                     item.get('comment') or None
                 )
+                # Декрементируем остаток для товаров в наличии
+                if item.get('order_type', 'in_stock') != 'preorder' and item.get('product_id'):
+                    spec_id = item.get('specification_id')
+                    qty = int(item.get('quantity', 1))
+                    if spec_id:
+                        await conn.execute(
+                            "UPDATE product_specifications SET stock = GREATEST(stock - $1, 0) WHERE id = $2",
+                            qty, spec_id
+                        )
+                    else:
+                        await conn.execute(
+                            "UPDATE products SET stock = GREATEST(stock - $1, 0) WHERE id = $2",
+                            qty, item['product_id']
+                        )
             return {"success": True, "order_id": order_id, "total": total}
     except HTTPException:
         raise
@@ -3828,8 +3950,7 @@ async def validate_promo_code(request: Request, user_id: str = Depends(get_curre
             )
             if not row:
                 raise HTTPException(status_code=404, detail="Промокод не найден или неактивен")
-            from datetime import datetime as dt
-            if row['expires_at'] and row['expires_at'] < dt.utcnow():
+            if row['expires_at'] and row['expires_at'] < datetime.now(timezone.utc).replace(tzinfo=None):
                 raise HTTPException(status_code=410, detail="Срок действия промокода истёк")
             if row['max_uses'] and row['used_count'] >= row['max_uses']:
                 raise HTTPException(status_code=410, detail="Промокод исчерпан")
@@ -3852,6 +3973,270 @@ async def validate_promo_code(request: Request, user_id: str = Depends(get_curre
     except Exception as e:
         logger.error("validate_promo error: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================
+# ВИШЛИСТ (избранное)
+# ============================================================
+
+@app.get("/api/wishlist")
+async def get_wishlist(user_id: str = Depends(get_current_user)):
+    """Получить список избранного пользователя"""
+    try:
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch('''
+                SELECT w.product_id, p.name, p.price, p.image_url, p.in_stock, p.preorder,
+                       p.discount_percent, w.added_at
+                FROM wishlists w
+                JOIN products p ON p.id = w.product_id
+                WHERE w.user_id = $1
+                ORDER BY w.added_at DESC
+            ''', user_id)
+            result = []
+            for r in rows:
+                d = dict(r)
+                d['price'] = float(d['price'])
+                if isinstance(d.get('added_at'), datetime):
+                    d['added_at'] = d['added_at'].isoformat()
+                result.append(d)
+            return result
+    except Exception as e:
+        logger.error("get_wishlist error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.post("/api/wishlist/{product_id}")
+async def add_to_wishlist(product_id: int, user_id: str = Depends(get_current_user)):
+    """Добавить товар в избранное"""
+    try:
+        async with db.pool.acquire() as conn:
+            exists = await conn.fetchval("SELECT id FROM products WHERE id=$1", product_id)
+            if not exists:
+                raise HTTPException(status_code=404, detail="Товар не найден")
+            await conn.execute(
+                "INSERT INTO wishlists (user_id, product_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+                user_id, product_id
+            )
+            return {"message": "Добавлено в избранное"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("add_to_wishlist error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.delete("/api/wishlist/{product_id}")
+async def remove_from_wishlist(product_id: int, user_id: str = Depends(get_current_user)):
+    """Убрать товар из избранного"""
+    try:
+        async with db.pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM wishlists WHERE user_id=$1 AND product_id=$2",
+                user_id, product_id
+            )
+            return {"message": "Удалено из избранного"}
+    except Exception as e:
+        logger.error("remove_from_wishlist error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+# ============================================================
+# ОТЗЫВЫ НА ТОВАРЫ
+# ============================================================
+
+@app.get("/api/products/{product_id}/reviews")
+async def get_product_reviews(product_id: int):
+    """Получить отзывы на товар"""
+    try:
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch('''
+                SELECT r.id, r.rating, r.review_text, r.created_at,
+                       u.username
+                FROM product_reviews r
+                JOIN users u ON u.id = r.user_id
+                WHERE r.product_id = $1
+                ORDER BY r.created_at DESC
+            ''', product_id)
+            result = []
+            for r in rows:
+                d = dict(r)
+                if isinstance(d.get('created_at'), datetime):
+                    d['created_at'] = d['created_at'].isoformat()
+                result.append(d)
+            return result
+    except Exception as e:
+        logger.error("get_reviews error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.post("/api/products/{product_id}/reviews")
+async def add_product_review(product_id: int, request: Request, user_id: str = Depends(get_current_user)):
+    """Добавить отзыв на товар (один отзыв на пользователя)"""
+    try:
+        data = await request.json()
+        rating = int(data.get('rating', 0))
+        review_text = str(data.get('review_text', '')).strip()[:2000]
+        if not 1 <= rating <= 5:
+            raise HTTPException(status_code=400, detail="Рейтинг должен быть от 1 до 5")
+        async with db.pool.acquire() as conn:
+            exists = await conn.fetchval("SELECT id FROM products WHERE id=$1", product_id)
+            if not exists:
+                raise HTTPException(status_code=404, detail="Товар не найден")
+            # Проверяем что пользователь покупал этот товар
+            purchased = await conn.fetchval('''
+                SELECT 1 FROM order_items oi
+                JOIN orders o ON o.id = oi.order_id
+                WHERE o.user_id=$1 AND oi.product_id=$2 AND o.status='completed'
+                LIMIT 1
+            ''', user_id, product_id)
+            if not purchased:
+                raise HTTPException(status_code=403, detail="Отзыв можно оставить только после покупки")
+            try:
+                review_id = await conn.fetchval('''
+                    INSERT INTO product_reviews (product_id, user_id, rating, review_text)
+                    VALUES ($1, $2, $3, $4) RETURNING id
+                ''', product_id, user_id, rating, review_text or None)
+            except asyncpg.UniqueViolationError:
+                raise HTTPException(status_code=409, detail="Вы уже оставили отзыв на этот товар")
+            return {"message": "Отзыв добавлен", "review_id": review_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("add_review error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.get("/api/products/{product_id}/reviews/stats")
+async def get_product_review_stats(product_id: int):
+    """Получить статистику отзывов товара (средний рейтинг, количество)"""
+    try:
+        async with db.pool.acquire() as conn:
+            row = await conn.fetchrow('''
+                SELECT COUNT(*) as total, ROUND(AVG(rating)::numeric, 1) as avg_rating
+                FROM product_reviews WHERE product_id=$1
+            ''', product_id)
+            return {
+                "total": int(row['total']),
+                "avg_rating": float(row['avg_rating']) if row['avg_rating'] else None
+            }
+    except Exception as e:
+        logger.error("review_stats error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+# ============================================================
+# ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ (обновление данных)
+# ============================================================
+
+@app.put("/api/me")
+async def update_profile(request: Request, user_id: str = Depends(get_current_user)):
+    """Обновить профиль пользователя (имя, телефон)"""
+    try:
+        data = await request.json()
+        full_name = str(data.get('full_name', '')).strip()
+        phone = str(data.get('phone', '')).strip()
+        if not full_name:
+            raise HTTPException(status_code=400, detail="Имя не может быть пустым")
+        async with db.pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE users SET full_name=$1, phone=$2 WHERE id=$3",
+                full_name, phone or None, user_id
+            )
+        return {"message": "Профиль обновлён"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("update_profile error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.put("/api/me/password")
+async def change_password(request: Request, user_id: str = Depends(get_current_user)):
+    """Изменить пароль пользователя"""
+    try:
+        data = await request.json()
+        old_password = str(data.get('old_password', ''))
+        new_password = str(data.get('new_password', ''))
+        if len(new_password) < 8:
+            raise HTTPException(status_code=400, detail="Новый пароль должен быть не менее 8 символов")
+        async with db.pool.acquire() as conn:
+            row = await conn.fetchrow("SELECT password_hash FROM users WHERE id=$1", user_id)
+            if not row or not PasswordHasher.verify(old_password, row['password_hash']):
+                raise HTTPException(status_code=400, detail="Неверный текущий пароль")
+            new_hash = PasswordHasher.hash(new_password)
+            await conn.execute("UPDATE users SET password_hash=$1 WHERE id=$2", new_hash, user_id)
+        return {"message": "Пароль изменён"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("change_password error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+# ============================================================
+# СТРАНИЦА ЛИЧНОГО КАБИНЕТА
+# ============================================================
+
+@app.get("/account", response_class=HTMLResponse)
+async def account_page(request: Request):
+    """Страница личного кабинета"""
+    return templates.TemplateResponse("account.html", {"request": request})
+
+
+# ============================================================
+# ПОХОЖИЕ ТОВАРЫ
+# ============================================================
+
+@app.get("/api/products/{product_id}/similar")
+async def get_similar_products(product_id: int):
+    """Получить похожие товары из той же категории"""
+    try:
+        async with db.pool.acquire() as conn:
+            product = await conn.fetchrow("SELECT category FROM products WHERE id=$1", product_id)
+            if not product:
+                raise HTTPException(status_code=404, detail="Товар не найден")
+            rows = await conn.fetch('''
+                SELECT id, name, price, image_url, in_stock, preorder, discount_percent
+                FROM products
+                WHERE category=$1 AND id != $2
+                ORDER BY RANDOM()
+                LIMIT 4
+            ''', product['category'], product_id)
+            result = []
+            for r in rows:
+                d = dict(r)
+                d['price'] = float(d['price'])
+                result.append(d)
+            return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("similar_products error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+# ============================================================
+# 404 HANDLER
+# ============================================================
+
+from fastapi.exceptions import HTTPException as FastAPIHTTPException
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+@app.exception_handler(StarletteHTTPException)
+async def custom_404_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404:
+        try:
+            return templates.TemplateResponse(
+                "404.html",
+                {"request": request},
+                status_code=404
+            )
+        except Exception:
+            return HTMLResponse(
+                content="<h1>404 — Страница не найдена</h1><a href='/'>На главную</a>",
+                status_code=404
+            )
+    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
 
 
 if __name__ == "__main__":

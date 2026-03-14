@@ -450,6 +450,10 @@
   <div class="container"><div class="header-inner">
     <a href="/" class="logo"><div class="logo-bolt">&#9889;</div><span class="logo-text">Fm <span>TuN</span></span></a>
     <div class="header-actions">
+      <form action="/products" method="get" style="display:flex;align-items:center;position:relative;" onsubmit="var v=this.querySelector('input').value.trim();if(!v){window.location.href='/products';return false;}">
+        <input type="search" name="search" placeholder="Поиск…" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.4rem .75rem .4rem 2rem;color:var(--text);font-size:.8125rem;font-family:var(--fb);outline:none;width:140px;transition:all .2s;" onfocus="this.style.borderColor='var(--blue)';this.style.width='180px';" onblur="this.style.borderColor='var(--border)';this.style.width='140px';">
+        <span style="position:absolute;left:.625rem;color:var(--text3);font-size:.875rem;pointer-events:none">🔍</span>
+      </form>
       <a href="/cart" class="btn btn-ghost btn-sm cart-btn-header" id="cartBtn" style="position:relative">🛒 Корзина<span class="cart-count" id="cartCount">0</span></a>
       <div class="user-dropdown-wrap" id="userMenu"></div>
       <button data-menu-toggle class="menu-button">
@@ -833,6 +837,7 @@ function renderUser(){
             '<div class="user-info-name">'+me.username+'</div>'+
             '<div class="user-info-email">'+me.email+'</div>'+
           '</div>'+
+          '<a href="/account" class="drop-item">👤 Личный кабинет</a>'+
           (me.is_admin?'<a href="/admin" class="drop-item">⚙ Admin</a>':'')+
           '<button class="drop-item danger" id="trackLogoutBtn">← Выйти</button>'+
         '</div>'+
@@ -1019,6 +1024,10 @@ function renderOrders(orders){
           '</div>';
       });
     }
+    var canCancel = (o.status === 'created' || o.status === 'processing');
+    var cancelBtn = canCancel
+      ? '<button class="btn btn-ghost btn-sm cancel-order-btn" data-order-id="'+o.id+'" style="color:var(--red);border-color:var(--red);opacity:.75;font-size:.75rem;padding:.3rem .7rem;" onclick="event.stopPropagation();cancelOrder('+o.id+')">✕ Отменить</button>'
+      : '';
     html+=
       '<div class="order-card" id="order-'+o.id+'">'+
         '<div class="order-card-head" data-toggle-order="'+o.id+'">'+
@@ -1027,7 +1036,8 @@ function renderOrders(orders){
             badge+
             '<span class="order-date">'+fmtDate(o.created_at)+'</span>'+
           '</div>'+
-          '<div style="display:flex;align-items:center;gap:1rem">'+
+          '<div style="display:flex;align-items:center;gap:.75rem">'+
+            cancelBtn+
             '<span class="order-total">'+fmt(o.total_amount)+' ₽</span>'+
             '<svg class="order-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
           '</div>'+
@@ -1046,6 +1056,16 @@ function renderOrders(orders){
 function toggleOrder(id){
   var card=document.getElementById('order-'+id);
   if(card)card.classList.toggle('expanded');
+}
+
+async function cancelOrder(orderId){
+  if(!confirm('Отменить заказ #'+orderId+'? Это действие нельзя отменить.')) return;
+  try{
+    var r=await fetch('/api/orders/'+orderId+'/cancel',{method:'POST',credentials:'include'});
+    var d=await r.json();
+    if(r.ok){toast('success','Заказ #'+orderId+' отменён');loadOrders();}
+    else toast('error',d.detail||'Ошибка при отмене заказа');
+  }catch(e){toast('error','Ошибка сети');}
 }
 
 /* =========================================================

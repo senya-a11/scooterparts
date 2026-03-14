@@ -189,41 +189,6 @@ def _send_telegram_sync(text: str):
         logger.warning("Telegram notification failed: %s", e)
 
 
-def _send_verification_email_sync(to_email: str, token: str):
-    """Отправить письмо с ссылкой для подтверждения email."""
-    if not SMTP_HOST or not SMTP_USER or not SMTP_PASS:
-        return
-    verify_url = f"{BASE_URL}/api/verify-email?token={token}"
-    body = f"""<html><body style="background:#080A0F;padding:2rem;margin:0">
-<div style="max-width:540px;margin:0 auto;background:#0D1018;border-radius:12px;padding:2rem;border:1px solid rgba(255,255,255,.06);font-family:sans-serif;color:#F0F4F8">
-  <h1 style="color:#00D4FF;margin-top:0;font-size:1.5rem">⚡ Fm TuN</h1>
-  <p style="font-size:1rem">Вы зарегистрировались на <strong>fmtun.ru</strong>. Подтвердите свой email, чтобы войти в аккаунт:</p>
-  <div style="text-align:center;margin:1.5rem 0">
-    <a href="{verify_url}" style="background:#00D4FF;color:#080A0F;padding:.75rem 2rem;border-radius:8px;text-decoration:none;font-weight:700;font-size:1rem">Подтвердить email</a>
-  </div>
-  <p style="color:#7B8599;font-size:.85rem">Ссылка действительна 24 часа. Если вы не регистрировались — просто проигнорируйте это письмо.</p>
-  <hr style="border:none;border-top:1px solid rgba(255,255,255,.06);margin:1.5rem 0">
-  <p style="color:#7B8599;font-size:.8rem">© Fm TuN. Автоматическое уведомление — не отвечайте на это письмо.</p>
-</div></body></html>"""
-    try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = "Fm TuN — Подтвердите ваш email"
-        msg["From"] = SMTP_FROM
-        msg["To"] = to_email
-        msg.attach(MIMEText(body, "html", "utf-8"))
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as srv:
-            srv.ehlo()
-            srv.starttls()
-            srv.login(SMTP_USER, SMTP_PASS)
-            srv.sendmail(SMTP_FROM, to_email, msg.as_string())
-    except Exception as e:
-        logger.warning("Verification email to %s failed: %s", to_email, e)
-
-
-async def send_verification_email(to_email: str, token: str):
-    await asyncio.to_thread(_send_verification_email_sync, to_email, token)
-
-
 async def send_order_telegram(order_id: int, status: str, username: str, email: str, delay_note: str | None = None):
     label = ORDER_STATUS_LABELS.get(status, status)
     note = f"\n⚠️ <i>{delay_note}</i>" if delay_note else ""
@@ -1017,17 +982,7 @@ class Database:
                 )
             ''')
 
-            # ── v26: email-верификация + поля заказа ──
-            try:
-                await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE")
-                await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR(100)")
-                await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_sent_at TIMESTAMP")
-                # Существующие admin-пользователи считаются верифицированными
-                await conn.execute("UPDATE users SET email_verified=TRUE WHERE is_admin=TRUE AND email_verified=FALSE")
-                print("✅ Миграция v26: email_verified в users")
-            except Exception as e:
-                print(f"⚠️ Миграция v26 (users email_verified): {e}")
-
+            # ── v26: поля заказа ──
             try:
                 await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name VARCHAR(200)")
                 await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_cost DECIMAL(12,2) DEFAULT 0")
@@ -1411,15 +1366,12 @@ async def register(user_data: UserRegister):
 
             user_id = str(uuid4())
             password_hash = hasher.get_password_hash(user_data.password)
-            verification_token = secrets.token_urlsafe(32)
             await conn.execute(
-                "INSERT INTO users (id,username,email,full_name,phone,password_hash,privacy_accepted,privacy_accepted_at,email_verification_token,email_verification_sent_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
+                "INSERT INTO users (id,username,email,full_name,phone,password_hash,privacy_accepted,privacy_accepted_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
                 user_id, user_data.username, user_data.email, user_data.full_name,
-                user_data.phone, password_hash, True, datetime.utcnow(),
-                verification_token, datetime.utcnow()
+                user_data.phone, password_hash, True, datetime.utcnow()
             )
-            asyncio.create_task(send_verification_email(user_data.email, verification_token))
-            return {"message": "Аккаунт создан. Проверьте email для подтверждения.", "user_id": user_id}
+            return {"message": "Аккаунт создан успешно", "user_id": user_id}
     except HTTPException:
         raise
     except Exception as e:
@@ -1432,19 +1384,12 @@ async def login(login_data: UserLogin, response: Response):
     try:
         async with db.pool.acquire() as conn:
             user = await conn.fetchrow(
-                "SELECT id,username,email,full_name,password_hash,is_admin,is_manager,personal_discount,email_verified FROM users WHERE username=$1",
+                "SELECT id,username,email,full_name,password_hash,is_admin,is_manager,personal_discount FROM users WHERE username=$1",
                 login_data.username
             )
             if not user or not hasher.verify_password(login_data.password, user['password_hash']):
                 logger.warning("Failed login attempt for username: %s", login_data.username)
                 raise HTTPException(status_code=401, detail="Неверное имя пользователя или пароль")
-
-            # Блокируем вход до подтверждения email (кроме admin)
-            if not user.get('email_verified') and not user.get('is_admin'):
-                raise HTTPException(
-                    status_code=403,
-                    detail="Подтвердите email перед входом. Проверьте вашу почту или запросите новое письмо."
-                )
 
             user_id = str(user['id'])
             is_manager = bool(user.get('is_manager', False))
@@ -1489,79 +1434,6 @@ async def logout(response: Response):
     # csrf_token тоже удаляем — устаревший токен в браузере не нужен
     response.delete_cookie("csrf_token", path="/", secure=_is_https, samesite="strict")
     return {"message": "Выход выполнен"}
-
-
-# ─── Верификация email ────────────────────────────────────────────────────────
-@app.get("/api/verify-email", response_class=HTMLResponse)
-async def verify_email(token: str = ""):
-    """Подтвердить email по токену из письма."""
-    error_html = lambda msg: f"""<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>Ошибка верификации</title>
-<style>body{{background:#080A0F;color:#F0F4F8;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}}
-.box{{background:#0D1018;border:1px solid rgba(255,80,80,.3);border-radius:12px;padding:2rem;max-width:480px;text-align:center}}
-h2{{color:#FF5050}}a{{color:#00D4FF}}</style></head>
-<body><div class="box"><h2>⚠️ Ошибка</h2><p>{msg}</p><a href="/auth">← Вернуться ко входу</a></div></body></html>"""
-    ok_html = """<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>Email подтверждён</title>
-<meta http-equiv="refresh" content="3;url=/auth?verified=1">
-<style>body{background:#080A0F;color:#F0F4F8;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
-.box{background:#0D1018;border:1px solid rgba(0,212,255,.3);border-radius:12px;padding:2rem;max-width:480px;text-align:center}
-h2{color:#00D4FF}a{color:#00D4FF}</style></head>
-<body><div class="box"><h2>✅ Email подтверждён!</h2><p>Аккаунт активирован. Перенаправляем на страницу входа...</p>
-<a href="/auth">Войти →</a></div></body></html>"""
-    if not token:
-        return HTMLResponse(error_html("Неверная или пустая ссылка верификации."), status_code=400)
-    try:
-        async with db.pool.acquire() as conn:
-            user = await conn.fetchrow(
-                "SELECT id, email_verified, email_verification_sent_at FROM users WHERE email_verification_token=$1",
-                token
-            )
-            if not user:
-                return HTMLResponse(error_html("Ссылка недействительна или уже была использована."), status_code=400)
-            if user['email_verified']:
-                return HTMLResponse(ok_html)
-            sent_at = user['email_verification_sent_at']
-            if sent_at and (datetime.utcnow() - sent_at).total_seconds() > 86400:
-                return HTMLResponse(error_html("Ссылка устарела (действительна 24 часа). <a href='/auth'>Запросите новую.</a>"), status_code=400)
-            await conn.execute(
-                "UPDATE users SET email_verified=TRUE, email_verification_token=NULL, email_verification_sent_at=NULL WHERE email_verification_token=$1",
-                token
-            )
-            return HTMLResponse(ok_html)
-    except Exception as e:
-        logger.error("verify_email error: %s", e, exc_info=True)
-        return HTMLResponse(error_html("Внутренняя ошибка. Попробуйте позже."), status_code=500)
-
-
-class ResendVerificationRequest(BaseModel):
-    email: str = Field(max_length=100)
-
-@app.post("/api/resend-verification")
-async def resend_verification(body: ResendVerificationRequest):
-    """Повторно отправить письмо с подтверждением email."""
-    try:
-        async with db.pool.acquire() as conn:
-            user = await conn.fetchrow(
-                "SELECT id, email, email_verified, email_verification_sent_at FROM users WHERE email=$1",
-                body.email
-            )
-            if not user or user['email_verified']:
-                # Не раскрываем информацию о наличии email в базе
-                return {"message": "Если этот email зарегистрирован и не подтверждён — письмо отправлено."}
-            sent_at = user['email_verification_sent_at']
-            if sent_at and (datetime.utcnow() - sent_at).total_seconds() < 300:
-                raise HTTPException(status_code=429, detail="Слишком часто. Подождите 5 минут перед повторной отправкой.")
-            new_token = secrets.token_urlsafe(32)
-            await conn.execute(
-                "UPDATE users SET email_verification_token=$1, email_verification_sent_at=$2 WHERE id=$3",
-                new_token, datetime.utcnow(), user['id']
-            )
-            asyncio.create_task(send_verification_email(user['email'], new_token))
-            return {"message": "Если этот email зарегистрирован и не подтверждён — письмо отправлено."}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("resend_verification error: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 # ─── 152-ФЗ: Логирование согласий на обработку Cookie ────────────────────────

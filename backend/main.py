@@ -107,6 +107,7 @@ PAYMENT_SHOP_ID    = os.getenv("PAYMENT_SHOP_ID", "")
 PAYMENT_SECRET_KEY = os.getenv("PAYMENT_SECRET_KEY", "")
 PAYMENT_CALLBACK_URL = os.getenv("PAYMENT_CALLBACK_URL", "https://your-domain.com/api/payment/callback")
 YM_COUNTER_ID = os.getenv("YM_COUNTER_ID", "")
+BASE_URL = os.getenv("BASE_URL", "https://scooterparts.onrender.com")
 
 # ── Email-уведомления ──
 SMTP_HOST = os.getenv("SMTP_HOST", "")
@@ -981,6 +982,14 @@ class Database:
                 )
             ''')
 
+            # ── v26: поля заказа ──
+            try:
+                await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name VARCHAR(200)")
+                await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_cost DECIMAL(12,2) DEFAULT 0")
+                print("✅ Миграция v26: customer_name, delivery_cost в orders")
+            except Exception as e:
+                print(f"⚠️ Миграция v26 (orders): {e}")
+
             # --- Начальные категории ---
             for slug, name, emoji, desc in DEFAULT_CATEGORIES:
                 exists = await conn.fetchval(
@@ -1360,7 +1369,7 @@ async def register(user_data: UserRegister):
             await conn.execute(
                 "INSERT INTO users (id,username,email,full_name,phone,password_hash,privacy_accepted,privacy_accepted_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
                 user_id, user_data.username, user_data.email, user_data.full_name,
-                user_data.phone, password_hash, True, datetime.now(timezone.utc)
+                user_data.phone, password_hash, True, datetime.utcnow()
             )
             return {"message": "Аккаунт создан успешно", "user_id": user_id}
     except HTTPException:
@@ -3044,14 +3053,17 @@ async def create_order_manual(request: Request, admin=Depends(verify_admin)):
         items = data.get('items', [])
         comment = data.get('comment', '')
         address = data.get('address', '')
+        customer_name = data.get('customer_name', '')
+        delivery_cost = float(data.get('delivery_cost', 0) or 0)
         if not items:
             raise HTTPException(status_code=400, detail="Нет позиций")
-        total = sum(float(i.get('price', 0)) * int(i.get('quantity', 1)) for i in items)
+        items_total = sum(float(i.get('price', 0)) * int(i.get('quantity', 1)) for i in items)
+        total = items_total + delivery_cost
         async with db.pool.acquire() as conn:
             order_id = await conn.fetchval(
-                """INSERT INTO orders (user_id, status, total_amount, delivery_address, comment, payment_status)
-                   VALUES ($1, 'created', $2, $3, $4, 'pending') RETURNING id""",
-                user_id, total, address, comment
+                """INSERT INTO orders (user_id, status, total_amount, delivery_address, comment, payment_status, customer_name, delivery_cost)
+                   VALUES ($1, 'created', $2, $3, $4, 'pending', $5, $6) RETURNING id""",
+                user_id, total, address, comment, customer_name or None, delivery_cost
             )
             for item in items:
                 await conn.execute(
@@ -3086,6 +3098,70 @@ async def create_order_manual(request: Request, admin=Depends(verify_admin)):
         raise
     except Exception as e:
         logger.error("Manual order error: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/admin/users")
+async def admin_users_list(search: str = "", page: int = 1, limit: int = 50, admin=Depends(verify_admin)):
+    """Список всех пользователей с поиском по ФИО / username / email."""
+    try:
+        offset = (page - 1) * limit
+        pattern = f"%{search}%"
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch(
+                """SELECT id, username, email, full_name, phone, is_admin, is_manager,
+                          COALESCE(email_verified, FALSE) AS email_verified,
+                          personal_discount, created_at
+                   FROM users
+                   WHERE ($1 = '' OR full_name ILIKE $1 OR username ILIKE $1 OR email ILIKE $1)
+                   ORDER BY created_at DESC
+                   LIMIT $2 OFFSET $3""",
+                pattern, limit, offset
+            )
+            total = await conn.fetchval(
+                "SELECT COUNT(*) FROM users WHERE ($1 = '' OR full_name ILIKE $1 OR username ILIKE $1 OR email ILIKE $1)",
+                pattern
+            )
+        return {
+            "users": [
+                {
+                    "id": str(r['id']),
+                    "username": r['username'],
+                    "email": r['email'],
+                    "full_name": r['full_name'],
+                    "phone": r['phone'],
+                    "is_admin": r['is_admin'],
+                    "is_manager": r['is_manager'],
+                    "email_verified": r['email_verified'],
+                    "personal_discount": int(r['personal_discount'] or 0),
+                    "created_at": r['created_at'].isoformat() if r['created_at'] else None,
+                }
+                for r in rows
+            ],
+            "total": total,
+            "page": page,
+            "limit": limit,
+        }
+    except Exception as e:
+        logger.error("admin_users_list error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/admin/users-autocomplete")
+async def admin_users_autocomplete(search: str = "", admin=Depends(verify_admin)):
+    """Автодополнение для поля ФИО при создании заказа вручную."""
+    try:
+        pattern = f"%{search}%"
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch(
+                """SELECT id, full_name, username, email FROM users
+                   WHERE full_name ILIKE $1 OR username ILIKE $1 OR email ILIKE $1
+                   ORDER BY full_name LIMIT 10""",
+                pattern
+            )
+        return [{"id": str(r['id']), "full_name": r['full_name'], "username": r['username'], "email": r['email']} for r in rows]
+    except Exception as e:
+        logger.error("users_autocomplete error: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -16,12 +16,16 @@
 
   <style nonce="{{ request.state.csp_nonce }}">
     /* ── LIGHT THEME OVERRIDES (early so they cascade correctly) ── */
-    [data-theme="light"] .imp-header { background:rgba(247,244,239,.92)!important; border-bottom-color:rgba(0,0,0,.1)!important; }
-    [data-theme="light"] .imp-nav-bg2 { background:#fff8f3; }
-    [data-theme="light"] .imp-nav-bg3 { background:#faf6f1; border-color:rgba(232,88,10,.12); }
-    [data-theme="light"] .imp-nav-close { color:var(--blue)!important; border-color:var(--blue)!important; }
-    [data-theme="light"] .imp-nav-heading { color:#1C1208; }
-    [data-theme="light"] .imp-logo-bolt { background:linear-gradient(135deg,#FFD700,#FFA500)!important; -webkit-background-clip:text!important; -webkit-text-fill-color:transparent!important; background-clip:text!important; filter:drop-shadow(0 0 8px rgba(255,180,0,.45))!important; }
+    [data-theme="light"] .header { background:rgba(247,244,239,.92)!important; border-bottom-color:rgba(0,0,0,.1)!important; }
+    [data-theme="light"] .nav-bg-panel.second { background:#fff8f3; }
+    [data-theme="light"] .nav-bg-panel:not(.first):not(.second) { background:#faf6f1; border-color:rgba(232,88,10,.12); }
+    [data-theme="light"] .nav-close-btn { color:var(--blue)!important; border-color:var(--blue)!important; }
+    [data-theme="light"] .nav-link-heading { color:#1C1208; }
+    [data-theme="light"] .logo-bolt { background:linear-gradient(135deg,#FFD700,#FFA500)!important; -webkit-background-clip:text!important; -webkit-text-fill-color:transparent!important; background-clip:text!important; filter:drop-shadow(0 0 8px rgba(255,180,0,.45))!important; }
+    [data-theme="light"] .nav-p-small { color:rgba(0,0,0,.28); }
+    [data-theme="light"] .nav-text-link { color:#6B5D4F; }
+    [data-theme="light"] .btn-ghost { border-color:rgba(0,0,0,.2); color:var(--text2); }
+    [data-theme="light"] .btn-ghost:hover { border-color:var(--border-h); color:var(--text); background:rgba(232,88,10,.06); }
     [data-theme="light"] .adv-card { background:var(--surface)!important; border-color:var(--border)!important; }
     [data-theme="light"] .adv-card:hover { background:rgba(232,88,10,.04)!important; border-color:rgba(232,88,10,.3)!important; }
     [data-theme="light"] .adv-card__num { color:rgba(232,88,10,.5); }
@@ -101,39 +105,44 @@
     @keyframes fadeInUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
 
     /* ── HEADER ── */
-    .imp-header { position:fixed; top:0; left:0; right:0; background:rgba(0,0,0,.78); backdrop-filter:blur(12px); border-bottom:1px solid rgba(255,255,255,.06); z-index:200; }
-    .imp-header-inner { display:flex; align-items:center; justify-content:space-between; height:64px; padding:0 1.5rem; max-width:1280px; margin:0 auto; }
-    .imp-logo { display:flex; align-items:center; gap:10px; font-family:'Syne',sans-serif; font-size:1.25rem; font-weight:800; color:var(--text); text-decoration:none; letter-spacing:.08em; }
-    .imp-logo-bolt { width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:22px; background:linear-gradient(135deg,#FFD700,#FFA500); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; filter:drop-shadow(0 0 8px rgba(255,190,0,.55)); }
-    .imp-logo span { color:var(--blue); }
-    .imp-menu-btn { display:flex; align-items:center; gap:.6rem; background:transparent; border:1px solid var(--border); border-radius:10px; color:var(--text); cursor:pointer; padding:.5rem 1rem; font-family:'Rajdhani',sans-serif; font-size:.9rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; transition:border-color .2s,background .2s; }
-    .imp-menu-btn:hover { border-color:rgba(0,212,255,.2); background:rgba(0,212,255,.05); }
-    .imp-menu-btn-txt { display:flex; flex-direction:column; align-items:flex-end; height:1.125em; overflow:hidden; }
-    .imp-menu-btn-txt p { font-size:1em; margin:0; line-height:1.125; }
-    .imp-menu-icon { width:1em; height:1em; flex-shrink:0; }
-
-    /* ── DRAWER ── */
-    .imp-nav-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:400; opacity:0; pointer-events:none; display:none; }
-    .imp-nav-drawer { position:fixed; right:0; top:0; bottom:0; width:36em; max-width:100%; z-index:500; display:none; flex-direction:column; }
-    .imp-nav-bg1,.imp-nav-bg2,.imp-nav-bg3 { position:absolute; inset:0; border-top-left-radius:1.25em; border-bottom-left-radius:1.25em; }
-    .imp-nav-bg1 { background:#00D4FF; } .imp-nav-bg2 { background:#0a1520; } .imp-nav-bg3 { background:#080A0F; border:1px solid rgba(0,212,255,.1); }
-    .imp-nav-inner { position:relative; z-index:1; display:flex; flex-direction:column; justify-content:space-between; height:100%; padding:5rem 0 2.5rem; }
-    .imp-nav-list { list-style:none; padding:0; margin:0; }
-    .imp-nav-item { overflow:hidden; }
-    .imp-nav-link { display:flex; align-items:baseline; justify-content:flex-end; gap:.5em; width:100%; padding:.4em 2rem; text-decoration:none; color:#F0F4F8; position:relative; text-align:right; }
-    [data-theme="light"] .imp-nav-link { color:#1C1208; }
-    .imp-nav-heading { font-family:'Syne',sans-serif; font-size:clamp(2rem,4.5vw,3rem); font-weight:800; line-height:.9; text-transform:uppercase; letter-spacing:-.02em; position:relative; z-index:1; transition:color .4s,transform .55s cubic-bezier(.65,.05,0,1); will-change:transform,color; }
-    .imp-nav-num { color:#00D4FF; font-family:'Rajdhani',sans-serif; font-size:.7em; font-weight:700; letter-spacing:.15em; text-transform:uppercase; position:relative; z-index:1; }
-    [data-theme="light"] .imp-nav-num { color:var(--blue); }
-    .imp-nav-bg-hover { position:absolute; inset:0; background:var(--blue-dim); transform:scale3d(1,0,1); transform-origin:50% 100%; transition:transform .55s cubic-bezier(.65,.05,0,1); z-index:0; }
-    .imp-nav-link:hover .imp-nav-heading { color:var(--blue); transform:translateY(-1em); }
-    .imp-nav-link:hover .imp-nav-bg-hover { transform:scale3d(1,1,1); }
-    .imp-nav-link.active .imp-nav-heading { color:var(--blue); }
-    .imp-nav-footer { padding:0 2rem; padding-top:1.5rem; border-top:1px solid rgba(255,255,255,.06); }
-    [data-theme="light"] .imp-nav-footer { border-top-color:rgba(0,0,0,.07); }
-    .imp-nav-close { position:absolute; top:1.5rem; right:2rem; background:none; border:1px solid rgba(255,255,255,.06); color:rgba(255,255,255,.5); width:2.5em; height:2.5em; border-radius:50%; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; z-index:2; transition:all .2s; }
-    .imp-nav-close:hover { border-color:#00D4FF; color:#00D4FF; }
-    @media(max-width:768px) { .imp-nav-drawer{width:100%;} .imp-nav-bg1,.imp-nav-bg2,.imp-nav-bg3{border-radius:0;} .imp-nav-heading{font-size:clamp(1.8rem,8vw,2.5rem);} .imp-menu-btn-txt{display:none!important;} }
+    .container{max-width:1280px;margin:0 auto;padding:0 1.5rem;}
+    .header{position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,.78);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);z-index:200;}
+    .header-inner{display:flex;align-items:center;justify-content:space-between;height:64px;gap:1rem;}
+    .logo{display:flex;align-items:center;gap:10px;font-family:'Syne',sans-serif;font-size:1.25rem;font-weight:800;color:var(--text);text-decoration:none;letter-spacing:.08em;flex-shrink:0;}
+    .logo-bolt{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:22px;background:linear-gradient(135deg,#FFD700,#FFA500);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 8px rgba(255,190,0,.55));}
+    .logo-text span{color:var(--blue);}
+    .header-actions{display:flex;align-items:center;gap:.75rem;}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.625rem 1.25rem;font-family:'Syne',sans-serif;font-size:.875rem;font-weight:700;border-radius:10px;border:none;cursor:pointer;text-decoration:none;transition:all .2s;white-space:nowrap;position:relative;overflow:hidden;letter-spacing:.03em;}
+    a.btn{text-decoration:none;} .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);}
+    .btn-ghost:hover{color:var(--text);border-color:var(--border-h);background:rgba(0,212,255,.04);} .btn-sm{padding:.375rem .875rem;font-size:.8125rem;}
+    .cart-count{position:absolute;top:-8px;right:-8px;background:#FF4757;color:#fff;font-size:.6875rem;font-weight:700;min-width:18px;height:18px;border-radius:9px;padding:0 4px;display:none;align-items:center;justify-content:center;}
+    .menu-button{display:flex;align-items:center;gap:.6rem;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;padding:.5rem 1rem;font-family:'Rajdhani',sans-serif;font-size:.9rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;transition:border-color .2s,background .2s;flex-shrink:0;}
+    .menu-button:hover{border-color:var(--border-h);background:rgba(0,212,255,.05);}
+    .menu-button-text{display:flex;flex-direction:column;align-items:flex-end;height:1.125em;overflow:hidden;} .menu-button-text p{font-size:1em;margin:0;line-height:1.125;} .menu-button-text p:nth-child(2){transform:translateY(100%);}
+    .menu-button-icon{width:1em;height:1em;flex-shrink:0;}
+    .user-dropdown-wrap{position:relative;} .user-btn{display:flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--text);padding:.375rem .875rem .375rem .5rem;border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif;font-size:.875rem;transition:all .2s;} .user-btn:hover{border-color:var(--border-h);}
+    .user-avatar{width:28px;height:28px;background:linear-gradient(135deg,var(--blue),#0099CC);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.8125rem;font-weight:700;color:#000;}
+    .user-dropdown{position:absolute;right:0;top:calc(100% + .5rem);background:#111520;border:1px solid var(--border-h);border-radius:16px;padding:.5rem;min-width:200px;box-shadow:0 12px 40px rgba(0,0,0,.6);opacity:0;pointer-events:none;transform:translateY(-6px);transition:all .2s;z-index:50;} .user-dropdown.active{opacity:1;pointer-events:all;transform:translateY(0);}
+    .user-info-box{padding:.5rem .75rem .75rem;border-bottom:1px solid var(--border);margin-bottom:.375rem;} .user-info-name{font-weight:700;font-size:.9375rem;} .user-info-email{font-size:.8125rem;color:var(--text2);}
+    .drop-item{display:flex;align-items:center;gap:.5rem;width:100%;padding:.5rem .75rem;background:none;border:none;border-radius:7px;color:var(--text2);cursor:pointer;font-family:'Inter',sans-serif;font-size:.875rem;text-decoration:none;transition:all .2s;} .drop-item:hover{background:rgba(255,255,255,.06);color:var(--text);} .drop-item.danger{color:#FF4757;} .drop-item.danger:hover{background:rgba(255,71,87,.12);}
+    /* ── NAV PANEL ── */
+    .nav-panel{position:fixed;inset:0;z-index:500;display:none;width:100%;height:100vh;}
+    .nav-overlay{position:absolute;inset:0;background:rgba(0,0,0,.55);cursor:pointer;z-index:0;}
+    .nav-menu{position:relative;width:36em;max-width:100%;height:100%;margin-left:auto;padding-top:5rem;padding-bottom:2rem;display:flex;flex-direction:column;overflow:auto;}
+    .nav-menu-bg{position:absolute;inset:0;z-index:0;} .nav-bg-panel{position:absolute;inset:0;background:#131820;border-top-left-radius:1.25em;border-bottom-left-radius:1.25em;} .nav-bg-panel.first{background:var(--blue);} .nav-bg-panel.second{background:#0a1520;}
+    .nav-menu-inner{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:space-between;height:100%;gap:3rem;}
+    .nav-menu-list{display:flex;flex-direction:column;width:100%;list-style:none;padding:0;margin:0;} .nav-menu-item{position:relative;overflow:hidden;} .nav-menu-item.mobile-only{display:none;}
+    .nav-menu-link{display:flex;align-items:baseline;justify-content:flex-end;gap:.5em;width:100%;padding:.4em 2rem;text-decoration:none;color:var(--text);cursor:pointer;background:none;border:none;text-align:right;}
+    .nav-link-heading{font-family:'Syne',sans-serif;font-size:clamp(2.8rem,8vw,4.4rem);font-weight:700;line-height:.9;text-transform:uppercase;letter-spacing:-.02em;position:relative;z-index:1;transition:color .4s ease,transform .65s cubic-bezier(.65,.05,0,1);white-space:nowrap;}
+    .nav-eyebrow{color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:.7em;font-weight:700;letter-spacing:.15em;text-transform:uppercase;position:relative;z-index:1;padding-bottom:.15em;}
+    .nav-link-bg{position:absolute;inset:0;background:rgba(0,212,255,.12);transform:scale3d(1,0,1);transform-origin:50% 100%;transition:transform .55s cubic-bezier(.65,.05,0,1);z-index:0;}
+    .nav-menu-link:hover .nav-link-heading{color:var(--blue);transform:translateY(-1em);} .nav-menu-link:hover .nav-link-bg{transform:scale3d(1,1,1);}
+    .nav-menu-details{padding:0 2rem;display:flex;flex-direction:column;gap:.75rem;}
+    .nav-p-small{font-family:'Rajdhani',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.38);}
+    .nav-socials-row{display:flex;gap:1.5rem;flex-wrap:wrap;}
+    .nav-text-link{font-size:.875rem;color:rgba(255,255,255,.6);text-decoration:none;transition:color .2s;} .nav-text-link:hover{color:var(--blue);}
+    .nav-close-btn{position:absolute;top:1.5rem;right:2rem;background:none;border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5);width:2.5rem;height:2.5rem;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;z-index:2;transition:all .2s;} .nav-close-btn:hover{border-color:var(--blue);color:var(--blue);}
+    @media(max-width:768px){ .menu-button-text{display:none!important;} .nav-menu{width:100%;padding-top:5.5rem;padding-bottom:2.5rem;} .nav-bg-panel{border-radius:0;} .nav-link-heading{font-size:clamp(2.2rem,11vw,3rem);} .nav-menu-link{padding:.35em 1.25em;} .nav-menu-item.mobile-only{display:block;} }
     .theme-seg { display:flex; align-items:center; justify-content:space-between; padding:.875rem 2rem; border-bottom:1px solid rgba(255,255,255,.06); }
     [data-theme="light"] .theme-seg { border-bottom-color:rgba(0,0,0,.07); }
     .theme-seg-label { font-family:'Rajdhani',sans-serif; font-size:.62rem; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,.28); }
@@ -292,7 +301,7 @@
     /* ── ANIMATIONS ── */
     body.js-ready .reveal { opacity:0; transform:translateY(40px); transition:opacity .8s ease,transform .8s ease; }
     body.js-ready .reveal.visible { opacity:1; transform:translateY(0); }
-    [data-parallax-layer="1"],[data-parallax-layer="2"],[data-parallax-layer="3"],[data-parallax-layer="4"],.imp-nav-drawer,.imp-nav-bg1,.imp-nav-bg2,.imp-nav-bg3 { will-change:transform; }
+    [data-parallax-layer="1"],[data-parallax-layer="2"],[data-parallax-layer="3"],[data-parallax-layer="4"],.nav-menu,.nav-bg-panel,.nav-overlay { will-change:transform; }
 
     /* ── RESPONSIVE ── */
     @media(max-width:768px) {
@@ -327,79 +336,88 @@
 <body>
 
 <!-- ═══ HEADER ═══ -->
-<header class="imp-header">
-  <div class="imp-header-inner">
-    <a href="/" class="imp-logo"><div class="imp-logo-bolt">&#9889;</div><span>Fm <span>TuN</span></span></a>
-    <button class="imp-menu-btn" id="impMenuBtn">
-      <div class="imp-menu-btn-txt"><p>Меню</p><p>Закрыть</p></div>
-      <svg class="imp-menu-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
-        <path d="M7.33333 16L7.33333 0L8.66667 0L8.66667 16L7.33333 16Z" fill="currentColor"/>
-        <path d="M16 8.66667L0 8.66667L0 7.33333L16 7.33333L16 8.66667Z" fill="currentColor"/>
-      </svg>
-    </button>
-  </div>
+<header class="header">
+  <div class="container"><div class="header-inner">
+    <a href="/" class="logo"><div class="logo-bolt">&#9889;</div><span class="logo-text">Fm <span>TuN</span></span></a>
+    <div class="header-actions">
+      <form action="/products" method="get" style="display:flex;align-items:center;position:relative;" onsubmit="var v=this.querySelector('input').value.trim();if(!v){window.location.href='/products';return false;}">
+        <input type="search" name="search" placeholder="Поиск…" style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:10px;padding:.4rem .75rem .4rem 2rem;color:var(--text);font-size:.8125rem;outline:none;width:140px;transition:all .2s;" onfocus="this.style.borderColor='var(--blue)';this.style.width='180px';" onblur="this.style.borderColor='var(--border)';this.style.width='140px';">
+        <span style="position:absolute;left:.625rem;color:var(--text3);font-size:.875rem;pointer-events:none">🔍</span>
+      </form>
+      <a href="/cart" class="btn btn-ghost btn-sm" style="position:relative">&#128722; Корзина</a>
+      <div class="user-dropdown-wrap" id="userMenu"></div>
+      <button data-menu-toggle class="menu-button">
+        <div class="menu-button-text"><p>Меню</p><p>Закрыть</p></div>
+        <svg class="menu-button-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+          <path d="M7.33333 16L7.33333 0L8.66667 0L8.66667 16L7.33333 16Z" fill="currentColor"/>
+          <path d="M16 8.66667L0 8.66667L0 7.33333L16 7.33333L16 8.66667Z" fill="currentColor"/>
+        </svg>
+      </button>
+    </div>
+  </div></div>
 </header>
 
-<!-- ═══ DRAWER ═══ -->
-<div class="imp-nav-overlay" id="impNavOverlay"></div>
-<div class="imp-nav-drawer" id="impNavDrawer">
-  <div style="position:absolute;inset:0;z-index:0"><div class="imp-nav-bg1"></div><div class="imp-nav-bg2"></div><div class="imp-nav-bg3"></div></div>
-  <button class="imp-nav-close" id="impNavClose">&#10005;</button>
-  <div class="imp-nav-inner">
-    <div class="theme-seg">
-      <p class="theme-seg-label">Тема</p>
-      <div class="theme-seg-ctrl" role="group">
-        <button class="theme-seg-btn seg-dark" data-seg="dark"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M11 7.5A5 5 0 0 1 4.5 1a5.5 5.5 0 1 0 6.5 6.5Z" fill="currentColor"/></svg>Тёмная</button>
-        <button class="theme-seg-btn seg-light" data-seg="light"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="2.2" fill="currentColor"/><path d="M6 .8V2.4M6 9.6v1.6M.8 6H2.4M9.6 6h1.6M2.34 2.34l1.13 1.13M8.53 8.53l1.13 1.13M9.66 2.34 8.53 3.47M3.47 8.53 2.34 9.66" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>Светлая</button>
+<!-- ═══ NAV DRAWER ═══ -->
+<div data-nav="closed" class="nav-panel" id="navPanel">
+  <div data-menu-toggle class="nav-overlay"></div>
+  <nav class="nav-menu">
+    <div class="nav-menu-bg">
+      <div class="nav-bg-panel first"></div>
+      <div class="nav-bg-panel second"></div>
+      <div class="nav-bg-panel"></div>
+    </div>
+    <button class="nav-close-btn" id="navCloseBtn" aria-label="Закрыть">✕</button>
+    <div class="nav-menu-inner">
+      <div class="theme-seg">
+        <p class="theme-seg-label">Тема</p>
+        <div class="theme-seg-ctrl" role="group" aria-label="Переключить тему">
+          <button class="theme-seg-btn seg-dark" data-seg="dark"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M11 7.5A5 5 0 0 1 4.5 1a5.5 5.5 0 1 0 6.5 6.5Z" fill="currentColor"/></svg>Тёмная</button>
+          <button class="theme-seg-btn seg-light" data-seg="light"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="2.2" fill="currentColor"/><path d="M6 .8V2.4M6 9.6v1.6M.8 6H2.4M9.6 6h1.6M2.34 2.34l1.13 1.13M8.53 8.53l1.13 1.13M9.66 2.34 8.53 3.47M3.47 8.53 2.34 9.66" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>Светлая</button>
+        </div>
+      </div>
+      <ul class="nav-menu-list">
+        <li class="nav-menu-item">
+          <a href="/" class="nav-menu-link">
+            <p class="nav-link-heading">Главная</p><p class="nav-eyebrow">01</p><div class="nav-link-bg"></div>
+          </a>
+        </li>
+        <li class="nav-menu-item">
+          <a href="/products" class="nav-menu-link">
+            <p class="nav-link-heading">Каталог</p><p class="nav-eyebrow">02</p><div class="nav-link-bg"></div>
+          </a>
+        </li>
+        <li class="nav-menu-item">
+          <a href="/about" class="nav-menu-link">
+            <p class="nav-link-heading" style="color:var(--blue)">О нас</p><p class="nav-eyebrow">03</p><div class="nav-link-bg"></div>
+          </a>
+        </li>
+        <li class="nav-menu-item">
+          <a href="/tracking" class="nav-menu-link">
+            <p class="nav-link-heading">Заказы</p><p class="nav-eyebrow">04</p><div class="nav-link-bg"></div>
+          </a>
+        </li>
+        <li class="nav-menu-item mobile-only">
+          <a href="/cart" class="nav-menu-link">
+            <p class="nav-link-heading">Корзина</p><p class="nav-eyebrow">05</p><div class="nav-link-bg"></div>
+          </a>
+        </li>
+        <li class="nav-menu-item mobile-only">
+          <button class="nav-menu-link" id="navAuthTrigger">
+            <p class="nav-link-heading" id="navAuthLabel">Войти</p><p class="nav-eyebrow" id="navAuthNum">06</p><div class="nav-link-bg"></div>
+          </button>
+        </li>
+      </ul>
+      <div class="nav-menu-details">
+        <p data-menu-fade class="nav-p-small">Контакты</p>
+        <div class="nav-socials-row">
+          <a data-menu-fade href="mailto:ilya.georgievskiy@gmail.com" class="nav-text-link">Email</a>
+          <a data-menu-fade href="https://t.me/FM_Tuning" class="nav-text-link" target="_blank" rel="noopener noreferrer">Telegram</a>
+        </div>
+        <a data-menu-fade href="/privacy-policy" class="nav-text-link" style="font-size:.8em;color:rgba(255,255,255,.38)">Конфиденциальность</a>
       </div>
     </div>
-    <ul class="imp-nav-list">
-      <li class="imp-nav-item"><a href="/" class="imp-nav-link"><p class="imp-nav-heading">Главная</p><p class="imp-nav-num">01</p><div class="imp-nav-bg-hover"></div></a></li>
-      <li class="imp-nav-item"><a href="/products" class="imp-nav-link"><p class="imp-nav-heading">Каталог</p><p class="imp-nav-num">02</p><div class="imp-nav-bg-hover"></div></a></li>
-      <li class="imp-nav-item"><a href="/about" class="imp-nav-link active"><p class="imp-nav-heading">О нас</p><p class="imp-nav-num">03</p><div class="imp-nav-bg-hover"></div></a></li>
-      <li class="imp-nav-item"><a href="/tracking" class="imp-nav-link"><p class="imp-nav-heading">Заказы</p><p class="imp-nav-num">04</p><div class="imp-nav-bg-hover"></div></a></li>
-      <li class="imp-nav-item"><a href="/cart" class="imp-nav-link"><p class="imp-nav-heading">Корзина</p><p class="imp-nav-num">05</p><div class="imp-nav-bg-hover"></div></a></li>
-      <li class="imp-nav-item"><a href="/account" class="imp-nav-link" id="aboutNavAuthLink"><p class="imp-nav-heading" id="aboutNavAuthLabel">Войти</p><p class="imp-nav-num">06</p><div class="imp-nav-bg-hover"></div></a></li>
-    </ul>
-    <div class="imp-nav-footer">
-      <p style="font-family:'Rajdhani',sans-serif;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:.75rem">Контакты</p>
-      <div style="display:flex;gap:1.5rem;flex-wrap:wrap">
-        <a href="mailto:ilya.georgievskiy@gmail.com" style="color:rgba(255,255,255,.5);font-size:.875rem;text-decoration:none;font-family:'Rajdhani',sans-serif">ilya.georgievskiy@gmail.com</a>
-        <a href="https://t.me/FM_Tuning" style="color:rgba(255,255,255,.5);font-size:.875rem;text-decoration:none;font-family:'Rajdhani',sans-serif" target="_blank" rel="noopener noreferrer">Telegram</a>
-      </div>
-    </div>
-  </div>
+  </nav>
 </div>
-<script nonce="{{ request.state.csp_nonce }}">
-(function(){
-  var btn=document.getElementById('impMenuBtn'),overlay=document.getElementById('impNavOverlay'),drawer=document.getElementById('impNavDrawer'),closeBtn=document.getElementById('impNavClose');
-  var isOpen=false;
-  if(drawer){drawer.style.transform='translateX(110%)';drawer.style.transition='transform .45s cubic-bezier(.65,.05,0,1)';}
-  function open(){isOpen=true;overlay.style.display='block';drawer.style.display='flex';setTimeout(function(){overlay.style.opacity='1';overlay.style.pointerEvents='all';drawer.style.transform='translateX(0)';},10);document.body.style.overflow='hidden';}
-  function close(){isOpen=false;overlay.style.opacity='0';overlay.style.pointerEvents='none';drawer.style.transform='translateX(110%)';setTimeout(function(){overlay.style.display='none';drawer.style.display='none';},350);document.body.style.overflow='';}
-  btn&&btn.addEventListener('click',function(){isOpen?close():open();});
-  closeBtn&&closeBtn.addEventListener('click',close);
-  overlay&&overlay.addEventListener('click',close);
-  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&isOpen)close();});
-  document.querySelectorAll('.imp-nav-link').forEach(function(l){l.addEventListener('click',function(){if(isOpen)close();});});
-  // Update auth link based on login state
-  (async function(){
-    try{
-      var r=await fetch('/api/user',{credentials:'include'});
-      if(r.ok){
-        var d=await r.json();
-        var lbl=document.getElementById('aboutNavAuthLabel');
-        var lnk=document.getElementById('aboutNavAuthLink');
-        if(lbl)lbl.textContent=d.username||'Кабинет';
-        if(lnk)lnk.href='/account';
-      } else {
-        var lnk2=document.getElementById('aboutNavAuthLink');
-        if(lnk2)lnk2.href='/auth';
-      }
-    }catch(e){}
-  })();
-})();
-</script>
 
 <!-- ═══ PARALLAX HERO ═══ -->
 <div class="parallax" style="padding-top:64px">
@@ -679,7 +697,114 @@
 
 <!-- GSAP + Lenis (progressive enhancement — CDN allowlisted in CSP) -->
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/CustomEase.min.js" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" integrity="sha384-Z3REaz79l2IaAZqJsSABtTbhjgOUYyV3p90XNnAPCSHg3EMTz1fouunq9WZRtj3d" crossorigin="anonymous"></script>
+<script nonce="{{ request.state.csp_nonce }}">
+/* ── NAV DRAWER ── */
+if(typeof gsap!=='undefined'&&typeof CustomEase!=='undefined'){
+  gsap.registerPlugin(CustomEase);
+  CustomEase.create('nav','0.65,0.01,0.05,0.99');
+}
+var navIsOpen=false;
+function initNav(){
+  var panel=document.getElementById('navPanel');
+  if(!panel)return;
+  var overlay=panel.querySelector('.nav-overlay');
+  var menu=panel.querySelector('.nav-menu');
+  var bgs=panel.querySelectorAll('.nav-bg-panel');
+  var links=panel.querySelectorAll('.nav-menu-link');
+  var fades=panel.querySelectorAll('[data-menu-fade]');
+  var btn=document.querySelector('.menu-button');
+  var btxt=btn?btn.querySelectorAll('p'):[];
+  var bico=btn?btn.querySelector('.menu-button-icon'):null;
+  var closeBtn=document.getElementById('navCloseBtn');
+  var toggles=document.querySelectorAll('[data-menu-toggle]');
+  if(typeof gsap!=='undefined'){
+    var tl=gsap.timeline();
+    gsap.set(panel,{display:'none'});
+    if(btxt[0])gsap.set(btxt[0],{yPercent:0});
+    if(btxt[1])gsap.set(btxt[1],{yPercent:100});
+    function openNav(){
+      navIsOpen=true;panel.setAttribute('data-nav','open');document.body.style.overflow='hidden';
+      gsap.set(menu,{xPercent:0});
+      tl.clear()
+        .set(panel,{display:'block'})
+        .to(btxt[0],{yPercent:-100,duration:.55,ease:'power2.out'},'<')
+        .to(btxt[1],{yPercent:0,duration:.55,ease:'power2.out'},'<+=0.12')
+        .fromTo(bico,{rotate:0},{rotate:315,duration:.6,ease:'power2.out'},'<')
+        .fromTo(overlay,{autoAlpha:0},{autoAlpha:1,duration:.7},'<')
+        .fromTo(bgs,{xPercent:108},{xPercent:0,stagger:.09,duration:.95,ease:'power3.out'},'<')
+        .fromTo(links,{xPercent:22,autoAlpha:0},{xPercent:0,autoAlpha:1,stagger:.07,duration:.8,ease:'power3.out'},'<+=0.3')
+        .fromTo(fades,{autoAlpha:0,yPercent:22},{autoAlpha:1,yPercent:0,stagger:.05,duration:.6,ease:'power2.out'},'<+=0.1');
+    }
+    function closeNav(){
+      navIsOpen=false;panel.setAttribute('data-nav','closed');document.body.style.overflow='';
+      tl.clear()
+        .to(links,{xPercent:18,autoAlpha:0,stagger:.04,duration:.32,ease:'power2.in'})
+        .to(fades,{autoAlpha:0,duration:.22},'<')
+        .to(overlay,{autoAlpha:0,duration:.5},'<+=.05')
+        .to(menu,{xPercent:108,duration:.65,ease:'power3.in'},'<')
+        .to(btxt[0],{yPercent:0,duration:.45,ease:'power2.out'},'<')
+        .to(btxt[1],{yPercent:100,duration:.45,ease:'power2.out'},'<')
+        .to(bico,{rotate:0,duration:.45,ease:'power2.out'},'<')
+        .set(panel,{display:'none'});
+    }
+    window._closeNav=closeNav;
+    toggles.forEach(function(t){t.addEventListener('click',function(){navIsOpen?closeNav():openNav();});});
+    if(closeBtn)closeBtn.addEventListener('click',closeNav);
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&navIsOpen)closeNav();});
+    links.forEach(function(l){if(l.tagName==='A')l.addEventListener('click',function(){closeNav();});});
+  }
+  // auth trigger
+  var at=document.getElementById('navAuthTrigger');
+  if(at){
+    (async function(){
+      try{
+        var r=await fetch('/api/user',{credentials:'include'});
+        var lbl=document.getElementById('navAuthLabel');
+        if(r.ok){
+          var d=await r.json();
+          if(lbl)lbl.textContent=d.username||'Кабинет';
+          at.onclick=function(){if(window._closeNav)window._closeNav();setTimeout(function(){window.location.href='/account';},300);};
+        } else {
+          at.onclick=function(){if(window._closeNav)window._closeNav();setTimeout(function(){window.location.href='/auth';},300);};
+        }
+      }catch(e){}
+    })();
+  }
+}
+initNav();
+
+/* ── USER MENU ── */
+(async function(){
+  var um=document.getElementById('userMenu');
+  if(!um)return;
+  try{
+    var r=await fetch('/api/user',{credentials:'include'});
+    if(r.ok){
+      var d=await r.json();
+      var ini=(d.username||'?')[0].toUpperCase();
+      um.innerHTML=
+        '<button class="user-btn" id="uBtn"><div class="user-avatar">'+ini+'</div><span>'+d.username+'</span><span>▾</span></button>'+
+        '<div class="user-dropdown" id="uDrop">'+
+          '<div class="user-info-box"><div class="user-info-name">'+d.username+'</div><div class="user-info-email">'+d.email+'</div></div>'+
+          '<a href="/account" class="drop-item">👤 Личный кабинет</a>'+
+          (d.is_admin?'<a href="/admin" class="drop-item">⚙ Admin</a>':'')+
+          '<button class="drop-item danger" id="uLogout">Выйти</button>'+
+        '</div>';
+      var uBtn=document.getElementById('uBtn'),uDrop=document.getElementById('uDrop');
+      uBtn.addEventListener('click',function(e){e.stopPropagation();uDrop.classList.toggle('active');});
+      document.addEventListener('click',function(){uDrop.classList.remove('active');});
+      document.getElementById('uLogout').addEventListener('click',async function(){
+        await fetch('/api/logout',{method:'POST',credentials:'include'});
+        window.location.reload();
+      });
+    } else {
+      um.innerHTML='<a href="/auth" class="btn btn-ghost btn-sm">Войти</a>';
+    }
+  }catch(e){}
+})();
+</script>
 <script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js" integrity="sha384-O55L/6rhHr9CFvrxqv5luxOCcmVaBmETbZbJDP+Do8T0pztTACsFBD/IXCNkj7DV" crossorigin="anonymous"></script>
 
 <script nonce="{{ request.state.csp_nonce }}">

@@ -424,6 +424,7 @@ var NEXT_URL = (function(){
   return p || '/';
 })();
 
+
 // ── Toast helper ──
 function authToast(type, msg) {
   var el = document.getElementById('authToast');
@@ -487,7 +488,6 @@ document.addEventListener('DOMContentLoaded',function(){
         body:JSON.stringify({username:username,email:email,full_name:(fname+' '+lname).trim(),password:password,privacy_accepted:true})});
       var d = await r.json();
       if(r.ok){ authToast('success','Аккаунт создан! Входим…');
-        // auto-login
         var lr = await fetch('/api/login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({username:username,password:password})});
         if(lr.ok){ /* cookie set by server */ }

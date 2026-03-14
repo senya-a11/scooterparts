@@ -805,6 +805,10 @@
     <div class="cat-pills" id="catPills">
       <div class="cat-pill active" data-cat="all">🛒 Все товары</div>
     </div>
+    <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;flex-wrap:wrap">
+      <button class="cat-pill" id="inStockPill" style="display:flex;align-items:center;gap:.35rem">✅ В наличии</button>
+      <button class="cat-pill" id="recentPill" style="display:flex;align-items:center;gap:.35rem">🕒 Новинки</button>
+    </div>
     <div class="products-grid" id="productsGrid">
       <div class="state-box"><div class="state-icon">⏳</div><p>Загрузка…</p></div>
     </div>
@@ -1171,6 +1175,7 @@
 ════════════════════════════════════════ */
 let currentUser=null, cart=[], allProducts=[], currentCat='all', searchTerm='';
 let wishlistIds = new Set();
+let inStockOnly = false, recentOnly = false;
 
 const catPillsEl   = document.getElementById('catPills');
 const productsGrid = document.getElementById('productsGrid');
@@ -1258,6 +1263,8 @@ function renderProducts() {
   let filtered = allProducts;
   if (currentCat!=='all') filtered=filtered.filter(p=>p.category===currentCat);
   if (searchTerm) { const q=searchTerm.toLowerCase(); filtered=filtered.filter(p=>p.name.toLowerCase().includes(q)||p.description.toLowerCase().includes(q)); }
+  if (inStockOnly) filtered=filtered.filter(p=>p.in_stock||p.preorder);
+  if (recentOnly) { const copy=[...filtered]; copy.sort((a,b)=>b.id-a.id); filtered=copy.slice(0,20); }
   const sort=sortSelect.value;
   if(sort==='price-asc') filtered.sort((a,b)=>a.price-b.price);
   else if(sort==='price-desc') filtered.sort((a,b)=>b.price-a.price);
@@ -1451,6 +1458,19 @@ function initCardDrag() {
 
 searchInput.addEventListener('input', ()=>{ searchTerm=searchInput.value; renderProducts(); });
 sortSelect.addEventListener('change', renderProducts);
+
+const inStockPill = document.getElementById('inStockPill');
+const recentPill = document.getElementById('recentPill');
+if(inStockPill) inStockPill.addEventListener('click', ()=>{
+  inStockOnly=!inStockOnly;
+  inStockPill.classList.toggle('active', inStockOnly);
+  renderProducts();
+});
+if(recentPill) recentPill.addEventListener('click', ()=>{
+  recentOnly=!recentOnly;
+  recentPill.classList.toggle('active', recentOnly);
+  renderProducts();
+});
 
 /* ════════════════════════════════════════
    ACTIVE ORDERS
@@ -2252,5 +2272,23 @@ productDetailModal.addEventListener('click',e=>{if(e.target===productDetailModal
   </div>
 </div>
 <script src="/static/cookie-consent.js" defer></script>
+<!-- Яндекс.Метрика — заглушка. Замените YM_COUNTER_ID на реальный ID из metrika.yandex.ru -->
+<script nonce="{{ request.state.csp_nonce }}">
+(function(){
+  var YM_ID = '{{ ym_counter_id|default("") }}';
+  if(!YM_ID) return;
+  var loaded = false;
+  function loadYM(){
+    if(loaded) return; loaded = true;
+    (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+    m[i].l=1*new Date();k=e.createElement(t);a=e.getElementsByTagName(t)[0];
+    k.async=1;k.src=r;a.parentNode.insertBefore(k,a)})(
+    window,document,'script','https://mc.yandex.ru/metrika/tag.js','ym');
+    ym(YM_ID,'init',{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:false});
+  }
+  document.addEventListener('cookieConsentAnalytics', loadYM);
+  try{ var c=JSON.parse(localStorage.getItem('fmtun_consent')||'{}'); if(c.analytics) loadYM(); }catch(e){}
+})();
+</script>
 </body>
 </html>

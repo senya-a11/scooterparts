@@ -29,6 +29,11 @@ from asyncpg.pool import Pool
 import asyncio
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
+import smtplib
+import urllib.request
+import urllib.parse
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 load_dotenv()
 
@@ -101,6 +106,96 @@ PAYMENT_API_KEY    = os.getenv("PAYMENT_API_KEY", "")
 PAYMENT_SHOP_ID    = os.getenv("PAYMENT_SHOP_ID", "")
 PAYMENT_SECRET_KEY = os.getenv("PAYMENT_SECRET_KEY", "")
 PAYMENT_CALLBACK_URL = os.getenv("PAYMENT_CALLBACK_URL", "https://your-domain.com/api/payment/callback")
+YM_COUNTER_ID = os.getenv("YM_COUNTER_ID", "")
+
+# ── Email-уведомления ──
+SMTP_HOST = os.getenv("SMTP_HOST", "")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASS = os.getenv("SMTP_PASS", "")
+SMTP_FROM = os.getenv("SMTP_FROM", "noreply@fmtun.ru")
+
+# ── Telegram-уведомления (бот для уведомлений) ──
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_ADMIN_CHAT_ID = os.getenv("TELEGRAM_ADMIN_CHAT_ID", "")
+
+ORDER_STATUS_LABELS: dict = {
+    "created": "Создан",
+    "processing": "В обработке",
+    "confirmed": "Подтверждён",
+    "in_transit": "В пути",
+    "customs": "На таможне",
+    "warehouse": "Прибыл на склад",
+    "delivery": "Передан в доставку",
+    "completed": "Завершён",
+    "cancelled": "Отменён",
+    "pending": "Создан",
+    "shipped": "В пути",
+}
+
+
+def _send_email_sync(to_email: str, order_id: int, status: str, delay_note: str | None = None):
+    """Отправить email-уведомление клиенту об изменении статуса заказа."""
+    if not SMTP_HOST or not SMTP_USER or not SMTP_PASS:
+        return
+    label = ORDER_STATUS_LABELS.get(status, status)
+    note_html = f'<p style="color:#FFB020;margin:.75rem 0"><strong>Примечание:</strong> {delay_note}</p>' if delay_note else ''
+    body = f"""<html><body style="background:#080A0F;padding:2rem;margin:0">
+<div style="max-width:540px;margin:0 auto;background:#0D1018;border-radius:12px;padding:2rem;border:1px solid rgba(255,255,255,.06);font-family:sans-serif;color:#F0F4F8">
+  <h1 style="color:#00D4FF;margin-top:0;font-size:1.5rem">⚡ Fm TuN</h1>
+  <p style="font-size:1rem;margin-bottom:.5rem">Статус вашего <strong>заказа #{order_id}</strong> изменён:</p>
+  <div style="background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);border-radius:8px;padding:1rem;margin:1.25rem 0;text-align:center;font-size:1.15rem;font-weight:700;color:#00D4FF">{label}</div>
+  {note_html}
+  <p><a href="https://scooterparts.onrender.com/tracking" style="color:#00D4FF;text-decoration:none">Отследить заказ →</a></p>
+  <hr style="border:none;border-top:1px solid rgba(255,255,255,.06);margin:1.5rem 0">
+  <p style="color:#7B8599;font-size:.8rem">© Fm TuN. Автоматическое уведомление — не отвечайте на это письмо.</p>
+</div></body></html>"""
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = f"Fm TuN — Заказ #{order_id}: {label}"
+        msg["From"] = SMTP_FROM
+        msg["To"] = to_email
+        msg.attach(MIMEText(body, "html", "utf-8"))
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as srv:
+            srv.ehlo()
+            srv.starttls()
+            srv.login(SMTP_USER, SMTP_PASS)
+            srv.sendmail(SMTP_FROM, to_email, msg.as_string())
+    except Exception as e:
+        logger.warning("Email notification to %s failed: %s", to_email, e)
+
+
+async def send_order_email(to_email: str, order_id: int, status: str, delay_note: str | None = None):
+    await asyncio.to_thread(_send_email_sync, to_email, order_id, status, delay_note)
+
+
+def _send_telegram_sync(text: str):
+    """Отправить сообщение в Telegram (admin-канал или пользователю)."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_ADMIN_CHAT_ID:
+        return
+    try:
+        payload = urllib.parse.urlencode({
+            "chat_id": TELEGRAM_ADMIN_CHAT_ID,
+            "text": text,
+            "parse_mode": "HTML",
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+            data=payload, method="POST"
+        )
+        urllib.request.urlopen(req, timeout=8)
+    except Exception as e:
+        logger.warning("Telegram notification failed: %s", e)
+
+
+async def send_order_telegram(order_id: int, status: str, username: str, email: str, delay_note: str | None = None):
+    label = ORDER_STATUS_LABELS.get(status, status)
+    note = f"\n⚠️ <i>{delay_note}</i>" if delay_note else ""
+    text = (f"📦 <b>Заказ #{order_id}</b>\n"
+            f"Статус: <b>{label}</b>{note}\n"
+            f"Клиент: {username} ({email})\n"
+            f"🔗 <a href='https://scooterparts.onrender.com/admin'>Открыть в админке</a>")
+    await asyncio.to_thread(_send_telegram_sync, text)
 
 
 # ========== МОДЕЛИ ==========
@@ -1105,11 +1200,11 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 @app.get("/")
 async def root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse("index.html", {"request": request, "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/products")
 async def products_page(request: Request):
-    return templates.TemplateResponse("products.html", {"request": request})
+    return templates.TemplateResponse("products.html", {"request": request, "ym_counter_id": YM_COUNTER_ID})
 
 
 def _require_admin_cookie(request: Request):
@@ -1131,24 +1226,24 @@ async def admin_panel(request: Request):
     if not payload:
         return RedirectResponse("/auth?next=/admin", status_code=302)
     is_manager = bool(payload.get("is_manager")) and not bool(payload.get("is_admin"))
-    return templates.TemplateResponse("admin.html", {"request": request, "is_manager": is_manager})
+    return templates.TemplateResponse("admin.html", {"request": request, "is_manager": is_manager, "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/admin/add-product")
 async def admin_add_product_page(request: Request):
     if not _require_admin_cookie(request):
         return RedirectResponse("/auth?next=/admin", status_code=302)
-    return templates.TemplateResponse("add_product.html", {"request": request})
+    return templates.TemplateResponse("add_product.html", {"request": request, "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/legal")
 async def legal_page(request: Request, doc: str = "terms"):
     """Единый маршрут для правовых документов. /legal?doc=terms|privacy|cookies|offer|returns"""
     allowed = {"terms", "privacy", "cookies", "offer", "returns"}
     doc_type = doc if doc in allowed else "terms"
-    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": doc_type})
+    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": doc_type, "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/privacy-policy")
 async def privacy_policy_page(request: Request):
-    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "privacy"})
+    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "privacy", "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/cookie-policy")
 async def cookie_policy_page(request: Request):
@@ -1157,31 +1252,31 @@ async def cookie_policy_page(request: Request):
 
 @app.get("/terms")
 async def terms_page(request: Request):
-    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "terms"})
+    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "terms", "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/offer")
 async def offer_page(request: Request):
-    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "offer"})
+    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "offer", "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/returns")
 async def returns_page(request: Request):
-    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "returns"})
+    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "returns", "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/about")
 async def about_page(request: Request):
-    return templates.TemplateResponse("about.html", {"request": request})
+    return templates.TemplateResponse("about.html", {"request": request, "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/tracking")
 async def tracking_page(request: Request):
-    return templates.TemplateResponse("tracking.html", {"request": request})
+    return templates.TemplateResponse("tracking.html", {"request": request, "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/cart")
 async def cart_page(request: Request):
-    return templates.TemplateResponse("cart.html", {"request": request})
+    return templates.TemplateResponse("cart.html", {"request": request, "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/auth")
 async def auth_page(request: Request, next: str = "/"):
-    return templates.TemplateResponse("auth.html", {"request": request, "next_url": next})
+    return templates.TemplateResponse("auth.html", {"request": request, "next_url": next, "ym_counter_id": YM_COUNTER_ID})
 
 
 # Fix #7: Эндпоинт для получения CSRF-токена. Фронтенд вызывает его при загрузке
@@ -2843,6 +2938,11 @@ async def update_order_status(order_id: int, body: OrderStatusUpdate, admin=Depe
     delay_note = body.delay_note
     try:
         async with db.pool.acquire() as conn:
+            # Получаем email/username клиента для уведомлений
+            order_info = await conn.fetchrow(
+                "SELECT u.email, u.username FROM orders o JOIN users u ON u.id=o.user_id WHERE o.id=$1",
+                order_id
+            )
             if body.payment_status:
                 r = await conn.execute(
                     "UPDATE orders SET status=$1, delay_note=$2, payment_status=$3, updated_at=NOW() WHERE id=$4",
@@ -2860,7 +2960,11 @@ async def update_order_status(order_id: int, body: OrderStatusUpdate, admin=Depe
                 )
             if r == "UPDATE 0":
                 raise HTTPException(status_code=404, detail="Заказ не найден")
-            return {"message": "Статус обновлён", "status": new_status, "delay_note": delay_note, "payment_status": body.payment_status}
+        # Отправляем уведомления (не блокируем ответ)
+        if order_info:
+            asyncio.create_task(send_order_email(order_info["email"], order_id, new_status, delay_note))
+            asyncio.create_task(send_order_telegram(order_id, new_status, order_info["username"], order_info["email"], delay_note))
+        return {"message": "Статус обновлён", "status": new_status, "delay_note": delay_note, "payment_status": body.payment_status}
     except HTTPException:
         raise
     except Exception as e:
@@ -4255,7 +4359,7 @@ async def change_password(request: Request, user_id: str = Depends(get_current_u
 @app.get("/account", response_class=HTMLResponse)
 async def account_page(request: Request):
     """Страница личного кабинета"""
-    return templates.TemplateResponse("account.html", {"request": request})
+    return templates.TemplateResponse("account.html", {"request": request, "ym_counter_id": YM_COUNTER_ID})
 
 
 # ============================================================

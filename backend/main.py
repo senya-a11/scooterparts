@@ -135,21 +135,104 @@ ORDER_STATUS_LABELS: dict = {
 }
 
 
-def _send_email_sync(to_email: str, order_id: int, status: str, delay_note: str | None = None):
+STATUS_ICONS: dict = {
+    "created": "📋", "processing": "⚙️", "confirmed": "✅",
+    "in_transit": "🚚", "customs": "🛃", "warehouse": "📦",
+    "delivery": "🤝", "completed": "🏁", "cancelled": "❌",
+}
+
+STATUS_STEPS = [
+    ("created", "Создан"),
+    ("processing", "В обработке"),
+    ("confirmed", "Подтверждён"),
+    ("in_transit", "В пути"),
+    ("customs", "На таможне"),
+    ("warehouse", "Прибыл на склад"),
+    ("delivery", "Передан в доставку"),
+    ("completed", "Завершён"),
+]
+
+
+def _build_status_timeline(current_status: str) -> str:
+    if current_status == "cancelled":
+        return '<div style="padding:.625rem 1rem;background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.3);border-radius:8px;color:#FF4757;font-weight:700">❌ Заказ отменён</div>'
+    status_keys = [s[0] for s in STATUS_STEPS]
+    try:
+        cur_idx = status_keys.index(current_status)
+    except ValueError:
+        cur_idx = -1
+    rows = []
+    for i, (key, label) in enumerate(STATUS_STEPS):
+        if i < cur_idx:
+            color, dot = '#00D4FF', '✓'
+        elif i == cur_idx:
+            color, dot = '#00D4FF', '●'
+        else:
+            color, dot = '#3A4055', '○'
+        weight = '700' if i == cur_idx else '400'
+        rows.append(
+            f'<div style="display:flex;align-items:center;gap:.75rem;padding:.375rem 0;color:{color};font-weight:{weight}">'
+            f'<span style="width:1.25rem;text-align:center;font-size:.9rem">{dot}</span>'
+            f'<span>{label}</span></div>'
+        )
+    return '<div style="border-left:2px solid rgba(0,212,255,.2);padding-left:1rem;margin:.5rem 0">' + ''.join(rows) + '</div>'
+
+
+def _send_email_sync(to_email: str, order_id: int, status: str, delay_note: str | None = None,
+                     items: list | None = None, order_info: dict | None = None):
     """Отправить email-уведомление клиенту об изменении статуса заказа."""
     if not SMTP_HOST or not SMTP_USER or not SMTP_PASS:
         return
+    base_url = os.getenv("BASE_URL", "https://scooterparts.onrender.com")
     label = ORDER_STATUS_LABELS.get(status, status)
-    note_html = f'<p style="color:#FFB020;margin:.75rem 0"><strong>Примечание:</strong> {delay_note}</p>' if delay_note else ''
+    icon = STATUS_ICONS.get(status, "📦")
+    note_html = (f'<div style="margin:1rem 0;padding:.75rem 1rem;background:rgba(255,176,32,.08);'
+                 f'border:1px solid rgba(255,176,32,.25);border-radius:8px;color:#FFB020">'
+                 f'<strong>Примечание:</strong> {delay_note}</div>') if delay_note else ''
+    # Items table
+    items_html = ''
+    if items:
+        DELIVERY_LABELS = {'in_stock': '📦 В наличии', 'auto': '🚗 Авто', 'air': '✈️ Авиа'}
+        rows_html = ''.join(
+            f'<tr><td style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.05)">{it.get("product_name","")}</td>'
+            f'<td style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.05);text-align:center">{it.get("quantity",1)}</td>'
+            f'<td style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.05);text-align:right">{float(it.get("price",0))*int(it.get("quantity",1)):,.0f} ₽</td>'
+            f'<td style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.05);color:#7B8599;font-size:.8rem">'
+            f'{DELIVERY_LABELS.get(it.get("delivery_type") or it.get("order_type",""), "")}</td></tr>'
+            for it in items
+        )
+        items_html = f'''<table style="width:100%;border-collapse:collapse;margin:1rem 0;font-size:.875rem">
+  <thead><tr style="color:#7B8599;font-size:.75rem;text-transform:uppercase">
+    <th style="padding:.375rem .75rem;text-align:left;font-weight:600">Товар</th>
+    <th style="padding:.375rem .75rem;text-align:center;font-weight:600">Кол-во</th>
+    <th style="padding:.375rem .75rem;text-align:right;font-weight:600">Сумма</th>
+    <th style="padding:.375rem .75rem;text-align:left;font-weight:600">Тип</th>
+  </tr></thead><tbody>{rows_html}</tbody></table>'''
+    # Order total
+    total_html = ''
+    if order_info and order_info.get('total_amount'):
+        total_html = f'<div style="text-align:right;font-weight:700;color:#F0F4F8;margin:.5rem 0">Итого: {float(order_info["total_amount"]):,.0f} ₽</div>'
+    track_html = ''
+    if order_info and order_info.get('track_number'):
+        track_html = f'<p style="font-size:.875rem">Трек-номер: <strong style="color:#00D4FF">{order_info["track_number"]}</strong></p>'
+    timeline = _build_status_timeline(status)
     body = f"""<html><body style="background:#080A0F;padding:2rem;margin:0">
-<div style="max-width:540px;margin:0 auto;background:#0D1018;border-radius:12px;padding:2rem;border:1px solid rgba(255,255,255,.06);font-family:sans-serif;color:#F0F4F8">
-  <h1 style="color:#00D4FF;margin-top:0;font-size:1.5rem">⚡ Fm TuN</h1>
-  <p style="font-size:1rem;margin-bottom:.5rem">Статус вашего <strong>заказа #{order_id}</strong> изменён:</p>
-  <div style="background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);border-radius:8px;padding:1rem;margin:1.25rem 0;text-align:center;font-size:1.15rem;font-weight:700;color:#00D4FF">{label}</div>
+<div style="max-width:580px;margin:0 auto;background:#0D1018;border-radius:12px;padding:2rem;border:1px solid rgba(255,255,255,.06);font-family:sans-serif;color:#F0F4F8">
+  <h1 style="color:#00D4FF;margin-top:0;font-size:1.4rem;letter-spacing:.05em">⚡ Fm TuN</h1>
+  <p style="font-size:1rem;color:#7B8599;margin:.25rem 0 1.5rem">Уведомление о статусе заказа</p>
+  <div style="background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.2);border-radius:10px;padding:1.25rem;margin-bottom:1.5rem">
+    <p style="margin:0 0 .25rem;font-size:.8rem;color:#7B8599;text-transform:uppercase;letter-spacing:.1em">Заказ #{order_id}</p>
+    <div style="font-size:1.5rem;font-weight:700;color:#00D4FF">{icon} {label}</div>
+  </div>
   {note_html}
-  <p><a href="https://scooterparts.onrender.com/tracking" style="color:#00D4FF;text-decoration:none">Отследить заказ →</a></p>
+  <h3 style="font-size:.85rem;text-transform:uppercase;letter-spacing:.1em;color:#7B8599;margin:1.5rem 0 .5rem">История статусов</h3>
+  {timeline}
+  {items_html}
+  {total_html}
+  {track_html}
   <hr style="border:none;border-top:1px solid rgba(255,255,255,.06);margin:1.5rem 0">
-  <p style="color:#7B8599;font-size:.8rem">© Fm TuN. Автоматическое уведомление — не отвечайте на это письмо.</p>
+  <p style="margin:0"><a href="{base_url}/tracking" style="display:inline-block;padding:.625rem 1.5rem;background:#00D4FF;color:#080A0F;text-decoration:none;border-radius:6px;font-weight:700;font-size:.875rem">Отследить заказ →</a></p>
+  <p style="color:#3A4055;font-size:.75rem;margin-top:1.5rem">© Fm TuN. Автоматическое уведомление — не отвечайте на это письмо.</p>
 </div></body></html>"""
     try:
         msg = MIMEMultipart("alternative")
@@ -167,7 +250,59 @@ def _send_email_sync(to_email: str, order_id: int, status: str, delay_note: str 
 
 
 async def send_order_email(to_email: str, order_id: int, status: str, delay_note: str | None = None):
-    await asyncio.to_thread(_send_email_sync, to_email, order_id, status, delay_note)
+    """Fetch order details and send rich HTML email notification."""
+    try:
+        async with db.pool.acquire() as conn:
+            items = await conn.fetch(
+                "SELECT product_name, quantity, price, order_type, delivery_type FROM order_items WHERE order_id=$1",
+                order_id
+            )
+            order_info = await conn.fetchrow(
+                "SELECT total_amount, track_number FROM orders WHERE id=$1", order_id
+            )
+        await asyncio.to_thread(
+            _send_email_sync, to_email, order_id, status, delay_note,
+            [dict(r) for r in items] if items else None,
+            dict(order_info) if order_info else None
+        )
+    except Exception as e:
+        logger.warning("send_order_email error: %s", e)
+
+
+def _send_verification_email_sync(to_email: str, token: str):
+    """Отправить письмо для подтверждения email."""
+    if not SMTP_HOST or not SMTP_USER or not SMTP_PASS:
+        logger.warning("SMTP not configured — verification email not sent to %s", to_email)
+        return
+    base_url = os.getenv("BASE_URL", "https://scooterparts.onrender.com")
+    verify_url = f"{base_url}/api/verify-email?token={token}"
+    body = f"""<html><body style="background:#080A0F;padding:2rem;margin:0">
+<div style="max-width:540px;margin:0 auto;background:#0D1018;border-radius:12px;padding:2rem;border:1px solid rgba(255,255,255,.06);font-family:sans-serif;color:#F0F4F8">
+  <h1 style="color:#00D4FF;margin-top:0;font-size:1.5rem">⚡ Fm TuN</h1>
+  <p style="font-size:1rem">Добро пожаловать! Подтвердите ваш email-адрес, чтобы завершить регистрацию.</p>
+  <a href="{verify_url}" style="display:inline-block;margin:1.25rem 0;padding:.75rem 2rem;background:#00D4FF;color:#080A0F;text-decoration:none;border-radius:8px;font-weight:700;font-size:1rem">Подтвердить email</a>
+  <p style="color:#7B8599;font-size:.85rem">Ссылка действительна 24 часа. Если вы не регистрировались — просто проигнорируйте это письмо.</p>
+  <hr style="border:none;border-top:1px solid rgba(255,255,255,.06);margin:1.5rem 0">
+  <p style="color:#7B8599;font-size:.8rem">© Fm TuN. Автоматическое уведомление — не отвечайте на это письмо.</p>
+</div></body></html>"""
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = "Fm TuN — Подтверждение email"
+        msg["From"] = SMTP_FROM
+        msg["To"] = to_email
+        msg.attach(MIMEText(body, "html", "utf-8"))
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as srv:
+            srv.ehlo()
+            srv.starttls()
+            srv.login(SMTP_USER, SMTP_PASS)
+            srv.sendmail(SMTP_FROM, to_email, msg.as_string())
+        logger.info("Verification email sent to %s", to_email)
+    except Exception as e:
+        logger.warning("Verification email to %s failed: %s", to_email, e)
+
+
+async def send_verification_email(to_email: str, token: str):
+    await asyncio.to_thread(_send_verification_email_sync, to_email, token)
 
 
 def _send_telegram_sync(text: str):
@@ -278,6 +413,18 @@ class OrderStatusUpdate(BaseModel):
     ]
     delay_note: Optional[str] = Field(None, max_length=500)
     payment_status: Optional[Literal['not_paid', 'pending', 'waiting', 'paid', 'failed']] = None
+    status_in_stock: Optional[Literal[
+        'created', 'processing', 'confirmed', 'in_transit',
+        'customs', 'warehouse', 'delivery', 'completed', 'cancelled'
+    ]] = None
+    status_auto: Optional[Literal[
+        'created', 'processing', 'confirmed', 'in_transit',
+        'customs', 'warehouse', 'delivery', 'completed', 'cancelled'
+    ]] = None
+    status_air: Optional[Literal[
+        'created', 'processing', 'confirmed', 'in_transit',
+        'customs', 'warehouse', 'delivery', 'completed', 'cancelled'
+    ]] = None
 
 
 class TrackNumberUpdate(BaseModel):
@@ -990,6 +1137,26 @@ class Database:
             except Exception as e:
                 print(f"⚠️ Миграция v26 (orders): {e}")
 
+            # ── v27: статусы по категориям доставки ──
+            try:
+                await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS status_in_stock VARCHAR(30) DEFAULT NULL")
+                await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS status_auto VARCHAR(30) DEFAULT NULL")
+                await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS status_air VARCHAR(30) DEFAULT NULL")
+                print("✅ Миграция v27: status_in_stock, status_auto, status_air в orders")
+            except Exception as e:
+                print(f"⚠️ Миграция v27 (orders): {e}")
+
+            # ── v28: верификация email ──
+            try:
+                await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE")
+                await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR(100)")
+                await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_sent_at TIMESTAMP")
+                # Существующие admin-пользователи сразу помечаем как верифицированные
+                await conn.execute("UPDATE users SET email_verified=TRUE WHERE is_admin=TRUE AND email_verified=FALSE")
+                print("✅ Миграция v28: email_verified, email_verification_token в users")
+            except Exception as e:
+                print(f"⚠️ Миграция v28 (users): {e}")
+
             # --- Начальные категории ---
             for slug, name, emoji, desc in DEFAULT_CATEGORIES:
                 exists = await conn.fetchval(
@@ -1366,12 +1533,15 @@ async def register(user_data: UserRegister):
 
             user_id = str(uuid4())
             password_hash = hasher.get_password_hash(user_data.password)
+            verification_token = secrets.token_urlsafe(32)
             await conn.execute(
-                "INSERT INTO users (id,username,email,full_name,phone,password_hash,privacy_accepted,privacy_accepted_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
+                "INSERT INTO users (id,username,email,full_name,phone,password_hash,privacy_accepted,privacy_accepted_at,email_verified,email_verification_token,email_verification_sent_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
                 user_id, user_data.username, user_data.email, user_data.full_name,
-                user_data.phone, password_hash, True, datetime.utcnow()
+                user_data.phone, password_hash, True, datetime.utcnow(),
+                False, verification_token, datetime.utcnow()
             )
-            return {"message": "Аккаунт создан успешно", "user_id": user_id}
+            asyncio.create_task(send_verification_email(user_data.email, verification_token))
+            return {"message": "Аккаунт создан. Проверьте вашу почту для подтверждения email.", "user_id": user_id, "requires_verification": True}
     except HTTPException:
         raise
     except Exception as e:
@@ -1384,12 +1554,18 @@ async def login(login_data: UserLogin, response: Response):
     try:
         async with db.pool.acquire() as conn:
             user = await conn.fetchrow(
-                "SELECT id,username,email,full_name,password_hash,is_admin,is_manager,personal_discount FROM users WHERE username=$1",
+                "SELECT id,username,email,full_name,password_hash,is_admin,is_manager,personal_discount,email_verified FROM users WHERE username=$1",
                 login_data.username
             )
             if not user or not hasher.verify_password(login_data.password, user['password_hash']):
                 logger.warning("Failed login attempt for username: %s", login_data.username)
                 raise HTTPException(status_code=401, detail="Неверное имя пользователя или пароль")
+            # Проверяем верификацию email (кроме администраторов)
+            if not user['is_admin'] and not user.get('email_verified', True):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Подтвердите email перед входом. Проверьте вашу почту или запросите новое письмо."
+                )
 
             user_id = str(user['id'])
             is_manager = bool(user.get('is_manager', False))
@@ -1423,6 +1599,88 @@ async def login(login_data: UserLogin, response: Response):
         raise
     except Exception as e:
         logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.get("/api/verify-email")
+async def verify_email(token: str):
+    """Подтверждение email по токену из письма."""
+    try:
+        async with db.pool.acquire() as conn:
+            user = await conn.fetchrow(
+                "SELECT id, email_verification_sent_at FROM users WHERE email_verification_token=$1 AND email_verified=FALSE",
+                token
+            )
+            if not user:
+                return HTMLResponse(content="""<html><body style="background:#080A0F;color:#F0F4F8;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0">
+<div style="text-align:center;max-width:400px;padding:2rem">
+  <div style="font-size:3rem;margin-bottom:1rem">❌</div>
+  <h2 style="color:#FF4444">Недействительная ссылка</h2>
+  <p style="color:#7B8599">Ссылка недействительна или уже использована.</p>
+  <a href="/auth" style="color:#00D4FF">Перейти ко входу</a>
+</div></body></html>""", status_code=400)
+            # Проверяем срок действия (24 часа)
+            sent_at = user['email_verification_sent_at']
+            if sent_at and (datetime.utcnow() - sent_at).total_seconds() > 86400:
+                return HTMLResponse(content="""<html><body style="background:#080A0F;color:#F0F4F8;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0">
+<div style="text-align:center;max-width:400px;padding:2rem">
+  <div style="font-size:3rem;margin-bottom:1rem">⏰</div>
+  <h2 style="color:#FFB020">Ссылка истекла</h2>
+  <p style="color:#7B8599">Ссылка действительна только 24 часа. Запросите новое письмо.</p>
+  <a href="/auth" style="color:#00D4FF">Перейти ко входу</a>
+</div></body></html>""", status_code=400)
+            await conn.execute(
+                "UPDATE users SET email_verified=TRUE, email_verification_token=NULL, email_verification_sent_at=NULL WHERE id=$1",
+                user['id']
+            )
+        return RedirectResponse(url="/auth?verified=1", status_code=302)
+    except Exception as e:
+        logger.error("Email verify error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.post("/api/resend-verification")
+async def resend_verification(request: Request):
+    """Повторная отправка письма подтверждения email."""
+    try:
+        data = await request.json()
+        email = data.get("email", "").strip().lower()
+        username = data.get("username", "").strip()
+        if not email and not username:
+            raise HTTPException(status_code=400, detail="Email или имя пользователя не указаны")
+        async with db.pool.acquire() as conn:
+            if email:
+                user = await conn.fetchrow(
+                    "SELECT id, email, email_verified, email_verification_sent_at FROM users WHERE email=$1",
+                    email
+                )
+            else:
+                user = await conn.fetchrow(
+                    "SELECT id, email, email_verified, email_verification_sent_at FROM users WHERE username=$1",
+                    username
+                )
+            if user:
+                email = user['email']
+            if not user:
+                # Не раскрываем факт существования пользователя
+                return {"message": "Если аккаунт существует — письмо отправлено"}
+            if user['email_verified']:
+                raise HTTPException(status_code=400, detail="Email уже подтверждён")
+            # Rate-limit: не чаще раза в 5 минут
+            sent_at = user['email_verification_sent_at']
+            if sent_at and (datetime.utcnow() - sent_at).total_seconds() < 300:
+                raise HTTPException(status_code=429, detail="Подождите 5 минут перед повторной отправкой")
+            new_token = secrets.token_urlsafe(32)
+            await conn.execute(
+                "UPDATE users SET email_verification_token=$1, email_verification_sent_at=$2 WHERE id=$3",
+                new_token, datetime.utcnow(), user['id']
+            )
+        asyncio.create_task(send_verification_email(email, new_token))
+        return {"message": "Письмо отправлено. Проверьте почту."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Resend verification error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
@@ -2954,21 +3212,26 @@ async def update_order_status(order_id: int, body: OrderStatusUpdate, admin=Depe
                 "SELECT u.email, u.username FROM orders o JOIN users u ON u.id=o.user_id WHERE o.id=$1",
                 order_id
             )
+            # Строим динамический UPDATE с учётом per-category статусов
+            set_parts = ["status=$1", "delay_note=$2", "updated_at=NOW()"]
+            params: list = [new_status, delay_note if delay_note else None]
             if body.payment_status:
-                r = await conn.execute(
-                    "UPDATE orders SET status=$1, delay_note=$2, payment_status=$3, updated_at=NOW() WHERE id=$4",
-                    new_status,
-                    delay_note if delay_note else None,
-                    body.payment_status,
-                    order_id
-                )
-            else:
-                r = await conn.execute(
-                    "UPDATE orders SET status=$1, delay_note=$2, updated_at=NOW() WHERE id=$3",
-                    new_status,
-                    delay_note if delay_note else None,
-                    order_id
-                )
+                params.append(body.payment_status)
+                set_parts.append(f"payment_status=${len(params)}")
+            if body.status_in_stock is not None:
+                params.append(body.status_in_stock)
+                set_parts.append(f"status_in_stock=${len(params)}")
+            if body.status_auto is not None:
+                params.append(body.status_auto)
+                set_parts.append(f"status_auto=${len(params)}")
+            if body.status_air is not None:
+                params.append(body.status_air)
+                set_parts.append(f"status_air=${len(params)}")
+            params.append(order_id)
+            r = await conn.execute(
+                f"UPDATE orders SET {', '.join(set_parts)} WHERE id=${len(params)}",
+                *params
+            )
             if r == "UPDATE 0":
                 raise HTTPException(status_code=404, detail="Заказ не найден")
         # Отправляем уведомления (не блокируем ответ)

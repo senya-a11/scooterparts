@@ -45,6 +45,10 @@ RUN mkdir -p /app/static/uploads \
     chmod -R 755 /app/static/images && \
     chmod -R 755 /app/static/favicon
 
+# [SEC] Создаём непривилегированного пользователя — контейнер НЕ должен работать от root
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
+
 # Порт
 EXPOSE 8000
 

@@ -518,7 +518,7 @@ ALGORITHM  = "HS256"
 
 # Fix #5: валидация image_url против SSRF и XSS
 _ALLOWED_IMAGE_URL = re.compile(
-    r'^https?://.+\.(jpg|jpeg|png|gif|webp)(\?.*)?$', re.IGNORECASE
+    r'^https?://.+\.(jpg|jpeg|png|gif|webp)$', re.IGNORECASE
 )
 _INTERNAL_HOSTS = re.compile(
     r'^(localhost|127\.\d+\.\d+\.\d+|0\.0\.0\.0|169\.254\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)'
@@ -1286,7 +1286,12 @@ class AppMiddleware(BaseHTTPMiddleware):
 
         # ── 2. Rate limiting ─────────────────────────────────────────────────
         if not request.url.path.startswith("/static"):
-            ip  = getattr(request.client, "host", "unknown")
+            # Извлекаем IP с учётом обратного прокси (Render.com)
+            forwarded_for = request.headers.get("X-Forwarded-For", "")
+            if forwarded_for:
+                ip = forwarded_for.split(",")[0].strip()[:45]
+            else:
+                ip = getattr(request.client, "host", "unknown")
             now = time.time()
             if len(self._buckets) > self.MAX_TRACKED:
                 self._buckets.clear()
@@ -1368,6 +1373,38 @@ app.add_middleware(
 )
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+# ── SEO: robots.txt и sitemap.xml ────────────────────────────────────────────
+@app.get("/robots.txt", include_in_schema=False)
+async def robots_txt():
+    from fastapi.responses import PlainTextResponse
+    robots_path = STATIC_DIR / "robots.txt"
+    if robots_path.exists():
+        return PlainTextResponse(robots_path.read_text())
+    return PlainTextResponse("User-agent: *
+Allow: /
+")
+
+
+@app.get("/sitemap.xml", include_in_schema=False)
+async def sitemap_xml():
+    from fastapi.responses import Response as _Response
+    from datetime import date
+    today = date.today().isoformat()
+    base = "https://scooterparts.onrender.com"
+    urls = ["/", "/products", "/about", "/legal"]
+    xml_parts = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ]
+    for u in urls:
+        xml_parts.append(
+            f"<url><loc>{base}{u}</loc><lastmod>{today}</lastmod><changefreq>weekly</changefreq></url>"
+        )
+    xml_parts.append("</urlset>")
+    return _Response(content="
+".join(xml_parts), media_type="application/xml")
 
 
 # ==========================================
@@ -1818,7 +1855,7 @@ async def update_delivery_settings(request: Request, admin=Depends(verify_admin)
         return {"success": True}
     except Exception as e:
         logger.error("Update delivery settings error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 # ==========================================
@@ -3262,7 +3299,7 @@ async def update_order_track(order_id: int, body: TrackNumberUpdate, admin=Depen
         raise
     except Exception as e:
         logger.error("Track update error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.put("/api/admin/orders/{order_id}/payment-status")
@@ -3281,7 +3318,7 @@ async def update_order_payment_status(order_id: int, body: PaymentStatusUpdate, 
         raise
     except Exception as e:
         logger.error("Payment status update error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/admin/orders/{order_id}/items")
@@ -3306,7 +3343,7 @@ async def get_order_items(order_id: int, admin=Depends(verify_manager_or_admin))
             return items
     except Exception as e:
         logger.error("Order items error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.post("/api/admin/orders")
@@ -3363,7 +3400,7 @@ async def create_order_manual(request: Request, admin=Depends(verify_admin)):
         raise
     except Exception as e:
         logger.error("Manual order error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/admin/users")
@@ -3409,7 +3446,7 @@ async def admin_users_list(search: str = "", page: int = 1, limit: int = 50, adm
         }
     except Exception as e:
         logger.error("admin_users_list error: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/admin/users-autocomplete")
@@ -3427,7 +3464,7 @@ async def admin_users_autocomplete(search: str = "", admin=Depends(verify_admin)
         return [{"id": str(r['id']), "full_name": r['full_name'], "username": r['username'], "email": r['email']} for r in rows]
     except Exception as e:
         logger.error("users_autocomplete error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.put("/api/admin/customers/{user_id}/discount")
@@ -3444,7 +3481,7 @@ async def set_customer_discount(user_id: str, request: Request, admin=Depends(ve
         return {"success": True, "discount": discount}
     except Exception as e:
         logger.error("Discount set error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.put("/api/admin/customers/{user_id}/role")
@@ -3461,7 +3498,7 @@ async def set_customer_role(user_id: str, request: Request, admin=Depends(verify
         return {"success": True, "is_manager": is_manager}
     except Exception as e:
         logger.error("Role set error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.post("/api/admin/users/create")
@@ -3488,7 +3525,7 @@ async def create_user_manual(request: Request, admin=Depends(verify_admin)):
         raise
     except Exception as e:
         logger.error("Create user error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 # ── Installation Requests (ТЗ 15) ──
@@ -3517,7 +3554,7 @@ async def create_installation_request(request: Request, user_id: str = Depends(g
         return {"success": True, "id": req_id}
     except Exception as e:
         logger.error("Installation request error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/admin/installation-requests")
@@ -3542,7 +3579,7 @@ async def get_installation_requests(admin=Depends(verify_admin), status: Optiona
                 result.append(d)
             return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.put("/api/admin/installation-requests/{req_id}")
@@ -3557,7 +3594,7 @@ async def update_installation_request(req_id: int, request: Request, admin=Depen
             )
         return {"success": True}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/admin/crm/export-csv")
@@ -3622,7 +3659,7 @@ async def export_crm_csv(admin=Depends(verify_admin)):
             headers={'Content-Disposition': 'attachment; filename="crm_export.xlsx"'}
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 # ==========================================
@@ -3766,7 +3803,7 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
                 print(f"❌ Error processing image {idx + 1}: {e}")
                 import traceback
                 traceback.print_exc()
-                raise HTTPException(status_code=500, detail=f"Ошибка обработки изображения {idx + 1}: {str(e)}")
+                raise HTTPException(status_code=500, detail="Ошибка обработки изображения")
         
         # Если файлы не загружены, используем URL
         if not image_files and image_url:
@@ -3874,7 +3911,7 @@ async def update_product(product_id: int, request: Request, admin=Depends(verify
                     
                 except Exception as e:
                     print(f"❌ Error updating image: {e}")
-                    raise HTTPException(status_code=500, detail=f"Ошибка обновления изображения: {str(e)}")
+                    raise HTTPException(status_code=500, detail="Ошибка обновления изображения")
             elif image_url:
                 final_image = validate_image_url(image_url)  # Fix #5
 
@@ -4047,7 +4084,7 @@ async def add_product_specification(product_id: int, request: Request, admin=Dep
                 
             except Exception as e:
                 print(f"❌ Error processing image {idx + 1}: {e}")
-                raise HTTPException(status_code=500, detail=f"Ошибка обработки изображения {idx + 1}: {str(e)}")
+                raise HTTPException(status_code=500, detail="Ошибка обработки изображения")
         
         # Если файлы не загружены, используем URL
         if not image_files and image_url:
@@ -4138,7 +4175,7 @@ async def update_specification(spec_id: int, request: Request, admin=Depends(ver
                     optimized = await optimize_image(file_content)
                     final_image = "data:image/jpeg;base64," + base64.b64encode(optimized).decode('utf-8')
                 except Exception as e:
-                    raise HTTPException(status_code=500, detail=f"Ошибка обработки изображения: {e}")
+                    raise HTTPException(status_code=500, detail="Ошибка обработки изображения")
             elif image_url:
                 final_image = validate_image_url(image_url)  # Fix #5
 
@@ -4279,7 +4316,7 @@ async def get_auto_discount(admin=Depends(verify_admin)):
             }
     except Exception as e:
         logger.error("get_auto_discount error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.post("/api/admin/auto-discount")
@@ -4301,7 +4338,7 @@ async def set_auto_discount(request: Request, admin=Depends(verify_admin)):
         return {"success": True, "enabled": enabled, "discount_percent": pct}
     except Exception as e:
         logger.error("set_auto_discount error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 # ══════════════════════════════════════════════
@@ -4328,7 +4365,7 @@ async def list_promo_codes(admin=Depends(verify_admin)):
             return result
     except Exception as e:
         logger.error("list_promo_codes error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.post("/api/admin/promo-codes")
@@ -4369,7 +4406,7 @@ async def create_promo_code(request: Request, admin=Depends(verify_admin)):
         raise HTTPException(status_code=409, detail=f"Промокод с кодом уже существует")
     except Exception as e:
         logger.error("create_promo_code error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.delete("/api/admin/promo-codes/{code_id}")
@@ -4387,7 +4424,7 @@ async def delete_promo_code(code_id: int, admin=Depends(verify_admin)):
         raise
     except Exception as e:
         logger.error("delete_promo_code error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.post("/api/promo-codes/validate")
@@ -4427,7 +4464,7 @@ async def validate_promo_code(request: Request, user_id: str = Depends(get_curre
         raise
     except Exception as e:
         logger.error("validate_promo error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 # ============================================================

@@ -11,6 +11,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#080A0F">
   <title>Fm TuN — Премиум запчасти для электросамокатов</title>
+  <meta name="description" content="Магазин запчастей для электросамокатов: аккумуляторы, контроллеры, двигатели, шины. Быстрая доставка по России.">
+  <meta name="keywords" content="запчасти самокат, электросамокат запчасти, аккумулятор самокат, ремонт самокат">
+  <link rel="canonical" href="https://scooterparts.onrender.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Fm TuN — ScooterParts">
+  <meta property="og:title" content="Fm TuN — Премиум запчасти для электросамокатов">
+  <meta property="og:description" content="Магазин запчастей для электросамокатов: аккумуляторы, контроллеры, двигатели, шины. Быстрая доставка по России.">
+  <meta property="og:url" content="https://scooterparts.onrender.com/">
+  <meta property="og:image" content="https://scooterparts.onrender.com/static/favicon/apple-touch-icon.png">
+  <meta property="og:locale" content="ru_RU">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style nonce="{{ request.state.csp_nonce }}">
@@ -447,6 +457,7 @@
 <script src="/static/csrf-init.js"></script>
 </head>
 <body>
+<a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:0;z-index:9999;padding:.5rem 1rem;background:var(--accent,#E8580A);color:#fff;font-weight:600;border-radius:4px;text-decoration:none;" onFocus="this.style.left='0'" onBlur="this.style.left='-9999px'">Перейти к основному содержимому</a>
 <!-- ═══════════════ PRELOADER (once per session) ═══════════════ -->
 <style nonce="{{ request.state.csp_nonce }}">
   @font-face{font-family:'PP Neue Corp';src:url('https://cdn.prod.website-files.com/6717aac16c9ea22eeef1e79e/6717de2d56e40b921572d2d9_PPNeueCorp-TightUltrabold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
@@ -572,7 +583,7 @@
       <!-- Войти / профиль: только на десктопе, слева от кнопки меню -->
       <div class="user-dropdown-wrap" id="userMenu"></div>
       <!-- Кнопка меню: всегда видна -->
-      <button data-menu-toggle class="menu-button">
+      <button data-menu-toggle class="menu-button" aria-expanded="false" aria-controls="navPanel" aria-label="Открыть меню">
         <div class="menu-button-text"><p>Меню</p><p>Закрыть</p></div>
         <svg class="menu-button-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
           <path d="M7.33333 16L7.33333 0L8.66667 0L8.66667 16L7.33333 16Z" fill="currentColor"/>
@@ -904,6 +915,8 @@ function initNav(){
   function openNav(){
     navIsOpen=true;
     panel.setAttribute('data-nav','open');
+    btn.setAttribute('aria-expanded','true');
+    btn.setAttribute('aria-label','Закрыть меню');
     document.body.style.overflow='hidden';
     gsap.set(menu,{xPercent:0});
     tl.clear()
@@ -920,6 +933,8 @@ function initNav(){
   function closeNav(){
     navIsOpen=false;
     panel.setAttribute('data-nav','closed');
+    btn.setAttribute('aria-expanded','false');
+    btn.setAttribute('aria-label','Открыть меню');
     document.body.style.overflow='';
     tl.clear()
       .to(links,{xPercent:18,autoAlpha:0,stagger:.04,duration:.32,ease:'power2.in'})

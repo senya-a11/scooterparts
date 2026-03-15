@@ -544,14 +544,14 @@
 
     <!-- ─── ORDER STATUS MODAL ─── -->
     <div class="modal-overlay" id="statusModal">
-      <div class="modal-box" style="max-width:520px">
+      <div class="modal-box" style="max-width:560px">
         <div class="modal-header">
           <h3 class="modal-title" id="statusModalTitle">🔄 Статус заказа</h3>
           <button class="modal-close" id="closeStatusModalBtn">✕</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label class="form-label">Новый статус</label>
+            <label class="form-label">Общий статус заказа</label>
             <select class="form-select" id="newStatusSelect">
               <option value="created">📋 Создан</option>
               <option value="processing">⚙️ В обработке</option>
@@ -563,6 +563,53 @@
               <option value="completed">🏁 Завершён</option>
               <option value="cancelled">❌ Отменён</option>
             </select>
+          </div>
+          <!-- Статусы по категориям доставки -->
+          <div id="categoryStatusBlock" style="display:none;margin-top:.875rem;padding:.875rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px">
+            <p style="font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin:0 0 .75rem">Статус по категориям доставки</p>
+            <div id="statusInStockRow" class="form-group" style="display:none">
+              <label class="form-label" style="font-size:.72rem">📦 В наличии</label>
+              <select class="form-select" id="statusInStockSelect">
+                <option value="">— Не изменять —</option>
+                <option value="created">📋 Создан</option>
+                <option value="processing">⚙️ В обработке</option>
+                <option value="confirmed">✅ Подтверждён</option>
+                <option value="warehouse">📦 На складе</option>
+                <option value="delivery">🤝 Передан в доставку</option>
+                <option value="completed">🏁 Завершён</option>
+                <option value="cancelled">❌ Отменён</option>
+              </select>
+            </div>
+            <div id="statusAutoRow" class="form-group" style="display:none;margin-top:.625rem">
+              <label class="form-label" style="font-size:.72rem">🚗 Автодоставка</label>
+              <select class="form-select" id="statusAutoSelect">
+                <option value="">— Не изменять —</option>
+                <option value="created">📋 Создан</option>
+                <option value="processing">⚙️ В обработке</option>
+                <option value="confirmed">✅ Подтверждён</option>
+                <option value="in_transit">🚚 В пути</option>
+                <option value="customs">🛃 На таможне</option>
+                <option value="warehouse">📦 Прибыл на склад</option>
+                <option value="delivery">🤝 Передан в доставку</option>
+                <option value="completed">🏁 Завершён</option>
+                <option value="cancelled">❌ Отменён</option>
+              </select>
+            </div>
+            <div id="statusAirRow" class="form-group" style="display:none;margin-top:.625rem">
+              <label class="form-label" style="font-size:.72rem">✈️ Авиадоставка</label>
+              <select class="form-select" id="statusAirSelect">
+                <option value="">— Не изменять —</option>
+                <option value="created">📋 Создан</option>
+                <option value="processing">⚙️ В обработке</option>
+                <option value="confirmed">✅ Подтверждён</option>
+                <option value="in_transit">🚚 В пути</option>
+                <option value="customs">🛃 На таможне</option>
+                <option value="warehouse">📦 Прибыл на склад</option>
+                <option value="delivery">🤝 Передан в доставку</option>
+                <option value="completed">🏁 Завершён</option>
+                <option value="cancelled">❌ Отменён</option>
+              </select>
+            </div>
           </div>
           <!-- Fix ЗАМ-05: статус оплаты (ТЗ §9.1) -->
           <div class="form-group" style="margin-top:.875rem">
@@ -2507,7 +2554,7 @@
           + '<td><span style="font-size:.8125rem;color:' + payColor + '">' + payText + '</span></td>'
           + '<td>' + trackBadge + '</td>'
           + '<td style="font-size:.8125rem;color:var(--text3)">' + dateStr + '</td>'
-          + '<td style="white-space:nowrap"><button class="btn btn-ghost btn-xs" data-order-id="' + orderId + '" data-order-status="' + safeStatus + '" data-order-delay="' + safeDelay + '" data-order-track="' + safeTrack + '" data-order-payment="' + escH(o.payment_status || 'not_paid') + '" data-action="open-status">🔄 Статус</button></td>'
+          + '<td style="white-space:nowrap"><button class="btn btn-ghost btn-xs" data-order-id="' + orderId + '" data-order-status="' + safeStatus + '" data-order-delay="' + safeDelay + '" data-order-track="' + safeTrack + '" data-order-payment="' + escH(o.payment_status || 'not_paid') + '" data-status-in-stock="' + escH(o.status_in_stock || '') + '" data-status-auto="' + escH(o.status_auto || '') + '" data-status-air="' + escH(o.status_air || '') + '" data-action="open-status">🔄 Статус</button></td>'
           + '</tr>'
           + '<tr class="order-accordion-row" data-accordion-for="' + orderId + '">'
           + '<td colspan="9" style="padding:0"><div class="order-accordion-wrap"><div class="order-accordion-inner"><div class="order-accordion-content" id="accordion-' + orderId + '" style="padding:.875rem 1.25rem;background:rgba(0,212,255,.03);border-top:1px solid var(--border)"><span style="color:var(--text3);font-size:.8125rem">⏳ Загрузка позиций…</span></div></div></div></td>'
@@ -2575,16 +2622,45 @@
   // ── Status modal ──
   let _currentOrderId = null;
 
-  function openStatusModal(btn) {
+  async function openStatusModal(btn) {
     _currentOrderId = btn.dataset.orderId;
     document.getElementById('statusModalTitle').textContent = '🔄 Статус заказа #' + _currentOrderId;
     document.getElementById('newStatusSelect').value         = btn.dataset.orderStatus  || 'created';
     document.getElementById('newPaymentStatusSelect').value  = btn.dataset.orderPayment || 'not_paid';
     document.getElementById('delayNoteInput').value          = btn.dataset.orderDelay   || '';
     document.getElementById('trackNumberInput').value        = btn.dataset.orderTrack   || '';
+    // Per-category statuses from dataset
+    document.getElementById('statusInStockSelect').value = btn.dataset.statusInStock || '';
+    document.getElementById('statusAutoSelect').value    = btn.dataset.statusAuto    || '';
+    document.getElementById('statusAirSelect').value     = btn.dataset.statusAir     || '';
     // Менеджер не управляет оплатой
     const payRow = document.getElementById('newPaymentStatusSelect')?.closest('.form-group');
     if (payRow) payRow.style.display = IS_MANAGER ? 'none' : '';
+    // Загружаем позиции заказа чтобы определить категории доставки
+    const catBlock = document.getElementById('categoryStatusBlock');
+    const rowStock = document.getElementById('statusInStockRow');
+    const rowAuto  = document.getElementById('statusAutoRow');
+    const rowAir   = document.getElementById('statusAirRow');
+    catBlock.style.display = 'none';
+    rowStock.style.display = 'none'; rowAuto.style.display = 'none'; rowAir.style.display = 'none';
+    try {
+      const resp = await fetch('/api/admin/orders/' + _currentOrderId + '/items', {credentials:'include'});
+      if (resp.ok) {
+        const items = await resp.json();
+        let hasStock = false, hasAuto = false, hasAir = false;
+        items.forEach(it => {
+          if (it.order_type === 'in_stock') hasStock = true;
+          if (it.order_type === 'preorder' && it.delivery_type === 'auto') hasAuto = true;
+          if (it.order_type === 'preorder' && it.delivery_type === 'air') hasAir = true;
+        });
+        if (hasStock || hasAuto || hasAir) {
+          catBlock.style.display = '';
+          if (hasStock) rowStock.style.display = '';
+          if (hasAuto)  rowAuto.style.display  = '';
+          if (hasAir)   rowAir.style.display   = '';
+        }
+      }
+    } catch { /* показываем модалку без категорий */ }
     document.getElementById('statusModal').classList.add('active');
   }
 
@@ -2599,13 +2675,20 @@
     const newPayStatus  = document.getElementById('newPaymentStatusSelect').value;
     const delayNote     = document.getElementById('delayNoteInput').value.trim();
     const trackNum      = document.getElementById('trackNumberInput').value.trim();
+    const statusInStock = document.getElementById('statusInStockSelect').value || null;
+    const statusAuto    = document.getElementById('statusAutoSelect').value    || null;
+    const statusAir     = document.getElementById('statusAirSelect').value     || null;
     const btn = document.getElementById('confirmStatusBtn');
     btn.disabled = true; btn.textContent = 'Сохраняю…';
     try {
-      const r = await fetch('/api/admin/orders/' + _currentOrderId + '/status', {credentials:'include', 
+      const payload = { status: newStatus, payment_status: newPayStatus, delay_note: delayNote || null };
+      if (statusInStock) payload.status_in_stock = statusInStock;
+      if (statusAuto)    payload.status_auto     = statusAuto;
+      if (statusAir)     payload.status_air      = statusAir;
+      const r = await fetch('/api/admin/orders/' + _currentOrderId + '/status', {credentials:'include',
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus, payment_status: newPayStatus, delay_note: delayNote || null })
+        body: JSON.stringify(payload)
       });
       if (!r.ok) { showToast('error', (await r.json()).detail || 'Ошибка'); return; }
       if (trackNum !== undefined) {

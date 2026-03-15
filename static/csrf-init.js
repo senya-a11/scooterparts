@@ -103,5 +103,13 @@
     setTimeout(doRefresh, REFRESH_AFTER_MS);
   })();
 
+  /* Делегированный обработчик для кнопок переключения темы (.nd-theme-pill).
+   * Заменяет inline onclick="..." во всех шаблонах, обеспечивая
+   * совместимость со строгой CSP (нет 'unsafe-inline'). */
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.nd-theme-pill')) {
+      if (window.importToggleTheme) window.importToggleTheme();
+    }
+  });
 
 })();

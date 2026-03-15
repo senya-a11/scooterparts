@@ -158,7 +158,7 @@
     }
     [data-flip-button="button"].active,[data-flip-button="button"]:hover{color:var(--text)}
 
-    .tab-content-wrap{position:relative;min-height:36em}
+    .tab-content-wrap{position:relative;min-height:42em}
     [data-tabs="content-item"]{position:absolute;inset:0;opacity:0;pointer-events:none}
     [data-tabs="content-item"].active{opacity:1;pointer-events:all}
     .form-group{margin-bottom:1.25rem}
@@ -213,7 +213,7 @@
       .auth-left{width:100%;}
       .auth-left{padding:2rem 1.25rem;justify-content:center;overflow:visible}
       .auth-right{display:none;}  /* hide animation on mobile */
-      .tab-content-wrap{min-height:32em}
+      .tab-content-wrap{min-height:44em}
       .form-row{grid-template-columns:1fr}
       .visual-words{height:1.8em}
       .visual-word{font-size:clamp(1rem,5vw,1.2rem)}
@@ -370,8 +370,13 @@ function initTabSystem(){
     if(!init&&(animating||buttons[i]===activeBtn))return;
     animating=true;
     var out=activeItem,inn=items[i];
+    // Measure new tab height before animating
+    inn.style.position='relative';inn.style.opacity='0';inn.style.pointerEvents='none';
+    var newH=inn.scrollHeight;
+    inn.style.position='';inn.style.opacity='';inn.style.pointerEvents='';
     var tl=gsap.timeline({defaults:{ease:'power3.inOut'},onComplete:function(){if(!init)out.classList.remove('active');activeItem=inn;animating=false;}});
     inn.classList.add('active');
+    if(newH>0)gsap.to(wrap,{minHeight:newH,duration:.4,ease:'power2.inOut'});
     tl.to(out.querySelectorAll('[data-tabs-fade]'),{y:'-2em',autoAlpha:0},0)
       .fromTo(inn.querySelectorAll('[data-tabs-fade]'),{y:'2em',autoAlpha:0},{y:'0em',autoAlpha:1,stagger:.07},0.35);
     activeBtn&&activeBtn.classList.remove('active');

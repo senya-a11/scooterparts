@@ -25,6 +25,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Syne:wght@400;700;800&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
   <style nonce="{{ request.state.csp_nonce }}">
+    /* ── PP Neue Corp Tight (для меню) ── */
+    @font-face {
+      font-family: 'PP Neue Corp Tight';
+      src: url('https://cdn.prod.website-files.com/673af51dea86ab95d124c3ee/673b0f5784f7060c0ac05534_PPNeueCorp-TightUltrabold.otf') format('opentype');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
     /* ── LIGHT THEME OVERRIDES (early so they cascade correctly) ── */
     [data-theme="light"] .header { background:rgba(247,244,239,.92)!important; border-bottom-color:rgba(0,0,0,.1)!important; }
     [data-theme="light"] .nav-bg-panel.second { background:#fff8f3; }
@@ -143,7 +151,7 @@
     .nav-menu-inner{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:space-between;height:100%;gap:3rem;}
     .nav-menu-list{display:flex;flex-direction:column;width:100%;list-style:none;padding:0;margin:0;} .nav-menu-item{position:relative;overflow:hidden;} .nav-menu-item.mobile-only{display:none;}
     .nav-menu-link{display:flex;align-items:baseline;justify-content:flex-end;gap:.5em;width:100%;padding:.4em 2rem;text-decoration:none;color:var(--text);cursor:pointer;background:none;border:none;text-align:right;}
-    .nav-link-heading{font-family:'Syne',sans-serif;font-size:clamp(2.8rem,8vw,4.4rem);font-weight:700;line-height:.9;text-transform:uppercase;letter-spacing:-.02em;position:relative;z-index:1;transition:color .4s ease,transform .65s cubic-bezier(.65,.05,0,1);white-space:nowrap;}
+    .nav-link-heading{font-family:'PP Neue Corp Tight','Syne',sans-serif;font-size:clamp(2.8rem,8vw,4.4rem);font-weight:700;line-height:.9;text-transform:uppercase;letter-spacing:-.02em;position:relative;z-index:1;transition:color .4s ease,transform .65s cubic-bezier(.65,.05,0,1);white-space:nowrap;}
     .nav-eyebrow{color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:.7em;font-weight:700;letter-spacing:.15em;text-transform:uppercase;position:relative;z-index:1;padding-bottom:.15em;}
     .nav-link-bg{position:absolute;inset:0;background:rgba(0,212,255,.12);transform:scale3d(1,0,1);transform-origin:50% 100%;transition:transform .55s cubic-bezier(.65,.05,0,1);z-index:0;}
     .nav-menu-link:hover .nav-link-heading{color:var(--blue);transform:translateY(-1em);} .nav-menu-link:hover .nav-link-bg{transform:scale3d(1,1,1);}

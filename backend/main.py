@@ -1579,8 +1579,8 @@ async def register(user_data: UserRegister):
             await conn.execute(
                 "INSERT INTO users (id,username,email,full_name,phone,password_hash,privacy_accepted,privacy_accepted_at,email_verified,email_verification_token,email_verification_sent_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
                 user_id, user_data.username, user_data.email, user_data.full_name,
-                user_data.phone, password_hash, True, datetime.now(timezone.utc),
-                False, verification_token, datetime.now(timezone.utc)
+                user_data.phone, password_hash, True, datetime.utcnow(),
+                False, verification_token, datetime.utcnow()
             )
             asyncio.create_task(send_verification_email(user_data.email, verification_token))
             return {"message": "Аккаунт создан. Проверьте вашу почту для подтверждения email.", "user_id": user_id, "requires_verification": True}
@@ -1717,7 +1717,7 @@ async def resend_verification(request: Request):
             new_token = secrets.token_urlsafe(32)
             await conn.execute(
                 "UPDATE users SET email_verification_token=$1, email_verification_sent_at=$2 WHERE id=$3",
-                new_token, datetime.now(timezone.utc), user['id']
+                new_token, datetime.utcnow(), user['id']
             )
         asyncio.create_task(send_verification_email(email, new_token))
         return {"message": "Письмо отправлено. Проверьте почту."}
@@ -1764,7 +1764,7 @@ async def log_cookie_consent(request: Request, body: CookieConsentLog):
                 VALUES ($1, $2, $3, $4)
                 ON CONFLICT (session_id) DO UPDATE
                   SET consent_type=$2, ip_address=$3, created_at=$4
-            """, body.session_id[:128], body.consent_type, ip, datetime.now(timezone.utc))
+            """, body.session_id[:128], body.consent_type, ip, datetime.utcnow())
         return {"status": "ok", "consent": body.consent_type, "timestamp": timestamp}
     except Exception as e:
         logger.error("Cookie consent log error: %s", e, exc_info=True)

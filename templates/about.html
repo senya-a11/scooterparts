@@ -340,11 +340,6 @@
   <div class="container"><div class="header-inner">
     <a href="/" class="logo"><div class="logo-bolt">&#9889;</div><span class="logo-text">Fm <span>TuN</span></span></a>
     <div class="header-actions">
-      <form action="/products" method="get" style="display:flex;align-items:center;position:relative;" onsubmit="var v=this.querySelector('input').value.trim();if(!v){window.location.href='/products';return false;}">
-        <input type="search" name="search" placeholder="Поиск…" style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:10px;padding:.4rem .75rem .4rem 2rem;color:var(--text);font-size:.8125rem;outline:none;width:140px;transition:all .2s;" onfocus="this.style.borderColor='var(--blue)';this.style.width='180px';" onblur="this.style.borderColor='var(--border)';this.style.width='140px';">
-        <span style="position:absolute;left:.625rem;color:var(--text3);font-size:.875rem;pointer-events:none">🔍</span>
-      </form>
-      <a href="/cart" class="btn btn-ghost btn-sm" style="position:relative">&#128722; Корзина</a>
       <div class="user-dropdown-wrap" id="userMenu"></div>
       <button data-menu-toggle class="menu-button">
         <div class="menu-button-text"><p>Меню</p><p>Закрыть</p></div>
@@ -396,15 +391,15 @@
             <p class="nav-link-heading">Заказы</p><p class="nav-eyebrow">04</p><div class="nav-link-bg"></div>
           </a>
         </li>
-        <li class="nav-menu-item mobile-only">
+        <li class="nav-menu-item">
           <a href="/cart" class="nav-menu-link">
             <p class="nav-link-heading">Корзина</p><p class="nav-eyebrow">05</p><div class="nav-link-bg"></div>
           </a>
         </li>
-        <li class="nav-menu-item mobile-only">
-          <button class="nav-menu-link" id="navAuthTrigger">
-            <p class="nav-link-heading" id="navAuthLabel">Войти</p><p class="nav-eyebrow" id="navAuthNum">06</p><div class="nav-link-bg"></div>
-          </button>
+        <li class="nav-menu-item">
+          <a href="/account" class="nav-menu-link" id="navAuthLink">
+            <p class="nav-link-heading" id="navAuthLabel">Войти</p><p class="nav-eyebrow">06</p><div class="nav-link-bg"></div>
+          </a>
         </li>
       </ul>
       <div class="nav-menu-details">
@@ -755,23 +750,21 @@ function initNav(){
     document.addEventListener('keydown',function(e){if(e.key==='Escape'&&navIsOpen)closeNav();});
     links.forEach(function(l){if(l.tagName==='A')l.addEventListener('click',function(){closeNav();});});
   }
-  // auth trigger
-  var at=document.getElementById('navAuthTrigger');
-  if(at){
-    (async function(){
-      try{
-        var r=await fetch('/api/user',{credentials:'include'});
-        var lbl=document.getElementById('navAuthLabel');
-        if(r.ok){
-          var d=await r.json();
-          if(lbl)lbl.textContent=d.username||'Кабинет';
-          at.onclick=function(){if(window._closeNav)window._closeNav();setTimeout(function(){window.location.href='/account';},300);};
-        } else {
-          at.onclick=function(){if(window._closeNav)window._closeNav();setTimeout(function(){window.location.href='/auth';},300);};
-        }
-      }catch(e){}
-    })();
-  }
+  // Обновляем Войти-ссылку в зависимости от состояния авторизации
+  (async function(){
+    try{
+      var r=await fetch('/api/user',{credentials:'include'});
+      var lbl=document.getElementById('navAuthLabel');
+      var authLink=document.getElementById('navAuthLink');
+      if(r.ok){
+        var d=await r.json();
+        if(lbl)lbl.textContent=d.username||'Кабинет';
+        if(authLink)authLink.href='/account';
+      } else {
+        if(authLink)authLink.href='/auth?next='+encodeURIComponent(window.location.pathname);
+      }
+    }catch(e){}
+  })();
 }
 initNav();
 

@@ -513,16 +513,15 @@
             <p class="nav-link-heading" style="color:var(--blue)">Заказы</p><p class="nav-eyebrow">04</p><div class="nav-link-bg"></div>
           </a>
         </li>
-        <!-- mobile-only -->
-        <li class="nav-menu-item mobile-only">
-          <button class="nav-menu-link" id="navCartTrigger">
+        <li class="nav-menu-item">
+          <a href="/cart" class="nav-menu-link">
             <p class="nav-link-heading">Корзина</p><p class="nav-eyebrow">05</p><div class="nav-link-bg"></div>
-          </button>
+          </a>
         </li>
-        <li class="nav-menu-item mobile-only">
-          <button class="nav-menu-link" id="navAuthTrigger">
-            <p class="nav-link-heading" id="navAuthLabel">Войти</p><p class="nav-eyebrow" id="navAuthNum">06</p><div class="nav-link-bg"></div>
-          </button>
+        <li class="nav-menu-item">
+          <a href="/account" class="nav-menu-link" id="navAuthLink">
+            <p class="nav-link-heading" id="navAuthLabel">Войти</p><p class="nav-eyebrow">06</p><div class="nav-link-bg"></div>
+          </a>
         </li>
       </ul>
       <div class="nav-menu-details">
@@ -776,9 +775,7 @@ function initNav(){
   toggles.forEach(function(t){t.addEventListener('click',function(){navIsOpen?closeNav():openNav();});});
   if(closeBtn)closeBtn.addEventListener('click',closeNav);
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&navIsOpen)closeNav();});
-  links.forEach(function(l){if(l.id!=='navCartTrigger'&&l.id!=='navAuthTrigger')l.addEventListener('click',function(){closeNav();});});
-  var ct=document.getElementById('navCartTrigger');
-  if(ct)ct.addEventListener('click',function(){closeNav();setTimeout(openCart,500);});
+  links.forEach(function(l){l.addEventListener('click',function(){closeNav();});});
 }
 
 /* =========================================================
@@ -830,7 +827,7 @@ async function checkAuth(){
 
 function renderUser(){
   userMenu.innerHTML='';
-  var navLabel=gi('navAuthLabel'),navAt=gi('navAuthTrigger');
+  var navLabel=gi('navAuthLabel'),navAuthLink=gi('navAuthLink');
   if(me){
     var ini=(me.username||'?')[0].toUpperCase();
     userMenu.innerHTML=
@@ -850,13 +847,13 @@ function renderUser(){
         '</div>'+
       '</div>';
     gi('uBtn').onclick=function(e){e.stopPropagation();gi('uDrop').classList.toggle('active');};
-  document.addEventListener('click',function(e){if(e.target&&e.target.id==='trackLogoutBtn')doLogout();});
+    document.addEventListener('click',function(e){if(e.target&&e.target.id==='trackLogoutBtn')doLogout();});
     if(navLabel)navLabel.textContent='Личный кабинет';
-    if(navAt){navAt.onclick=function(){if(window._closeNav)window._closeNav();setTimeout(function(){window.location.href='/account';},300);};}
+    if(navAuthLink)navAuthLink.href='/account';
   }else{
     userMenu.innerHTML='<a href="/auth?next='+encodeURIComponent(window.location.pathname)+'" class="btn btn-primary btn-sm">Войти</a>';
     if(navLabel)navLabel.textContent='Войти';
-    if(navAt){navAt.onclick=function(){if(window._closeNav)window._closeNav();setTimeout(function(){window.location.href='/auth?next='+encodeURIComponent(window.location.pathname);},300);};}
+    if(navAuthLink)navAuthLink.href='/auth?next='+encodeURIComponent(window.location.pathname);
   }
 }
 
@@ -1177,7 +1174,7 @@ async function loadOrderItems(orderId){
    INIT
 ========================================================= */
 document.addEventListener('DOMContentLoaded',function(){
-  initNav();
+  if(typeof gsap!=='undefined')initNav();
   // Theme sync
   var saved=localStorage.getItem('fmtun_theme')||'dark';
   document.documentElement.setAttribute('data-theme',saved);

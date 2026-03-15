@@ -543,17 +543,19 @@ document.addEventListener('DOMContentLoaded',function(){
         body:JSON.stringify({username:username,email:email,full_name:(fname+' '+lname).trim(),password:password,privacy_accepted:true})});
       var d = await r.json();
       if(r.ok){
-        authToast('success','Аккаунт создан! Проверьте почту для подтверждения.');
-        // Show verification notice instead of auto-login
-        var notice = regTab.querySelector('#verifyNotice');
-        if(!notice){
-          notice=document.createElement('p');
-          notice.id='verifyNotice';
-          notice.style.cssText='margin-top:1rem;padding:.75rem 1rem;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);border-radius:8px;color:#00D4FF;font-size:.875rem;text-align:center';
-          regBtn.after(notice);
-        }
-        notice.textContent='Письмо с подтверждением отправлено на '+email+'. Перейдите по ссылке в письме чтобы войти.';
-        regBtn.disabled=false; regBtn.textContent='Создать аккаунт →';
+        // Replace entire register tab content with a confirmation screen
+        regTab.innerHTML=
+          '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem 0;gap:1.25rem;">'
+         +'<div style="width:64px;height:64px;border-radius:50%;background:rgba(0,212,255,.12);border:1px solid rgba(0,212,255,.3);display:flex;align-items:center;justify-content:center;">'
+         +'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#00D4FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>'
+         +'</div>'
+         +'<h2 style="font-family:var(--fr);font-size:1.25rem;font-weight:700;color:var(--text);margin:0;">Подтвердите email</h2>'
+         +'<p style="color:var(--text2);font-size:.9rem;line-height:1.6;max-width:320px;margin:0;">Мы отправили письмо на<br><strong style="color:#00D4FF;">'+email+'</strong></p>'
+         +'<p style="color:var(--text3);font-size:.8rem;line-height:1.6;max-width:300px;margin:0;">Перейдите по ссылке в письме чтобы активировать аккаунт и войти на сайт.</p>'
+         +'<div style="padding:.75rem 1.25rem;background:rgba(255,200,0,.06);border:1px solid rgba(255,200,0,.2);border-radius:8px;color:#F5C400;font-size:.78rem;max-width:300px;">Не нашли письмо? Проверьте папку&nbsp;<strong>Спам</strong></div>'
+         +'<a href="#" id="toLoginFromVerify" style="font-size:.8rem;color:var(--text3);text-decoration:none;margin-top:.5rem;">← Вернуться к входу</a>'
+         +'</div>';
+        document.getElementById('toLoginFromVerify').addEventListener('click',function(e){e.preventDefault();document.getElementById('toLogin').click();});
       }
       else{ authToast('error',d.detail||'Ошибка регистрации'); regBtn.disabled=false; regBtn.textContent='Создать аккаунт →'; }
     }catch(e){ authToast('error','Ошибка соединения'); regBtn.disabled=false; regBtn.textContent='Создать аккаунт →'; }

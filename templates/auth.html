@@ -21,9 +21,9 @@
   <link rel="shortcut icon" href="/static/favicon/favicon.ico?v=6">
   <meta name="theme-color" content="#080A0F">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/Flip.min.js" integrity="sha384-CHvG5TSBYWY4gs18D+se5IrGOZ6r8JlhAWob7LbkaUcfqD8PWzaYz2pqZdH7LsXQ" crossorigin="anonymous" integrity="sha384-CHvG5TSBYWY4gs18D+se5IrGOZ6r8JlhAWob7LbkaUcfqD8PWzaYz2pqZdH7LsXQ" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/CustomEase.min.js" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/Flip.min.js" integrity="sha384-CHvG5TSBYWY4gs18D+se5IrGOZ6r8JlhAWob7LbkaUcfqD8PWzaYz2pqZdH7LsXQ" integrity="sha384-CHvG5TSBYWY4gs18D+se5IrGOZ6r8JlhAWob7LbkaUcfqD8PWzaYz2pqZdH7LsXQ" integrity="sha384-CHvG5TSBYWY4gs18D+se5IrGOZ6r8JlhAWob7LbkaUcfqD8PWzaYz2pqZdH7LsXQ" integrity="sha384-CHvG5TSBYWY4gs18D+se5IrGOZ6r8JlhAWob7LbkaUcfqD8PWzaYz2pqZdH7LsXQ" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/CustomEase.min.js" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous"></script>
   <style nonce="{{ request.state.csp_nonce }}">
     @font-face{font-family:'PP Neue Corp Tight';src:url('https://cdn.prod.website-files.com/673af51dea86ab95d124c3ee/673b0f5784f7060c0ac05534_PPNeueCorp-TightUltrabold.otf') format('opentype');font-weight:700;font-display:swap;}
     :root{
@@ -288,7 +288,7 @@
     <a href="/" class="logo"><div class="logo-bolt">&#9889;</div><span class="logo-text">Fm <span>TuN</span></span></a>
     <div style="display:flex;align-items:center;gap:1rem;">
       <a href="{{ next_url|default('/') }}" class="header-back">← Назад</a>
-      <button class="nd-theme-pill" onclick="window.importToggleTheme&&window.importToggleTheme()" aria-label="Переключить тему" type="button">
+      <button class="nd-theme-pill" aria-label="Переключить тему" type="button">
         <div class="nd-tt-knob">
           <svg class="nd-tt-icon nd-tt-moon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
           <svg class="nd-tt-icon nd-tt-sun-slot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -326,7 +326,13 @@
           <label data-tabs-fade class="nd-cb-root">
             <input type="checkbox" id="authPrivacyCb" required>
             <div class="nd-cb-box"><svg width="12" height="9" viewBox="0 0 12 9" fill="none"><path class="nd-cb-checkmark" d="M1 4.5L4.5 8L11 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <span style="font-size:.72rem;color:var(--text2);line-height:1.55;word-break:break-word;overflow-wrap:break-word;">Продолжая регистрацию, я соглашаюсь с <a href="/legal?doc=terms" target="_blank" style="color:var(--blue);text-decoration:none;">Правилами пользования сайтом и обработки персональных данных</a> и <a href="/legal?doc=offer" target="_blank" style="color:var(--blue);text-decoration:none;">Публичной офертой</a></span>
+            <span style="font-size:.72rem;color:var(--text2);line-height:1.55;word-break:break-word;overflow-wrap:break-word;">Я принимаю <a href="/legal?doc=terms" target="_blank" style="color:var(--blue);text-decoration:none;">Правила пользования сайтом</a> и <a href="/legal?doc=offer" target="_blank" style="color:var(--blue);text-decoration:none;">Публичную оферту</a></span>
+          </label>
+          <!-- Отдельное согласие на обработку ПД (ФЗ-152, ст. 9, ред. с 01.09.2025) -->
+          <label data-tabs-fade class="nd-cb-root" style="margin-top:.5rem">
+            <input type="checkbox" id="authPdCb" required>
+            <div class="nd-cb-box"><svg width="12" height="9" viewBox="0 0 12 9" fill="none"><path class="nd-cb-checkmark" d="M1 4.5L4.5 8L11 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span style="font-size:.72rem;color:var(--text2);line-height:1.55;word-break:break-word;overflow-wrap:break-word;">Я даю <a href="/legal?doc=privacy" target="_blank" style="color:var(--blue);text-decoration:none;">согласие на обработку персональных данных</a> (ФИО, email, телефон) в целях оформления заказов и связи по вопросам заказов</span>
           </label>
           <button data-tabs-fade class="btn-submit">Создать аккаунт →</button>
           <div data-tabs-fade class="form-footer">Уже есть аккаунт? <a href="#" class="form-link" id="toLogin">Войти</a></div>
@@ -578,7 +584,8 @@ document.addEventListener('DOMContentLoaded',function(){
         email = inputs[2].value.trim(), username = inputs[3].value.trim(),
         password = inputs[4].value;
     if(!fname||!email||!username||!password){ authToast('error','Заполните все поля'); return; }
-    if(!document.getElementById('authPrivacyCb').checked){ authToast('error','Примите политику конфиденциальности'); return; }
+    if(!document.getElementById('authPrivacyCb').checked){ authToast('error','Примите Правила пользования и Оферту'); return; }
+    if(!document.getElementById('authPdCb').checked){ authToast('error','Необходимо согласие на обработку персональных данных'); return; }
     if(password.length<8){ authToast('error','Пароль минимум 8 символов'); return; }
     regBtn.disabled=true; regBtn.textContent='Создаём…';
     try{

@@ -1294,7 +1294,14 @@ class AppMiddleware(BaseHTTPMiddleware):
                 ip = getattr(request.client, "host", "unknown")
             now = time.time()
             if len(self._buckets) > self.MAX_TRACKED:
-                self._buckets.clear()
+                # Удаляем 20% старых записей вместо полной очистки
+                cutoff = now - self.window
+                stale = [k for k, v in self._buckets.items()
+                         if not v.get("auth") and not v.get("global")
+                         or (v.get("auth") and v["auth"][-1] < cutoff)
+                         and (v.get("global") and v["global"][-1] < cutoff)]
+                for k in stale[:max(1, self.MAX_TRACKED // 5)]:
+                    del self._buckets[k]
             bucket = self._buckets[ip]
             if request.url.path in self.AUTH_PATHS:
                 bucket["auth"] = self._clean(bucket["auth"], now)
@@ -1338,7 +1345,8 @@ class AppMiddleware(BaseHTTPMiddleware):
             f"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             f"font-src 'self' https://fonts.gstatic.com https://cdn.prod.website-files.com; "
             f"img-src 'self' data: https:; "
-            f"connect-src 'self'; "
+            f"connect-src 'self' https://api.yookassa.ru; "
+            f"frame-src 'none'; "
             f"frame-ancestors 'none'; "
             f"base-uri 'self'; "
             f"form-action 'self'; "
@@ -1571,8 +1579,8 @@ async def register(user_data: UserRegister):
             await conn.execute(
                 "INSERT INTO users (id,username,email,full_name,phone,password_hash,privacy_accepted,privacy_accepted_at,email_verified,email_verification_token,email_verification_sent_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
                 user_id, user_data.username, user_data.email, user_data.full_name,
-                user_data.phone, password_hash, True, datetime.utcnow(),
-                False, verification_token, datetime.utcnow()
+                user_data.phone, password_hash, True, datetime.now(timezone.utc),
+                False, verification_token, datetime.now(timezone.utc)
             )
             asyncio.create_task(send_verification_email(user_data.email, verification_token))
             return {"message": "Аккаунт создан. Проверьте вашу почту для подтверждения email.", "user_id": user_id, "requires_verification": True}
@@ -1655,7 +1663,8 @@ async def verify_email(token: str):
 </div></body></html>""", status_code=400)
             # Проверяем срок действия (24 часа)
             sent_at = user['email_verification_sent_at']
-            if sent_at and (datetime.utcnow() - sent_at).total_seconds() > 86400:
+            sent_at_aware = sent_at.replace(tzinfo=timezone.utc) if sent_at and sent_at.tzinfo is None else sent_at
+            if sent_at_aware and (datetime.now(timezone.utc) - sent_at_aware).total_seconds() > 86400:
                 return HTMLResponse(content="""<html><body style="background:#080A0F;color:#F0F4F8;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0">
 <div style="text-align:center;max-width:400px;padding:2rem">
   <div style="font-size:3rem;margin-bottom:1rem">⏰</div>
@@ -1702,12 +1711,13 @@ async def resend_verification(request: Request):
                 raise HTTPException(status_code=400, detail="Email уже подтверждён")
             # Rate-limit: не чаще раза в 5 минут
             sent_at = user['email_verification_sent_at']
-            if sent_at and (datetime.utcnow() - sent_at).total_seconds() < 300:
+            sent_at_aware2 = sent_at.replace(tzinfo=timezone.utc) if sent_at and sent_at.tzinfo is None else sent_at
+            if sent_at_aware2 and (datetime.now(timezone.utc) - sent_at_aware2).total_seconds() < 300:
                 raise HTTPException(status_code=429, detail="Подождите 5 минут перед повторной отправкой")
             new_token = secrets.token_urlsafe(32)
             await conn.execute(
                 "UPDATE users SET email_verification_token=$1, email_verification_sent_at=$2 WHERE id=$3",
-                new_token, datetime.utcnow(), user['id']
+                new_token, datetime.now(timezone.utc), user['id']
             )
         asyncio.create_task(send_verification_email(email, new_token))
         return {"message": "Письмо отправлено. Проверьте почту."}
@@ -3766,7 +3776,7 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
             if ext not in allowed_formats:
                 raise HTTPException(
                     status_code=400, 
-                    detail=f"Недопустимый формат файла {image_file.filename}. Разрешены: {', '.join(allowed_formats)}"
+                    detail=f"Недопустимый формат изображения. Разрешены: {', '.join(allowed_formats)}"
                 )
             
             # Чтение файла
@@ -3777,9 +3787,9 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
             if len(file_content) > max_size_mb * 1024 * 1024:
                 raise HTTPException(
                     status_code=400, 
-                    detail=f"Файл {image_file.filename} слишком большой. Максимум {max_size_mb}MB"
+                    detail=f"Изображение слишком большое. Максимум {max_size_mb}MB"
                 )
-            
+
             # Оптимизация изображения
             try:
                 optimized_content = await optimize_image(file_content)
@@ -4055,7 +4065,7 @@ async def add_product_specification(product_id: int, request: Request, admin=Dep
         for idx, image_file in enumerate(image_files):
             ext = Path(image_file.filename).suffix.lower()
             if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
-                raise HTTPException(status_code=400, detail=f"Недопустимый формат файла {image_file.filename}")
+                raise HTTPException(status_code=400, detail="Недопустимый формат изображения")
             
             # Чтение файла
             file_content = await image_file.read()
@@ -4063,7 +4073,7 @@ async def add_product_specification(product_id: int, request: Request, admin=Dep
             # Валидация размера
             max_size_mb = 10
             if len(file_content) > max_size_mb * 1024 * 1024:
-                raise HTTPException(status_code=400, detail=f"Файл {image_file.filename} слишком большой. Максимум {max_size_mb}MB")
+                raise HTTPException(status_code=400, detail=f"Изображение слишком большое. Максимум {max_size_mb}MB")
             
             # Оптимизация изображения
             try:

@@ -21,8 +21,8 @@
   <meta property="og:locale" content="ru_RU">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/CustomEase.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/CustomEase.min.js" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous"></script>
   <style nonce="{{ request.state.csp_nonce }}">
     @font-face{font-family:'PP Neue Corp Tight';src:url('https://cdn.prod.website-files.com/673af51dea86ab95d124c3ee/673b0f5784f7060c0ac05534_PPNeueCorp-TightUltrabold.otf') format('opentype');font-weight:700;font-display:swap;}
     @font-face{font-family:'PP Neue Montreal';src:url('https://cdn.prod.website-files.com/6819ed8312518f61b84824df/6819ed8312518f61b84825ba_PPNeueMontreal-Medium.woff2') format('woff2');font-weight:500;font-display:swap;}
@@ -339,7 +339,7 @@
       <div class="theme-seg">
         <p class="theme-seg-label">Тема</p>
         <!-- Moon/Sun pill toggle (Theme button.txt) -->
-        <button class="nd-theme-pill theme-pill" onclick="window.importToggleTheme&&window.importToggleTheme()" aria-label="Переключить тему" type="button">
+        <button class="nd-theme-pill theme-pill" aria-label="Переключить тему" type="button">
           <div class="nd-tt-knob">
             <!-- Moon icon (dark mode) -->
             <svg class="nd-tt-icon nd-tt-moon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>

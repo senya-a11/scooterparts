@@ -5,6 +5,14 @@
   <meta name="next-url" content="{{ next_url|default('/') }}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fm TuN — Авторизация</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="https://scooterparts.onrender.com/auth">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Fm TuN — ScooterParts">
+  <meta property="og:title" content="Вход / Регистрация — Fm TuN">
+  <meta property="og:url" content="https://scooterparts.onrender.com/auth">
+  <meta property="og:image" content="https://scooterparts.onrender.com/static/favicon/apple-touch-icon.png">
+  <meta property="og:locale" content="ru_RU">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png?v=6">
   <link rel="icon" type="image/svg+xml" href="/static/favicon/favicon.svg?v=6">
   <link rel="icon" type="image/png" sizes="512x512" href="/static/favicon/favicon-512x512.png?v=6">
@@ -424,6 +432,7 @@ var NEXT_URL = (function(){
   return p || '/';
 })();
 
+
 // ── Toast helper ──
 function authToast(type, msg) {
   var el = document.getElementById('authToast');
@@ -454,6 +463,23 @@ document.addEventListener('DOMContentLoaded',function(){
   var tabs = document.querySelectorAll('[data-tabs="content-item"]');
   var loginTab = tabs[0], regTab = tabs[1];
 
+  // ── Show verified=1 message ──
+  if(new URLSearchParams(location.search).get('verified')==='1'){
+    setTimeout(function(){ authToast('success','Email подтверждён! Теперь вы можете войти.'); },400);
+  }
+
+  // ── Resend verification helper ──
+  async function resendVerification(usernameOrEmail){
+    if(!usernameOrEmail){ authToast('error','Введите имя пользователя или email'); return; }
+    var payload = usernameOrEmail.includes('@') ? {email:usernameOrEmail} : {username:usernameOrEmail};
+    try{
+      var r = await fetch('/api/resend-verification',{method:'POST',credentials:'include',
+        headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      var d = await r.json();
+      authToast(r.ok?'success':'error', d.detail||d.message||'Ошибка');
+    }catch(e){ authToast('error','Ошибка соединения'); }
+  }
+
   // ── LOGIN ──
   var loginBtn = loginTab.querySelector('.btn-submit');
   loginBtn.addEventListener('click', async function(){
@@ -467,6 +493,25 @@ document.addEventListener('DOMContentLoaded',function(){
       var d = await r.json();
       if(r.ok){ authToast('success','Добро пожаловать!');
         setTimeout(function(){ window.location.href=NEXT_URL; },600); }
+      else if(r.status===403){
+        // Email not verified
+        var el=document.getElementById('authToast');
+        authToast('error',d.detail||'Email не подтверждён');
+        loginBtn.disabled=false; loginBtn.textContent='Войти →';
+        // Show resend button
+        var resendEl=document.getElementById('resendVerifyBtn');
+        if(!resendEl){
+          resendEl=document.createElement('button');
+          resendEl.id='resendVerifyBtn';
+          resendEl.textContent='Отправить письмо повторно';
+          resendEl.style.cssText='margin-top:.75rem;width:100%;padding:.625rem;border:1px solid rgba(0,212,255,.4);background:transparent;color:#00D4FF;border-radius:8px;cursor:pointer;font-size:.875rem;font-family:var(--fd,sans-serif)';
+          loginTab.querySelector('.btn-submit').after(resendEl);
+        }
+        resendEl.style.display='block';
+        resendEl.onclick=async function(){
+          await resendVerification(username);
+        };
+      }
       else{ authToast('error',d.detail||'Неверный логин или пароль'); loginBtn.disabled=false; loginBtn.textContent='Войти →'; }
     }catch(e){ authToast('error','Ошибка соединения'); loginBtn.disabled=false; loginBtn.textContent='Войти →'; }
   });
@@ -486,12 +531,19 @@ document.addEventListener('DOMContentLoaded',function(){
       var r = await fetch('/api/register',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({username:username,email:email,full_name:(fname+' '+lname).trim(),password:password,privacy_accepted:true})});
       var d = await r.json();
-      if(r.ok){ authToast('success','Аккаунт создан! Входим…');
-        // auto-login
-        var lr = await fetch('/api/login',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({username:username,password:password})});
-        if(lr.ok){ /* cookie set by server */ }
-        setTimeout(function(){ window.location.href=NEXT_URL; },800); }
+      if(r.ok){
+        authToast('success','Аккаунт создан! Проверьте почту для подтверждения.');
+        // Show verification notice instead of auto-login
+        var notice = regTab.querySelector('#verifyNotice');
+        if(!notice){
+          notice=document.createElement('p');
+          notice.id='verifyNotice';
+          notice.style.cssText='margin-top:1rem;padding:.75rem 1rem;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);border-radius:8px;color:#00D4FF;font-size:.875rem;text-align:center';
+          regBtn.after(notice);
+        }
+        notice.textContent='Письмо с подтверждением отправлено на '+email+'. Перейдите по ссылке в письме чтобы войти.';
+        regBtn.disabled=false; regBtn.textContent='Создать аккаунт →';
+      }
       else{ authToast('error',d.detail||'Ошибка регистрации'); regBtn.disabled=false; regBtn.textContent='Создать аккаунт →'; }
     }catch(e){ authToast('error','Ошибка соединения'); regBtn.disabled=false; regBtn.textContent='Создать аккаунт →'; }
   });
@@ -552,5 +604,23 @@ document.addEventListener('DOMContentLoaded',function(){
   </div>
 </div>
 <script src="/static/cookie-consent.js" defer></script>
+<!-- Яндекс.Метрика — заглушка. Замените YM_COUNTER_ID на реальный ID из metrika.yandex.ru -->
+<script nonce="{{ request.state.csp_nonce }}">
+(function(){
+  var YM_ID = '{{ ym_counter_id|default("") }}';
+  if(!YM_ID) return;
+  var loaded = false;
+  function loadYM(){
+    if(loaded) return; loaded = true;
+    (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+    m[i].l=1*new Date();k=e.createElement(t);a=e.getElementsByTagName(t)[0];
+    k.async=1;k.src=r;a.parentNode.insertBefore(k,a)})(
+    window,document,'script','https://mc.yandex.ru/metrika/tag.js','ym');
+    ym(YM_ID,'init',{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:false});
+  }
+  document.addEventListener('cookieConsentAnalytics', loadYM);
+  try{ var c=JSON.parse(localStorage.getItem('fmtun_consent')||'{}'); if(c.analytics) loadYM(); }catch(e){}
+})();
+</script>
 </body>
 </html>

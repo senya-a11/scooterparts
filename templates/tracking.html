@@ -11,6 +11,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#080A0F">
   <title>Заказы — Fm TuN</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="https://scooterparts.onrender.com/tracking">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Fm TuN — ScooterParts">
+  <meta property="og:title" content="Отслеживание заказа — Fm TuN">
+  <meta property="og:url" content="https://scooterparts.onrender.com/tracking">
+  <meta property="og:image" content="https://scooterparts.onrender.com/static/favicon/apple-touch-icon.png">
+  <meta property="og:locale" content="ru_RU">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style nonce="{{ request.state.csp_nonce }}">
@@ -159,6 +167,11 @@
     /* ── ORDER DETAILS (collapsible) ── */
     .order-body{display:none;padding:0 1.5rem 1.5rem;border-top:1px solid var(--border);}
     .order-card.expanded .order-body{display:block;}
+    /* ── Delivery sub-tabs ── */
+    .order-dtab-nav{display:flex;gap:.5rem;flex-wrap:wrap;padding:1rem 0 .25rem;}
+    .order-dtab-btn{background:transparent;border:1px solid var(--border);border-radius:8px;padding:.375rem .75rem;cursor:pointer;font-size:.82rem;font-weight:600;color:var(--text2);transition:all .18s;font-family:var(--fd);}
+    .order-dtab-btn.active,.order-dtab-btn:hover{background:rgba(0,212,255,.07);}
+    .order-dtab-pane{} /* shown by default if only one tab; hidden by JS if multiple */
     .order-items-title{font-family:var(--fr);font-size:.7rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin:1.25rem 0 .75rem;}
     .order-item-row{display:flex;align-items:center;justify-content:space-between;padding:.625rem 0;border-bottom:1px solid var(--border);gap:.75rem;}
     .order-item-row:last-child{border-bottom:none;}
@@ -301,6 +314,8 @@
     /* ── RESPONSIVE ── */
     @media(max-width:768px){
       .cart-btn-header,#userMenu{display:none!important;}
+      .menu-button-text{display:none!important;}
+      .header-actions form{display:none!important;}
       .nav-menu-item.mobile-only{display:block;}
       .nav-menu{width:100%;padding-top:5.5rem;padding-bottom:2.5rem;}
       .nav-bg-panel{border-radius:0;}
@@ -450,6 +465,10 @@
   <div class="container"><div class="header-inner">
     <a href="/" class="logo"><div class="logo-bolt">&#9889;</div><span class="logo-text">Fm <span>TuN</span></span></a>
     <div class="header-actions">
+      <form action="/products" method="get" style="display:flex;align-items:center;position:relative;" onsubmit="var v=this.querySelector('input').value.trim();if(!v){window.location.href='/products';return false;}">
+        <input type="search" name="search" placeholder="Поиск…" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.4rem .75rem .4rem 2rem;color:var(--text);font-size:.8125rem;font-family:var(--fb);outline:none;width:140px;transition:all .2s;" onfocus="this.style.borderColor='var(--blue)';this.style.width='180px';" onblur="this.style.borderColor='var(--border)';this.style.width='140px';">
+        <span style="position:absolute;left:.625rem;color:var(--text3);font-size:.875rem;pointer-events:none">🔍</span>
+      </form>
       <a href="/cart" class="btn btn-ghost btn-sm cart-btn-header" id="cartBtn" style="position:relative">🛒 Корзина<span class="cart-count" id="cartCount">0</span></a>
       <div class="user-dropdown-wrap" id="userMenu"></div>
       <button data-menu-toggle class="menu-button">
@@ -502,16 +521,15 @@
             <p class="nav-link-heading" style="color:var(--blue)">Заказы</p><p class="nav-eyebrow">04</p><div class="nav-link-bg"></div>
           </a>
         </li>
-        <!-- mobile-only -->
-        <li class="nav-menu-item mobile-only">
-          <button class="nav-menu-link" id="navCartTrigger">
+        <li class="nav-menu-item">
+          <a href="/cart" class="nav-menu-link">
             <p class="nav-link-heading">Корзина</p><p class="nav-eyebrow">05</p><div class="nav-link-bg"></div>
-          </button>
+          </a>
         </li>
-        <li class="nav-menu-item mobile-only">
-          <button class="nav-menu-link" id="navAuthTrigger">
-            <p class="nav-link-heading" id="navAuthLabel">Войти</p><p class="nav-eyebrow" id="navAuthNum">06</p><div class="nav-link-bg"></div>
-          </button>
+        <li class="nav-menu-item">
+          <a href="/account" class="nav-menu-link" id="navAuthLink">
+            <p class="nav-link-heading" id="navAuthLabel">Войти</p><p class="nav-eyebrow">06</p><div class="nav-link-bg"></div>
+          </a>
         </li>
       </ul>
       <div class="nav-menu-details">
@@ -765,9 +783,7 @@ function initNav(){
   toggles.forEach(function(t){t.addEventListener('click',function(){navIsOpen?closeNav():openNav();});});
   if(closeBtn)closeBtn.addEventListener('click',closeNav);
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&navIsOpen)closeNav();});
-  links.forEach(function(l){if(l.id!=='navCartTrigger'&&l.id!=='navAuthTrigger')l.addEventListener('click',function(){closeNav();});});
-  var ct=document.getElementById('navCartTrigger');
-  if(ct)ct.addEventListener('click',function(){closeNav();setTimeout(openCart,500);});
+  links.forEach(function(l){l.addEventListener('click',function(){closeNav();});});
 }
 
 /* =========================================================
@@ -819,7 +835,7 @@ async function checkAuth(){
 
 function renderUser(){
   userMenu.innerHTML='';
-  var navLabel=gi('navAuthLabel'),navAt=gi('navAuthTrigger');
+  var navLabel=gi('navAuthLabel'),navAuthLink=gi('navAuthLink');
   if(me){
     var ini=(me.username||'?')[0].toUpperCase();
     userMenu.innerHTML=
@@ -833,18 +849,19 @@ function renderUser(){
             '<div class="user-info-name">'+me.username+'</div>'+
             '<div class="user-info-email">'+me.email+'</div>'+
           '</div>'+
+          '<a href="/account" class="drop-item">👤 Личный кабинет</a>'+
           (me.is_admin?'<a href="/admin" class="drop-item">⚙ Admin</a>':'')+
           '<button class="drop-item danger" id="trackLogoutBtn">← Выйти</button>'+
         '</div>'+
       '</div>';
     gi('uBtn').onclick=function(e){e.stopPropagation();gi('uDrop').classList.toggle('active');};
-  document.addEventListener('click',function(e){if(e.target&&e.target.id==='trackLogoutBtn')doLogout();});
-    if(navLabel)navLabel.textContent=me.username;
-    if(navAt){navAt.onclick=function(){if(window._closeNav)window._closeNav();setTimeout(function(){doLogout();},400);};}
+    document.addEventListener('click',function(e){if(e.target&&e.target.id==='trackLogoutBtn')doLogout();});
+    if(navLabel)navLabel.textContent='Личный кабинет';
+    if(navAuthLink)navAuthLink.href='/account';
   }else{
     userMenu.innerHTML='<a href="/auth?next='+encodeURIComponent(window.location.pathname)+'" class="btn btn-primary btn-sm">Войти</a>';
     if(navLabel)navLabel.textContent='Войти';
-    if(navAt){navAt.onclick=function(){if(window._closeNav)window._closeNav();setTimeout(function(){window.location.href='/auth?next='+encodeURIComponent(window.location.pathname);},300);};}
+    if(navAuthLink)navAuthLink.href='/auth?next='+encodeURIComponent(window.location.pathname);
   }
 }
 
@@ -931,16 +948,58 @@ function getBadgeHtml(status){
   return '<span class="order-badge '+s.cls+'">'+s.icon+' '+s.label+'</span>';
 }
 
-function getTimelineHtml(status, delayNote){
+// Checkpoints per delivery type
+var FLOW_IN_STOCK = ['created','processing','confirmed','warehouse','delivery','completed'];
+var FLOW_AUTO = ['created','processing','confirmed','in_transit','customs','warehouse','delivery','completed'];
+var FLOW_AIR  = ['created','processing','confirmed','in_transit','customs','warehouse','delivery','completed'];
+
+var LABELS_IN_STOCK = {
+  created:    {label:'Создан',               icon:'📋'},
+  processing: {label:'В обработке',          icon:'⚙️'},
+  confirmed:  {label:'Подтверждён',          icon:'✅'},
+  warehouse:  {label:'Отправлен клиенту',    icon:'📦'},
+  delivery:   {label:'Передан в доставку',   icon:'🤝'},
+  completed:  {label:'Доставлен',            icon:'🏁'}
+};
+var LABELS_AUTO = {
+  created:    {label:'Заказ создан',         icon:'📋'},
+  processing: {label:'В обработке',          icon:'⚙️'},
+  confirmed:  {label:'Подтверждён',          icon:'✅'},
+  in_transit: {label:'В пути (авто)',        icon:'🚗'},
+  customs:    {label:'На таможне',           icon:'🛃'},
+  warehouse:  {label:'Прибыл на склад',      icon:'📦'},
+  delivery:   {label:'Передан в доставку',   icon:'🤝'},
+  completed:  {label:'Доставлен',            icon:'🏁'}
+};
+var LABELS_AIR = {
+  created:    {label:'Заказ создан',         icon:'📋'},
+  processing: {label:'В обработке',          icon:'⚙️'},
+  confirmed:  {label:'Подтверждён',          icon:'✅'},
+  in_transit: {label:'В пути (самолёт)',     icon:'✈️'},
+  customs:    {label:'На таможне',           icon:'🛃'},
+  warehouse:  {label:'Прибыл на склад',      icon:'📦'},
+  delivery:   {label:'Передан в доставку',   icon:'🤝'},
+  completed:  {label:'Доставлен',            icon:'🏁'}
+};
+
+function getTimelineHtml(status, delayNote, flow, labels){
+  flow = flow || STATUS_FLOW;
+  labels = labels || STATUS_LABELS;
   if(status==='cancelled'){
     return '<div class="timeline"><div class="tl-steps">'+
       '<div class="tl-step cancelled"><div class="tl-dot-wrap"><div class="tl-dot"></div></div><div class="tl-info"><div class="tl-label">✕ Заказ отменён</div></div></div>'+
       '</div></div>';
   }
-  var curIdx = STATUS_FLOW.indexOf(status);
+  var curIdx = flow.indexOf(status);
+  if(curIdx === -1){
+    // map status to nearest known position
+    var globalIdx = STATUS_FLOW.indexOf(status);
+    var mapped = flow.filter(function(s){ return STATUS_FLOW.indexOf(s) <= globalIdx; });
+    curIdx = mapped.length - 1;
+  }
   var html = '<div class="timeline"><div class="timeline-line"></div><div class="tl-steps">';
-  STATUS_FLOW.forEach(function(s, i){
-    var info = STATUS_LABELS[s];
+  flow.forEach(function(s, i){
+    var info = labels[s] || STATUS_LABELS[s] || {label:s, icon:'●'};
     var stepClass = i < curIdx ? 'done' : (i === curIdx ? 'active' : 'pending-step');
     html += '<div class="tl-step '+stepClass+'">'+
       '<div class="tl-dot-wrap"><div class="tl-dot"></div></div>'+
@@ -955,6 +1014,25 @@ function getTimelineHtml(status, delayNote){
       '</div></div>';
   }
   return html;
+}
+
+function renderDeliveryTab(tabId, titleHtml, items, timelineHtml) {
+  var itemsHtml = '';
+  if(items.length){
+    items.forEach(function(it){
+      var dtBadge = it.delivery_type==='auto' ? ' 🚗' : it.delivery_type==='air' ? ' ✈️' : '';
+      itemsHtml += '<div class="order-item-row">'+
+        '<span class="order-item-name">'+escHtml(it.product_name)+dtBadge+'</span>'+
+        '<span class="order-item-qty">× '+it.quantity+'</span>'+
+        '<span class="order-item-price">'+fmt(it.price*it.quantity)+' ₽</span>'+
+        '</div>';
+    });
+  }
+  return '<div class="order-dtab-pane" id="'+tabId+'">'+
+    (itemsHtml ? '<div class="order-items-title" style="margin-bottom:.5rem">Позиции</div>'+itemsHtml : '')+
+    '<div class="order-items-title" style="margin-top:'+(itemsHtml?'1.25rem':'0')+';margin-bottom:.5rem">Статусы</div>'+
+    timelineHtml+
+    '</div>';
 }
 
 function escHtml(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -1007,18 +1085,32 @@ function renderOrders(orders){
   var html='<div class="orders-grid">';
   orders.forEach(function(o){
     var badge=getBadgeHtml(o.status);
-    var tl=getTimelineHtml(o.status, o.delay_note||'');
-    var itemsHtml='';
-    if(o.items&&o.items.length){
-      itemsHtml='<div class="order-items-title">Состав заказа</div>';
-      o.items.forEach(function(it){
-        itemsHtml+='<div class="order-item-row">'+
-          '<span class="order-item-name">'+escHtml(it.product_name)+'</span>'+
-          '<span class="order-item-qty">× '+it.quantity+'</span>'+
-          '<span class="order-item-price">'+fmt(it.price*it.quantity)+' ₽</span>'+
-          '</div>';
-      });
-    }
+    var items = o.items || [];
+    var inStockItems = items.filter(function(it){ return it.order_type!=='preorder'; });
+    var autoItems    = items.filter(function(it){ return it.order_type==='preorder' && it.delivery_type==='auto'; });
+    var airItems     = items.filter(function(it){ return it.order_type==='preorder' && it.delivery_type==='air'; });
+    var otherItems   = items.filter(function(it){ return it.order_type==='preorder' && !it.delivery_type; });
+
+    // Build delivery tabs
+    var tabs = [];
+    if(inStockItems.length) tabs.push({key:'stock', icon:'✓', label:'В наличии',    color:'var(--green)',  items:inStockItems, flow:FLOW_IN_STOCK, labels:LABELS_IN_STOCK});
+    if(autoItems.length)    tabs.push({key:'auto',  icon:'🚗', label:'Автодоставка', color:'var(--blue)',  items:autoItems,    flow:FLOW_AUTO,     labels:LABELS_AUTO});
+    if(airItems.length)     tabs.push({key:'air',   icon:'✈️', label:'Авиадоставка', color:'#A78BFA',     items:airItems,     flow:FLOW_AIR,      labels:LABELS_AIR});
+    if(otherItems.length)   tabs.push({key:'other', icon:'📦', label:'Предзаказ',   color:'var(--amber)', items:otherItems,   flow:STATUS_FLOW,   labels:STATUS_LABELS});
+    if(!tabs.length)        tabs.push({key:'all',   icon:'📋', label:'Все',         color:'var(--text)',  items:items,        flow:STATUS_FLOW,   labels:STATUS_LABELS});
+
+    var tabNavHtml='', tabPanesHtml='';
+    tabs.forEach(function(t, idx){
+      var tabId='dtab-'+o.id+'-'+t.key;
+      var isFirst = idx===0;
+      tabNavHtml += '<button class="order-dtab-btn'+(isFirst?' active':'')+'" data-dtab-pane="'+tabId+'" data-dtab-order="'+o.id+'" data-dtab-color="'+t.color+'" style="border-color:'+(isFirst?t.color:'var(--border)')+';color:'+(isFirst?t.color:'var(--text2)')+'">'+ t.icon+' '+t.label+'</button>';
+      tabPanesHtml += renderDeliveryTab(tabId, t.label, t.items, getTimelineHtml(o.status, isFirst?(o.delay_note||''):'', t.flow, t.labels));
+    });
+
+    var canCancel = (o.status === 'created' || o.status === 'processing');
+    var cancelBtn = canCancel
+      ? '<button class="btn btn-ghost btn-sm cancel-order-btn" data-cancel-order="'+o.id+'" style="color:var(--red);border-color:var(--red);opacity:.75;font-size:.75rem;padding:.3rem .7rem;">✕ Отменить</button>'
+      : '';
     html+=
       '<div class="order-card" id="order-'+o.id+'">'+
         '<div class="order-card-head" data-toggle-order="'+o.id+'">'+
@@ -1027,25 +1119,52 @@ function renderOrders(orders){
             badge+
             '<span class="order-date">'+fmtDate(o.created_at)+'</span>'+
           '</div>'+
-          '<div style="display:flex;align-items:center;gap:1rem">'+
+          '<div style="display:flex;align-items:center;gap:.75rem">'+
+            cancelBtn+
             '<span class="order-total">'+fmt(o.total_amount)+' ₽</span>'+
             '<svg class="order-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
           '</div>'+
         '</div>'+
         '<div class="order-body">'+
-          itemsHtml+
-          '<div class="order-items-title" style="margin-top:'+(itemsHtml?'1.5rem':'1.25rem')+'">История статусов</div>'+
-          tl+
+          (tabs.length > 1 ? '<div class="order-dtab-nav" id="dtab-nav-'+o.id+'">'+tabNavHtml+'</div>' : '')+
+          tabPanesHtml+
         '</div>'+
       '</div>';
   });
   html+='</div>';
   gi('ordersContainer').innerHTML=html;
+  // Hide non-first panes for multi-tab orders
+  orders.forEach(function(o){
+    var nav = document.getElementById('dtab-nav-'+o.id);
+    if(!nav) return;
+    var panes = document.querySelectorAll('#order-'+o.id+' .order-dtab-pane');
+    panes.forEach(function(p, i){ if(i>0) p.style.display='none'; });
+  });
+}
+
+function switchDeliveryTab(btn, paneId, orderId){
+  var nav = document.getElementById('dtab-nav-'+orderId);
+  if(nav) nav.querySelectorAll('.order-dtab-btn').forEach(function(b){ b.classList.remove('active'); b.style.borderColor='var(--border)'; b.style.color='var(--text2)'; });
+  btn.classList.add('active');
+  var color = btn.getAttribute('data-dtab-color')||'var(--blue)';
+  btn.style.borderColor=color; btn.style.color=color;
+  var card = document.getElementById('order-'+orderId);
+  if(card) card.querySelectorAll('.order-dtab-pane').forEach(function(p){ p.style.display = p.id===paneId ? '' : 'none'; });
 }
 
 function toggleOrder(id){
   var card=document.getElementById('order-'+id);
   if(card)card.classList.toggle('expanded');
+}
+
+async function cancelOrder(orderId){
+  if(!confirm('Отменить заказ #'+orderId+'? Это действие нельзя отменить.')) return;
+  try{
+    var r=await fetch('/api/orders/'+orderId+'/cancel',{method:'POST',credentials:'include'});
+    var d=await r.json();
+    if(r.ok){toast('success','Заказ #'+orderId+' отменён');loadOrders();}
+    else toast('error',d.detail||'Ошибка при отмене заказа');
+  }catch(e){toast('error','Ошибка сети');}
 }
 
 /* =========================================================
@@ -1063,7 +1182,7 @@ async function loadOrderItems(orderId){
    INIT
 ========================================================= */
 document.addEventListener('DOMContentLoaded',function(){
-  initNav();
+  if(typeof gsap!=='undefined')initNav();
   // Theme sync
   var saved=localStorage.getItem('fmtun_theme')||'dark';
   document.documentElement.setAttribute('data-theme',saved);
@@ -1076,8 +1195,15 @@ document.addEventListener('DOMContentLoaded',function(){
       document.querySelectorAll('.theme-seg-btn').forEach(function(x){x.classList.toggle('seg-active',x.getAttribute('data-seg')===t);});
     });
   });
-  // Order card toggle — единственный listener
+  // Event delegation for all order interactions
   document.getElementById('ordersContainer').addEventListener('click',function(e){
+    // Cancel order button
+    var cb=e.target.closest('[data-cancel-order]');
+    if(cb){e.stopPropagation();cancelOrder(parseInt(cb.getAttribute('data-cancel-order')));return;}
+    // Delivery sub-tab button
+    var tb=e.target.closest('[data-dtab-pane]');
+    if(tb){e.stopPropagation();switchDeliveryTab(tb,tb.getAttribute('data-dtab-pane'),tb.getAttribute('data-dtab-order'));return;}
+    // Order card toggle
     var h=e.target.closest('[data-toggle-order]');
     if(h)toggleOrder(h.getAttribute('data-toggle-order'));
   });
@@ -1086,5 +1212,23 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 </script>
 <script src="/static/cookie-consent.js" defer></script>
+<!-- Яндекс.Метрика — заглушка. Замените YM_COUNTER_ID на реальный ID из metrika.yandex.ru -->
+<script nonce="{{ request.state.csp_nonce }}">
+(function(){
+  var YM_ID = '{{ ym_counter_id|default("") }}';
+  if(!YM_ID) return;
+  var loaded = false;
+  function loadYM(){
+    if(loaded) return; loaded = true;
+    (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+    m[i].l=1*new Date();k=e.createElement(t);a=e.getElementsByTagName(t)[0];
+    k.async=1;k.src=r;a.parentNode.insertBefore(k,a)})(
+    window,document,'script','https://mc.yandex.ru/metrika/tag.js','ym');
+    ym(YM_ID,'init',{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:false});
+  }
+  document.addEventListener('cookieConsentAnalytics', loadYM);
+  try{ var c=JSON.parse(localStorage.getItem('fmtun_consent')||'{}'); if(c.analytics) loadYM(); }catch(e){}
+})();
+</script>
 </body>
 </html>

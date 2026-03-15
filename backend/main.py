@@ -29,6 +29,11 @@ from asyncpg.pool import Pool
 import asyncio
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
+import smtplib
+import urllib.request
+import urllib.parse
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 load_dotenv()
 
@@ -101,6 +106,232 @@ PAYMENT_API_KEY    = os.getenv("PAYMENT_API_KEY", "")
 PAYMENT_SHOP_ID    = os.getenv("PAYMENT_SHOP_ID", "")
 PAYMENT_SECRET_KEY = os.getenv("PAYMENT_SECRET_KEY", "")
 PAYMENT_CALLBACK_URL = os.getenv("PAYMENT_CALLBACK_URL", "https://your-domain.com/api/payment/callback")
+YM_COUNTER_ID = os.getenv("YM_COUNTER_ID", "")
+BASE_URL = os.getenv("BASE_URL", "https://scooterparts.onrender.com")
+
+# ── Email-уведомления ──
+SMTP_HOST = os.getenv("SMTP_HOST", "")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASS = os.getenv("SMTP_PASS", "")
+SMTP_FROM = os.getenv("SMTP_FROM", "noreply@fmtun.ru")
+
+# ── Telegram-уведомления (бот для уведомлений) ──
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_ADMIN_CHAT_ID = os.getenv("TELEGRAM_ADMIN_CHAT_ID", "")
+
+ORDER_STATUS_LABELS: dict = {
+    "created": "Создан",
+    "processing": "В обработке",
+    "confirmed": "Подтверждён",
+    "in_transit": "В пути",
+    "customs": "На таможне",
+    "warehouse": "Прибыл на склад",
+    "delivery": "Передан в доставку",
+    "completed": "Завершён",
+    "cancelled": "Отменён",
+    "pending": "Создан",
+    "shipped": "В пути",
+}
+
+
+STATUS_ICONS: dict = {
+    "created": "📋", "processing": "⚙️", "confirmed": "✅",
+    "in_transit": "🚚", "customs": "🛃", "warehouse": "📦",
+    "delivery": "🤝", "completed": "🏁", "cancelled": "❌",
+}
+
+STATUS_STEPS = [
+    ("created", "Создан"),
+    ("processing", "В обработке"),
+    ("confirmed", "Подтверждён"),
+    ("in_transit", "В пути"),
+    ("customs", "На таможне"),
+    ("warehouse", "Прибыл на склад"),
+    ("delivery", "Передан в доставку"),
+    ("completed", "Завершён"),
+]
+
+
+def _build_status_timeline(current_status: str) -> str:
+    if current_status == "cancelled":
+        return '<div style="padding:.625rem 1rem;background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.3);border-radius:8px;color:#FF4757;font-weight:700">❌ Заказ отменён</div>'
+    status_keys = [s[0] for s in STATUS_STEPS]
+    try:
+        cur_idx = status_keys.index(current_status)
+    except ValueError:
+        cur_idx = -1
+    rows = []
+    for i, (key, label) in enumerate(STATUS_STEPS):
+        if i < cur_idx:
+            color, dot = '#00D4FF', '✓'
+        elif i == cur_idx:
+            color, dot = '#00D4FF', '●'
+        else:
+            color, dot = '#3A4055', '○'
+        weight = '700' if i == cur_idx else '400'
+        rows.append(
+            f'<div style="display:flex;align-items:center;gap:.75rem;padding:.375rem 0;color:{color};font-weight:{weight}">'
+            f'<span style="width:1.25rem;text-align:center;font-size:.9rem">{dot}</span>'
+            f'<span>{label}</span></div>'
+        )
+    return '<div style="border-left:2px solid rgba(0,212,255,.2);padding-left:1rem;margin:.5rem 0">' + ''.join(rows) + '</div>'
+
+
+def _send_email_sync(to_email: str, order_id: int, status: str, delay_note: str | None = None,
+                     items: list | None = None, order_info: dict | None = None):
+    """Отправить email-уведомление клиенту об изменении статуса заказа."""
+    if not SMTP_HOST or not SMTP_USER or not SMTP_PASS:
+        return
+    base_url = os.getenv("BASE_URL", "https://scooterparts.onrender.com")
+    label = ORDER_STATUS_LABELS.get(status, status)
+    icon = STATUS_ICONS.get(status, "📦")
+    note_html = (f'<div style="margin:1rem 0;padding:.75rem 1rem;background:rgba(255,176,32,.08);'
+                 f'border:1px solid rgba(255,176,32,.25);border-radius:8px;color:#FFB020">'
+                 f'<strong>Примечание:</strong> {delay_note}</div>') if delay_note else ''
+    # Items table
+    items_html = ''
+    if items:
+        DELIVERY_LABELS = {'in_stock': '📦 В наличии', 'auto': '🚗 Авто', 'air': '✈️ Авиа'}
+        rows_html = ''.join(
+            f'<tr><td style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.05)">{it.get("product_name","")}</td>'
+            f'<td style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.05);text-align:center">{it.get("quantity",1)}</td>'
+            f'<td style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.05);text-align:right">{float(it.get("price",0))*int(it.get("quantity",1)):,.0f} ₽</td>'
+            f'<td style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.05);color:#7B8599;font-size:.8rem">'
+            f'{DELIVERY_LABELS.get(it.get("delivery_type") or it.get("order_type",""), "")}</td></tr>'
+            for it in items
+        )
+        items_html = f'''<table style="width:100%;border-collapse:collapse;margin:1rem 0;font-size:.875rem">
+  <thead><tr style="color:#7B8599;font-size:.75rem;text-transform:uppercase">
+    <th style="padding:.375rem .75rem;text-align:left;font-weight:600">Товар</th>
+    <th style="padding:.375rem .75rem;text-align:center;font-weight:600">Кол-во</th>
+    <th style="padding:.375rem .75rem;text-align:right;font-weight:600">Сумма</th>
+    <th style="padding:.375rem .75rem;text-align:left;font-weight:600">Тип</th>
+  </tr></thead><tbody>{rows_html}</tbody></table>'''
+    # Order total
+    total_html = ''
+    if order_info and order_info.get('total_amount'):
+        total_html = f'<div style="text-align:right;font-weight:700;color:#F0F4F8;margin:.5rem 0">Итого: {float(order_info["total_amount"]):,.0f} ₽</div>'
+    track_html = ''
+    if order_info and order_info.get('track_number'):
+        track_html = f'<p style="font-size:.875rem">Трек-номер: <strong style="color:#00D4FF">{order_info["track_number"]}</strong></p>'
+    timeline = _build_status_timeline(status)
+    body = f"""<html><body style="background:#080A0F;padding:2rem;margin:0">
+<div style="max-width:580px;margin:0 auto;background:#0D1018;border-radius:12px;padding:2rem;border:1px solid rgba(255,255,255,.06);font-family:sans-serif;color:#F0F4F8">
+  <h1 style="color:#00D4FF;margin-top:0;font-size:1.4rem;letter-spacing:.05em">⚡ Fm TuN</h1>
+  <p style="font-size:1rem;color:#7B8599;margin:.25rem 0 1.5rem">Уведомление о статусе заказа</p>
+  <div style="background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.2);border-radius:10px;padding:1.25rem;margin-bottom:1.5rem">
+    <p style="margin:0 0 .25rem;font-size:.8rem;color:#7B8599;text-transform:uppercase;letter-spacing:.1em">Заказ #{order_id}</p>
+    <div style="font-size:1.5rem;font-weight:700;color:#00D4FF">{icon} {label}</div>
+  </div>
+  {note_html}
+  <h3 style="font-size:.85rem;text-transform:uppercase;letter-spacing:.1em;color:#7B8599;margin:1.5rem 0 .5rem">История статусов</h3>
+  {timeline}
+  {items_html}
+  {total_html}
+  {track_html}
+  <hr style="border:none;border-top:1px solid rgba(255,255,255,.06);margin:1.5rem 0">
+  <p style="margin:0"><a href="{base_url}/tracking" style="display:inline-block;padding:.625rem 1.5rem;background:#00D4FF;color:#080A0F;text-decoration:none;border-radius:6px;font-weight:700;font-size:.875rem">Отследить заказ →</a></p>
+  <p style="color:#3A4055;font-size:.75rem;margin-top:1.5rem">© Fm TuN. Автоматическое уведомление — не отвечайте на это письмо.</p>
+</div></body></html>"""
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = f"Fm TuN — Заказ #{order_id}: {label}"
+        msg["From"] = SMTP_FROM
+        msg["To"] = to_email
+        msg.attach(MIMEText(body, "html", "utf-8"))
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as srv:
+            srv.ehlo()
+            srv.starttls()
+            srv.login(SMTP_USER, SMTP_PASS)
+            srv.sendmail(SMTP_FROM, to_email, msg.as_string())
+    except Exception as e:
+        logger.warning("Email notification to %s failed: %s", to_email, e)
+
+
+async def send_order_email(to_email: str, order_id: int, status: str, delay_note: str | None = None):
+    """Fetch order details and send rich HTML email notification."""
+    try:
+        async with db.pool.acquire() as conn:
+            items = await conn.fetch(
+                "SELECT product_name, quantity, price, order_type, delivery_type FROM order_items WHERE order_id=$1",
+                order_id
+            )
+            order_info = await conn.fetchrow(
+                "SELECT total_amount, track_number FROM orders WHERE id=$1", order_id
+            )
+        await asyncio.to_thread(
+            _send_email_sync, to_email, order_id, status, delay_note,
+            [dict(r) for r in items] if items else None,
+            dict(order_info) if order_info else None
+        )
+    except Exception as e:
+        logger.warning("send_order_email error: %s", e)
+
+
+def _send_verification_email_sync(to_email: str, token: str):
+    """Отправить письмо для подтверждения email."""
+    if not SMTP_HOST or not SMTP_USER or not SMTP_PASS:
+        logger.warning("SMTP not configured — verification email not sent to %s", to_email)
+        return
+    base_url = os.getenv("BASE_URL", "https://scooterparts.onrender.com")
+    verify_url = f"{base_url}/api/verify-email?token={token}"
+    body = f"""<html><body style="background:#080A0F;padding:2rem;margin:0">
+<div style="max-width:540px;margin:0 auto;background:#0D1018;border-radius:12px;padding:2rem;border:1px solid rgba(255,255,255,.06);font-family:sans-serif;color:#F0F4F8">
+  <h1 style="color:#00D4FF;margin-top:0;font-size:1.5rem">⚡ Fm TuN</h1>
+  <p style="font-size:1rem">Добро пожаловать! Подтвердите ваш email-адрес, чтобы завершить регистрацию.</p>
+  <a href="{verify_url}" style="display:inline-block;margin:1.25rem 0;padding:.75rem 2rem;background:#00D4FF;color:#080A0F;text-decoration:none;border-radius:8px;font-weight:700;font-size:1rem">Подтвердить email</a>
+  <p style="color:#7B8599;font-size:.85rem">Ссылка действительна 24 часа. Если вы не регистрировались — просто проигнорируйте это письмо.</p>
+  <hr style="border:none;border-top:1px solid rgba(255,255,255,.06);margin:1.5rem 0">
+  <p style="color:#7B8599;font-size:.8rem">© Fm TuN. Автоматическое уведомление — не отвечайте на это письмо.</p>
+</div></body></html>"""
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = "Fm TuN — Подтверждение email"
+        msg["From"] = SMTP_FROM
+        msg["To"] = to_email
+        msg.attach(MIMEText(body, "html", "utf-8"))
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as srv:
+            srv.ehlo()
+            srv.starttls()
+            srv.login(SMTP_USER, SMTP_PASS)
+            srv.sendmail(SMTP_FROM, to_email, msg.as_string())
+        logger.info("Verification email sent to %s", to_email)
+    except Exception as e:
+        logger.warning("Verification email to %s failed: %s", to_email, e)
+
+
+async def send_verification_email(to_email: str, token: str):
+    await asyncio.to_thread(_send_verification_email_sync, to_email, token)
+
+
+def _send_telegram_sync(text: str):
+    """Отправить сообщение в Telegram (admin-канал или пользователю)."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_ADMIN_CHAT_ID:
+        return
+    try:
+        payload = urllib.parse.urlencode({
+            "chat_id": TELEGRAM_ADMIN_CHAT_ID,
+            "text": text,
+            "parse_mode": "HTML",
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+            data=payload, method="POST"
+        )
+        urllib.request.urlopen(req, timeout=8)
+    except Exception as e:
+        logger.warning("Telegram notification failed: %s", e)
+
+
+async def send_order_telegram(order_id: int, status: str, username: str, email: str, delay_note: str | None = None):
+    label = ORDER_STATUS_LABELS.get(status, status)
+    note = f"\n⚠️ <i>{delay_note}</i>" if delay_note else ""
+    text = (f"📦 <b>Заказ #{order_id}</b>\n"
+            f"Статус: <b>{label}</b>{note}\n"
+            f"Клиент: {username} ({email})\n"
+            f"🔗 <a href='https://scooterparts.onrender.com/admin'>Открыть в админке</a>")
+    await asyncio.to_thread(_send_telegram_sync, text)
 
 
 # ========== МОДЕЛИ ==========
@@ -182,6 +413,18 @@ class OrderStatusUpdate(BaseModel):
     ]
     delay_note: Optional[str] = Field(None, max_length=500)
     payment_status: Optional[Literal['not_paid', 'pending', 'waiting', 'paid', 'failed']] = None
+    status_in_stock: Optional[Literal[
+        'created', 'processing', 'confirmed', 'in_transit',
+        'customs', 'warehouse', 'delivery', 'completed', 'cancelled'
+    ]] = None
+    status_auto: Optional[Literal[
+        'created', 'processing', 'confirmed', 'in_transit',
+        'customs', 'warehouse', 'delivery', 'completed', 'cancelled'
+    ]] = None
+    status_air: Optional[Literal[
+        'created', 'processing', 'confirmed', 'in_transit',
+        'customs', 'warehouse', 'delivery', 'completed', 'cancelled'
+    ]] = None
 
 
 class TrackNumberUpdate(BaseModel):
@@ -234,6 +477,8 @@ class OrderCreate(BaseModel):
     comment: Optional[str] = None
     # Тип заказа для товаров с предзаказом, если не сохранён в cart_items
     items_overrides: Optional[list] = None
+    # Промокод (опционально)
+    promo_code: Optional[str] = None
 
 
 class PaymentCreate(BaseModel):
@@ -273,7 +518,7 @@ ALGORITHM  = "HS256"
 
 # Fix #5: валидация image_url против SSRF и XSS
 _ALLOWED_IMAGE_URL = re.compile(
-    r'^https?://.+\.(jpg|jpeg|png|gif|webp)(\?.*)?$', re.IGNORECASE
+    r'^https?://.+\.(jpg|jpeg|png|gif|webp)$', re.IGNORECASE
 )
 _INTERNAL_HOSTS = re.compile(
     r'^(localhost|127\.\d+\.\d+\.\d+|0\.0\.0\.0|169\.254\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)'
@@ -839,7 +1084,78 @@ class Database:
                 print("✅ Миграция v24: item_comment в order_items")
             except Exception as e:
                 print(f"⚠️ Миграция v24 (item_comment): {e}")
-            print("✅ v24: promo_codes, auto_discount, item_comment готовы")
+            # ── v25: Промокод в заказе, вишлист ──
+            try:
+                await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS promo_code VARCHAR(50) DEFAULT NULL")
+                await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS promo_discount DECIMAL(10,2) DEFAULT 0")
+                print("✅ Миграция v25: promo_code, promo_discount в orders")
+            except Exception as e:
+                print(f"⚠️ Миграция v25 (promo): {e}")
+            # ── v25: Вишлист ──
+            await conn.execute('''
+                CREATE TABLE IF NOT EXISTS wishlists (
+                    id SERIAL PRIMARY KEY,
+                    user_id UUID NOT NULL,
+                    product_id INTEGER NOT NULL,
+                    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(user_id, product_id),
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+                )
+            ''')
+            # ── v25: Отзывы на товары ──
+            await conn.execute('''
+                CREATE TABLE IF NOT EXISTS product_reviews (
+                    id SERIAL PRIMARY KEY,
+                    product_id INTEGER NOT NULL,
+                    user_id UUID NOT NULL,
+                    rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+                    review_text TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(product_id, user_id),
+                    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            ''')
+            print("✅ v25: promo в orders, wishlists, product_reviews готовы")
+
+            # ── Документы поставщика ──
+            await conn.execute('''
+                CREATE TABLE IF NOT EXISTS supplier_documents (
+                    id SERIAL PRIMARY KEY,
+                    doc_type VARCHAR(64) NOT NULL UNIQUE,
+                    filename VARCHAR(255) NOT NULL,
+                    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+
+            # ── v26: поля заказа ──
+            try:
+                await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name VARCHAR(200)")
+                await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_cost DECIMAL(12,2) DEFAULT 0")
+                print("✅ Миграция v26: customer_name, delivery_cost в orders")
+            except Exception as e:
+                print(f"⚠️ Миграция v26 (orders): {e}")
+
+            # ── v27: статусы по категориям доставки ──
+            try:
+                await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS status_in_stock VARCHAR(30) DEFAULT NULL")
+                await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS status_auto VARCHAR(30) DEFAULT NULL")
+                await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS status_air VARCHAR(30) DEFAULT NULL")
+                print("✅ Миграция v27: status_in_stock, status_auto, status_air в orders")
+            except Exception as e:
+                print(f"⚠️ Миграция v27 (orders): {e}")
+
+            # ── v28: верификация email ──
+            try:
+                await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE")
+                await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR(100)")
+                await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_sent_at TIMESTAMP")
+                # Существующие admin-пользователи сразу помечаем как верифицированные
+                await conn.execute("UPDATE users SET email_verified=TRUE WHERE is_admin=TRUE AND email_verified=FALSE")
+                print("✅ Миграция v28: email_verified, email_verification_token в users")
+            except Exception as e:
+                print(f"⚠️ Миграция v28 (users): {e}")
 
             # --- Начальные категории ---
             for slug, name, emoji, desc in DEFAULT_CATEGORIES:
@@ -970,7 +1286,12 @@ class AppMiddleware(BaseHTTPMiddleware):
 
         # ── 2. Rate limiting ─────────────────────────────────────────────────
         if not request.url.path.startswith("/static"):
-            ip  = getattr(request.client, "host", "unknown")
+            # Извлекаем IP с учётом обратного прокси (Render.com)
+            forwarded_for = request.headers.get("X-Forwarded-For", "")
+            if forwarded_for:
+                ip = forwarded_for.split(",")[0].strip()[:45]
+            else:
+                ip = getattr(request.client, "host", "unknown")
             now = time.time()
             if len(self._buckets) > self.MAX_TRACKED:
                 self._buckets.clear()
@@ -1054,17 +1375,46 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
+# ── SEO: robots.txt и sitemap.xml ────────────────────────────────────────────
+@app.get("/robots.txt", include_in_schema=False)
+async def robots_txt():
+    from fastapi.responses import PlainTextResponse
+    robots_path = STATIC_DIR / "robots.txt"
+    if robots_path.exists():
+        return PlainTextResponse(robots_path.read_text())
+    return PlainTextResponse("User-agent: *\nAllow: /\n")
+
+
+@app.get("/sitemap.xml", include_in_schema=False)
+async def sitemap_xml():
+    from fastapi.responses import Response as _Response
+    from datetime import date
+    today = date.today().isoformat()
+    base = "https://scooterparts.onrender.com"
+    urls = ["/", "/products", "/about", "/legal"]
+    xml_parts = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ]
+    for u in urls:
+        xml_parts.append(
+            f"<url><loc>{base}{u}</loc><lastmod>{today}</lastmod><changefreq>weekly</changefreq></url>"
+        )
+    xml_parts.append("</urlset>")
+    return _Response(content="\n".join(xml_parts), media_type="application/xml")
+
+
 # ==========================================
 # ========== СТРАНИЦЫ ==========
 # ==========================================
 
 @app.get("/")
 async def root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse("index.html", {"request": request, "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/products")
 async def products_page(request: Request):
-    return templates.TemplateResponse("products.html", {"request": request})
+    return templates.TemplateResponse("products.html", {"request": request, "ym_counter_id": YM_COUNTER_ID})
 
 
 def _require_admin_cookie(request: Request):
@@ -1086,24 +1436,24 @@ async def admin_panel(request: Request):
     if not payload:
         return RedirectResponse("/auth?next=/admin", status_code=302)
     is_manager = bool(payload.get("is_manager")) and not bool(payload.get("is_admin"))
-    return templates.TemplateResponse("admin.html", {"request": request, "is_manager": is_manager})
+    return templates.TemplateResponse("admin.html", {"request": request, "is_manager": is_manager, "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/admin/add-product")
 async def admin_add_product_page(request: Request):
     if not _require_admin_cookie(request):
         return RedirectResponse("/auth?next=/admin", status_code=302)
-    return templates.TemplateResponse("add_product.html", {"request": request})
+    return templates.TemplateResponse("add_product.html", {"request": request, "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/legal")
 async def legal_page(request: Request, doc: str = "terms"):
     """Единый маршрут для правовых документов. /legal?doc=terms|privacy|cookies|offer|returns"""
     allowed = {"terms", "privacy", "cookies", "offer", "returns"}
     doc_type = doc if doc in allowed else "terms"
-    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": doc_type})
+    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": doc_type, "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/privacy-policy")
 async def privacy_policy_page(request: Request):
-    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "privacy"})
+    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "privacy", "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/cookie-policy")
 async def cookie_policy_page(request: Request):
@@ -1112,31 +1462,31 @@ async def cookie_policy_page(request: Request):
 
 @app.get("/terms")
 async def terms_page(request: Request):
-    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "terms"})
+    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "terms", "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/offer")
 async def offer_page(request: Request):
-    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "offer"})
+    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "offer", "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/returns")
 async def returns_page(request: Request):
-    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "returns"})
+    return templates.TemplateResponse("legal.html", {"request": request, "doc_type": "returns", "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/about")
 async def about_page(request: Request):
-    return templates.TemplateResponse("about.html", {"request": request})
+    return templates.TemplateResponse("about.html", {"request": request, "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/tracking")
 async def tracking_page(request: Request):
-    return templates.TemplateResponse("tracking.html", {"request": request})
+    return templates.TemplateResponse("tracking.html", {"request": request, "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/cart")
 async def cart_page(request: Request):
-    return templates.TemplateResponse("cart.html", {"request": request})
+    return templates.TemplateResponse("cart.html", {"request": request, "ym_counter_id": YM_COUNTER_ID})
 
 @app.get("/auth")
 async def auth_page(request: Request, next: str = "/"):
-    return templates.TemplateResponse("auth.html", {"request": request, "next_url": next})
+    return templates.TemplateResponse("auth.html", {"request": request, "next_url": next, "ym_counter_id": YM_COUNTER_ID})
 
 
 # Fix #7: Эндпоинт для получения CSRF-токена. Фронтенд вызывает его при загрузке
@@ -1217,12 +1567,15 @@ async def register(user_data: UserRegister):
 
             user_id = str(uuid4())
             password_hash = hasher.get_password_hash(user_data.password)
+            verification_token = secrets.token_urlsafe(32)
             await conn.execute(
-                "INSERT INTO users (id,username,email,full_name,phone,password_hash,privacy_accepted,privacy_accepted_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
+                "INSERT INTO users (id,username,email,full_name,phone,password_hash,privacy_accepted,privacy_accepted_at,email_verified,email_verification_token,email_verification_sent_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
                 user_id, user_data.username, user_data.email, user_data.full_name,
-                user_data.phone, password_hash, True, datetime.utcnow()
+                user_data.phone, password_hash, True, datetime.utcnow(),
+                False, verification_token, datetime.utcnow()
             )
-            return {"message": "Аккаунт создан успешно", "user_id": user_id}
+            asyncio.create_task(send_verification_email(user_data.email, verification_token))
+            return {"message": "Аккаунт создан. Проверьте вашу почту для подтверждения email.", "user_id": user_id, "requires_verification": True}
     except HTTPException:
         raise
     except Exception as e:
@@ -1235,12 +1588,18 @@ async def login(login_data: UserLogin, response: Response):
     try:
         async with db.pool.acquire() as conn:
             user = await conn.fetchrow(
-                "SELECT id,username,email,full_name,password_hash,is_admin,is_manager,personal_discount FROM users WHERE username=$1",
+                "SELECT id,username,email,full_name,password_hash,is_admin,is_manager,personal_discount,email_verified FROM users WHERE username=$1",
                 login_data.username
             )
             if not user or not hasher.verify_password(login_data.password, user['password_hash']):
                 logger.warning("Failed login attempt for username: %s", login_data.username)
                 raise HTTPException(status_code=401, detail="Неверное имя пользователя или пароль")
+            # Проверяем верификацию email (кроме администраторов)
+            if not user['is_admin'] and not user.get('email_verified', True):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Подтвердите email перед входом. Проверьте вашу почту или запросите новое письмо."
+                )
 
             user_id = str(user['id'])
             is_manager = bool(user.get('is_manager', False))
@@ -1274,6 +1633,88 @@ async def login(login_data: UserLogin, response: Response):
         raise
     except Exception as e:
         logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.get("/api/verify-email")
+async def verify_email(token: str):
+    """Подтверждение email по токену из письма."""
+    try:
+        async with db.pool.acquire() as conn:
+            user = await conn.fetchrow(
+                "SELECT id, email_verification_sent_at FROM users WHERE email_verification_token=$1 AND email_verified=FALSE",
+                token
+            )
+            if not user:
+                return HTMLResponse(content="""<html><body style="background:#080A0F;color:#F0F4F8;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0">
+<div style="text-align:center;max-width:400px;padding:2rem">
+  <div style="font-size:3rem;margin-bottom:1rem">❌</div>
+  <h2 style="color:#FF4444">Недействительная ссылка</h2>
+  <p style="color:#7B8599">Ссылка недействительна или уже использована.</p>
+  <a href="/auth" style="color:#00D4FF">Перейти ко входу</a>
+</div></body></html>""", status_code=400)
+            # Проверяем срок действия (24 часа)
+            sent_at = user['email_verification_sent_at']
+            if sent_at and (datetime.utcnow() - sent_at).total_seconds() > 86400:
+                return HTMLResponse(content="""<html><body style="background:#080A0F;color:#F0F4F8;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0">
+<div style="text-align:center;max-width:400px;padding:2rem">
+  <div style="font-size:3rem;margin-bottom:1rem">⏰</div>
+  <h2 style="color:#FFB020">Ссылка истекла</h2>
+  <p style="color:#7B8599">Ссылка действительна только 24 часа. Запросите новое письмо.</p>
+  <a href="/auth" style="color:#00D4FF">Перейти ко входу</a>
+</div></body></html>""", status_code=400)
+            await conn.execute(
+                "UPDATE users SET email_verified=TRUE, email_verification_token=NULL, email_verification_sent_at=NULL WHERE id=$1",
+                user['id']
+            )
+        return RedirectResponse(url="/auth?verified=1", status_code=302)
+    except Exception as e:
+        logger.error("Email verify error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.post("/api/resend-verification")
+async def resend_verification(request: Request):
+    """Повторная отправка письма подтверждения email."""
+    try:
+        data = await request.json()
+        email = data.get("email", "").strip().lower()
+        username = data.get("username", "").strip()
+        if not email and not username:
+            raise HTTPException(status_code=400, detail="Email или имя пользователя не указаны")
+        async with db.pool.acquire() as conn:
+            if email:
+                user = await conn.fetchrow(
+                    "SELECT id, email, email_verified, email_verification_sent_at FROM users WHERE email=$1",
+                    email
+                )
+            else:
+                user = await conn.fetchrow(
+                    "SELECT id, email, email_verified, email_verification_sent_at FROM users WHERE username=$1",
+                    username
+                )
+            if user:
+                email = user['email']
+            if not user:
+                # Не раскрываем факт существования пользователя
+                return {"message": "Если аккаунт существует — письмо отправлено"}
+            if user['email_verified']:
+                raise HTTPException(status_code=400, detail="Email уже подтверждён")
+            # Rate-limit: не чаще раза в 5 минут
+            sent_at = user['email_verification_sent_at']
+            if sent_at and (datetime.utcnow() - sent_at).total_seconds() < 300:
+                raise HTTPException(status_code=429, detail="Подождите 5 минут перед повторной отправкой")
+            new_token = secrets.token_urlsafe(32)
+            await conn.execute(
+                "UPDATE users SET email_verification_token=$1, email_verification_sent_at=$2 WHERE id=$3",
+                new_token, datetime.utcnow(), user['id']
+            )
+        asyncio.create_task(send_verification_email(email, new_token))
+        return {"message": "Письмо отправлено. Проверьте почту."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Resend verification error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
@@ -1411,7 +1852,7 @@ async def update_delivery_settings(request: Request, admin=Depends(verify_admin)
         return {"success": True}
     except Exception as e:
         logger.error("Update delivery settings error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 # ==========================================
@@ -2097,11 +2538,37 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(get_curre
                 price = round(raw * (1 - eff_disc / 100)) if eff_disc > 0 else raw
                 total += price * i['quantity']
 
+            # Применяем промокод (если передан)
+            promo_discount = 0.0
+            applied_promo = None
+            if order_data.promo_code:
+                promo_code_upper = order_data.promo_code.strip().upper()
+                promo_row = await conn.fetchrow(
+                    "SELECT * FROM promo_codes WHERE code=$1 AND is_active=TRUE", promo_code_upper
+                )
+                if promo_row:
+                    from datetime import datetime as _dt
+                    promo_expired = promo_row['expires_at'] and promo_row['expires_at'] < _dt.now(timezone.utc).replace(tzinfo=None)
+                    promo_exhausted = promo_row['max_uses'] and promo_row['used_count'] >= promo_row['max_uses']
+                    if not promo_expired and not promo_exhausted:
+                        if promo_row['discount_type'] == 'percent':
+                            promo_discount = round(total * float(promo_row['discount_value']) / 100, 2)
+                        else:
+                            promo_discount = min(float(promo_row['discount_value']), total)
+                        applied_promo = promo_code_upper
+                        # Инкрементируем счётчик использований
+                        await conn.execute(
+                            "UPDATE promo_codes SET used_count = used_count + 1 WHERE id = $1",
+                            promo_row['id']
+                        )
+            total_final = max(0.0, total - promo_discount)
+
             order_id = await conn.fetchval('''
-                INSERT INTO orders (user_id, total_amount, delivery_address, comment, status, payment_status)
-                VALUES ($1, $2, $3, $4, 'created', 'pending')
+                INSERT INTO orders (user_id, total_amount, delivery_address, comment, status, payment_status, promo_code, promo_discount)
+                VALUES ($1, $2, $3, $4, 'created', 'pending', $5, $6)
                 RETURNING id
-            ''', user_id, total, order_data.delivery_address, order_data.comment)
+            ''', user_id, total_final, order_data.delivery_address, order_data.comment,
+                applied_promo, promo_discount)
 
             for item in cart_items:
                 # Определяем название и цену товара
@@ -2168,7 +2635,9 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(get_curre
             return {
                 "message": "Заказ создан",
                 "order_id": order_id,
-                "total": total,
+                "total": total_final,
+                "promo_discount": promo_discount,
+                "promo_code": applied_promo,
                 "status": "created"
             }
     except HTTPException:
@@ -2191,7 +2660,9 @@ async def get_user_orders(user_id: str = Depends(get_current_user)):
                            json_build_object(
                              'product_name', oi.product_name,
                              'quantity', oi.quantity,
-                             'price', oi.price
+                             'price', oi.price,
+                             'order_type', COALESCE(oi.order_type, 'in_stock'),
+                             'delivery_type', oi.delivery_type
                            ) ORDER BY oi.id
                          ) FILTER (WHERE oi.id IS NOT NULL),
                          '[]'
@@ -2235,6 +2706,51 @@ async def get_active_orders_count():
             return {"count": count or 0}
     except Exception as e:
         logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.post("/api/orders/{order_id}/cancel")
+async def cancel_order(order_id: int, user_id: str = Depends(get_current_user)):
+    """Отменить заказ пользователем (только статусы created и processing)"""
+    try:
+        async with db.pool.acquire() as conn:
+            order = await conn.fetchrow(
+                "SELECT id, status, user_id FROM orders WHERE id=$1 AND user_id=$2",
+                order_id, user_id
+            )
+            if not order:
+                raise HTTPException(status_code=404, detail="Заказ не найден")
+            if order['status'] not in ('created', 'processing'):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Нельзя отменить заказ в статусе «{}»".format(order['status'])
+                )
+            # Возвращаем сток для товаров in_stock
+            items = await conn.fetch(
+                "SELECT product_id, specification_id, quantity, order_type FROM order_items WHERE order_id=$1",
+                order_id
+            )
+            for item in items:
+                if item['order_type'] != 'preorder':
+                    if item['specification_id']:
+                        await conn.execute(
+                            "UPDATE product_specifications SET stock = stock + $1 WHERE id = $2",
+                            item['quantity'], item['specification_id']
+                        )
+                    else:
+                        await conn.execute(
+                            "UPDATE products SET stock = stock + $1 WHERE id = $2",
+                            item['quantity'], item['product_id']
+                        )
+            await conn.execute(
+                "UPDATE orders SET status='cancelled', updated_at=CURRENT_TIMESTAMP WHERE id=$1",
+                order_id
+            )
+            return {"message": "Заказ отменён", "order_id": order_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("cancel_order error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
@@ -2725,24 +3241,38 @@ async def update_order_status(order_id: int, body: OrderStatusUpdate, admin=Depe
     delay_note = body.delay_note
     try:
         async with db.pool.acquire() as conn:
+            # Получаем email/username клиента для уведомлений
+            order_info = await conn.fetchrow(
+                "SELECT u.email, u.username FROM orders o JOIN users u ON u.id=o.user_id WHERE o.id=$1",
+                order_id
+            )
+            # Строим динамический UPDATE с учётом per-category статусов
+            set_parts = ["status=$1", "delay_note=$2", "updated_at=NOW()"]
+            params: list = [new_status, delay_note if delay_note else None]
             if body.payment_status:
-                r = await conn.execute(
-                    "UPDATE orders SET status=$1, delay_note=$2, payment_status=$3, updated_at=NOW() WHERE id=$4",
-                    new_status,
-                    delay_note if delay_note else None,
-                    body.payment_status,
-                    order_id
-                )
-            else:
-                r = await conn.execute(
-                    "UPDATE orders SET status=$1, delay_note=$2, updated_at=NOW() WHERE id=$3",
-                    new_status,
-                    delay_note if delay_note else None,
-                    order_id
-                )
+                params.append(body.payment_status)
+                set_parts.append(f"payment_status=${len(params)}")
+            if body.status_in_stock is not None:
+                params.append(body.status_in_stock)
+                set_parts.append(f"status_in_stock=${len(params)}")
+            if body.status_auto is not None:
+                params.append(body.status_auto)
+                set_parts.append(f"status_auto=${len(params)}")
+            if body.status_air is not None:
+                params.append(body.status_air)
+                set_parts.append(f"status_air=${len(params)}")
+            params.append(order_id)
+            r = await conn.execute(
+                f"UPDATE orders SET {', '.join(set_parts)} WHERE id=${len(params)}",
+                *params
+            )
             if r == "UPDATE 0":
                 raise HTTPException(status_code=404, detail="Заказ не найден")
-            return {"message": "Статус обновлён", "status": new_status, "delay_note": delay_note, "payment_status": body.payment_status}
+        # Отправляем уведомления (не блокируем ответ)
+        if order_info:
+            asyncio.create_task(send_order_email(order_info["email"], order_id, new_status, delay_note))
+            asyncio.create_task(send_order_telegram(order_id, new_status, order_info["username"], order_info["email"], delay_note))
+        return {"message": "Статус обновлён", "status": new_status, "delay_note": delay_note, "payment_status": body.payment_status}
     except HTTPException:
         raise
     except Exception as e:
@@ -2766,7 +3296,7 @@ async def update_order_track(order_id: int, body: TrackNumberUpdate, admin=Depen
         raise
     except Exception as e:
         logger.error("Track update error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.put("/api/admin/orders/{order_id}/payment-status")
@@ -2785,7 +3315,7 @@ async def update_order_payment_status(order_id: int, body: PaymentStatusUpdate, 
         raise
     except Exception as e:
         logger.error("Payment status update error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/admin/orders/{order_id}/items")
@@ -2810,7 +3340,7 @@ async def get_order_items(order_id: int, admin=Depends(verify_manager_or_admin))
             return items
     except Exception as e:
         logger.error("Order items error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.post("/api/admin/orders")
@@ -2822,14 +3352,17 @@ async def create_order_manual(request: Request, admin=Depends(verify_admin)):
         items = data.get('items', [])
         comment = data.get('comment', '')
         address = data.get('address', '')
+        customer_name = data.get('customer_name', '')
+        delivery_cost = float(data.get('delivery_cost', 0) or 0)
         if not items:
             raise HTTPException(status_code=400, detail="Нет позиций")
-        total = sum(float(i.get('price', 0)) * int(i.get('quantity', 1)) for i in items)
+        items_total = sum(float(i.get('price', 0)) * int(i.get('quantity', 1)) for i in items)
+        total = items_total + delivery_cost
         async with db.pool.acquire() as conn:
             order_id = await conn.fetchval(
-                """INSERT INTO orders (user_id, status, total_amount, delivery_address, comment, payment_status)
-                   VALUES ($1, 'created', $2, $3, $4, 'pending') RETURNING id""",
-                user_id, total, address, comment
+                """INSERT INTO orders (user_id, status, total_amount, delivery_address, comment, payment_status, customer_name, delivery_cost)
+                   VALUES ($1, 'created', $2, $3, $4, 'pending', $5, $6) RETURNING id""",
+                user_id, total, address, comment, customer_name or None, delivery_cost
             )
             for item in items:
                 await conn.execute(
@@ -2845,12 +3378,90 @@ async def create_order_manual(request: Request, admin=Depends(verify_admin)):
                     float(item['weight_kg']) if item.get('weight_kg') else None,
                     item.get('comment') or None
                 )
+                # Декрементируем остаток для товаров в наличии
+                if item.get('order_type', 'in_stock') != 'preorder' and item.get('product_id'):
+                    spec_id = item.get('specification_id')
+                    qty = int(item.get('quantity', 1))
+                    if spec_id:
+                        await conn.execute(
+                            "UPDATE product_specifications SET stock = GREATEST(stock - $1, 0) WHERE id = $2",
+                            qty, spec_id
+                        )
+                    else:
+                        await conn.execute(
+                            "UPDATE products SET stock = GREATEST(stock - $1, 0) WHERE id = $2",
+                            qty, item['product_id']
+                        )
             return {"success": True, "order_id": order_id, "total": total}
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Manual order error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.get("/api/admin/users")
+async def admin_users_list(search: str = "", page: int = 1, limit: int = 50, admin=Depends(verify_admin)):
+    """Список всех пользователей с поиском по ФИО / username / email."""
+    try:
+        offset = (page - 1) * limit
+        pattern = f"%{search}%"
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch(
+                """SELECT id, username, email, full_name, phone, is_admin, is_manager,
+                          COALESCE(email_verified, FALSE) AS email_verified,
+                          personal_discount, created_at
+                   FROM users
+                   WHERE ($1 = '' OR full_name ILIKE $1 OR username ILIKE $1 OR email ILIKE $1)
+                   ORDER BY created_at DESC
+                   LIMIT $2 OFFSET $3""",
+                pattern, limit, offset
+            )
+            total = await conn.fetchval(
+                "SELECT COUNT(*) FROM users WHERE ($1 = '' OR full_name ILIKE $1 OR username ILIKE $1 OR email ILIKE $1)",
+                pattern
+            )
+        return {
+            "users": [
+                {
+                    "id": str(r['id']),
+                    "username": r['username'],
+                    "email": r['email'],
+                    "full_name": r['full_name'],
+                    "phone": r['phone'],
+                    "is_admin": r['is_admin'],
+                    "is_manager": r['is_manager'],
+                    "email_verified": r['email_verified'],
+                    "personal_discount": int(r['personal_discount'] or 0),
+                    "created_at": r['created_at'].isoformat() if r['created_at'] else None,
+                }
+                for r in rows
+            ],
+            "total": total,
+            "page": page,
+            "limit": limit,
+        }
+    except Exception as e:
+        logger.error("admin_users_list error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.get("/api/admin/users-autocomplete")
+async def admin_users_autocomplete(search: str = "", admin=Depends(verify_admin)):
+    """Автодополнение для поля ФИО при создании заказа вручную."""
+    try:
+        pattern = f"%{search}%"
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch(
+                """SELECT id, full_name, username, email FROM users
+                   WHERE full_name ILIKE $1 OR username ILIKE $1 OR email ILIKE $1
+                   ORDER BY full_name LIMIT 10""",
+                pattern
+            )
+        return [{"id": str(r['id']), "full_name": r['full_name'], "username": r['username'], "email": r['email']} for r in rows]
+    except Exception as e:
+        logger.error("users_autocomplete error: %s", e)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.put("/api/admin/customers/{user_id}/discount")
@@ -2867,7 +3478,7 @@ async def set_customer_discount(user_id: str, request: Request, admin=Depends(ve
         return {"success": True, "discount": discount}
     except Exception as e:
         logger.error("Discount set error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.put("/api/admin/customers/{user_id}/role")
@@ -2884,7 +3495,7 @@ async def set_customer_role(user_id: str, request: Request, admin=Depends(verify
         return {"success": True, "is_manager": is_manager}
     except Exception as e:
         logger.error("Role set error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.post("/api/admin/users/create")
@@ -2911,7 +3522,7 @@ async def create_user_manual(request: Request, admin=Depends(verify_admin)):
         raise
     except Exception as e:
         logger.error("Create user error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 # ── Installation Requests (ТЗ 15) ──
@@ -2940,7 +3551,7 @@ async def create_installation_request(request: Request, user_id: str = Depends(g
         return {"success": True, "id": req_id}
     except Exception as e:
         logger.error("Installation request error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/admin/installation-requests")
@@ -2965,7 +3576,7 @@ async def get_installation_requests(admin=Depends(verify_admin), status: Optiona
                 result.append(d)
             return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.put("/api/admin/installation-requests/{req_id}")
@@ -2980,7 +3591,7 @@ async def update_installation_request(req_id: int, request: Request, admin=Depen
             )
         return {"success": True}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.get("/api/admin/crm/export-csv")
@@ -3045,7 +3656,7 @@ async def export_crm_csv(admin=Depends(verify_admin)):
             headers={'Content-Disposition': 'attachment; filename="crm_export.xlsx"'}
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 # ==========================================
@@ -3189,7 +3800,7 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
                 print(f"❌ Error processing image {idx + 1}: {e}")
                 import traceback
                 traceback.print_exc()
-                raise HTTPException(status_code=500, detail=f"Ошибка обработки изображения {idx + 1}: {str(e)}")
+                raise HTTPException(status_code=500, detail="Ошибка обработки изображения")
         
         # Если файлы не загружены, используем URL
         if not image_files and image_url:
@@ -3297,7 +3908,7 @@ async def update_product(product_id: int, request: Request, admin=Depends(verify
                     
                 except Exception as e:
                     print(f"❌ Error updating image: {e}")
-                    raise HTTPException(status_code=500, detail=f"Ошибка обновления изображения: {str(e)}")
+                    raise HTTPException(status_code=500, detail="Ошибка обновления изображения")
             elif image_url:
                 final_image = validate_image_url(image_url)  # Fix #5
 
@@ -3470,7 +4081,7 @@ async def add_product_specification(product_id: int, request: Request, admin=Dep
                 
             except Exception as e:
                 print(f"❌ Error processing image {idx + 1}: {e}")
-                raise HTTPException(status_code=500, detail=f"Ошибка обработки изображения {idx + 1}: {str(e)}")
+                raise HTTPException(status_code=500, detail="Ошибка обработки изображения")
         
         # Если файлы не загружены, используем URL
         if not image_files and image_url:
@@ -3561,7 +4172,7 @@ async def update_specification(spec_id: int, request: Request, admin=Depends(ver
                     optimized = await optimize_image(file_content)
                     final_image = "data:image/jpeg;base64," + base64.b64encode(optimized).decode('utf-8')
                 except Exception as e:
-                    raise HTTPException(status_code=500, detail=f"Ошибка обработки изображения: {e}")
+                    raise HTTPException(status_code=500, detail="Ошибка обработки изображения")
             elif image_url:
                 final_image = validate_image_url(image_url)  # Fix #5
 
@@ -3702,7 +4313,7 @@ async def get_auto_discount(admin=Depends(verify_admin)):
             }
     except Exception as e:
         logger.error("get_auto_discount error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.post("/api/admin/auto-discount")
@@ -3724,7 +4335,7 @@ async def set_auto_discount(request: Request, admin=Depends(verify_admin)):
         return {"success": True, "enabled": enabled, "discount_percent": pct}
     except Exception as e:
         logger.error("set_auto_discount error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 # ══════════════════════════════════════════════
@@ -3751,7 +4362,7 @@ async def list_promo_codes(admin=Depends(verify_admin)):
             return result
     except Exception as e:
         logger.error("list_promo_codes error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.post("/api/admin/promo-codes")
@@ -3792,7 +4403,7 @@ async def create_promo_code(request: Request, admin=Depends(verify_admin)):
         raise HTTPException(status_code=409, detail=f"Промокод с кодом уже существует")
     except Exception as e:
         logger.error("create_promo_code error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.delete("/api/admin/promo-codes/{code_id}")
@@ -3810,7 +4421,7 @@ async def delete_promo_code(code_id: int, admin=Depends(verify_admin)):
         raise
     except Exception as e:
         logger.error("delete_promo_code error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.post("/api/promo-codes/validate")
@@ -3828,8 +4439,7 @@ async def validate_promo_code(request: Request, user_id: str = Depends(get_curre
             )
             if not row:
                 raise HTTPException(status_code=404, detail="Промокод не найден или неактивен")
-            from datetime import datetime as dt
-            if row['expires_at'] and row['expires_at'] < dt.utcnow():
+            if row['expires_at'] and row['expires_at'] < datetime.now(timezone.utc).replace(tzinfo=None):
                 raise HTTPException(status_code=410, detail="Срок действия промокода истёк")
             if row['max_uses'] and row['used_count'] >= row['max_uses']:
                 raise HTTPException(status_code=410, detail="Промокод исчерпан")
@@ -3851,7 +4461,336 @@ async def validate_promo_code(request: Request, user_id: str = Depends(get_curre
         raise
     except Exception as e:
         logger.error("validate_promo error: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+# ============================================================
+# ВИШЛИСТ (избранное)
+# ============================================================
+
+@app.get("/api/wishlist")
+async def get_wishlist(user_id: str = Depends(get_current_user)):
+    """Получить список избранного пользователя"""
+    try:
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch('''
+                SELECT w.product_id, p.name, p.price, p.image_url, p.in_stock, p.preorder,
+                       p.discount_percent, w.added_at
+                FROM wishlists w
+                JOIN products p ON p.id = w.product_id
+                WHERE w.user_id = $1
+                ORDER BY w.added_at DESC
+            ''', user_id)
+            result = []
+            for r in rows:
+                d = dict(r)
+                d['price'] = float(d['price'])
+                if isinstance(d.get('added_at'), datetime):
+                    d['added_at'] = d['added_at'].isoformat()
+                result.append(d)
+            return result
+    except Exception as e:
+        logger.error("get_wishlist error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.post("/api/wishlist/{product_id}")
+async def add_to_wishlist(product_id: int, user_id: str = Depends(get_current_user)):
+    """Добавить товар в избранное"""
+    try:
+        async with db.pool.acquire() as conn:
+            exists = await conn.fetchval("SELECT id FROM products WHERE id=$1", product_id)
+            if not exists:
+                raise HTTPException(status_code=404, detail="Товар не найден")
+            await conn.execute(
+                "INSERT INTO wishlists (user_id, product_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+                user_id, product_id
+            )
+            return {"message": "Добавлено в избранное"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("add_to_wishlist error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.delete("/api/wishlist/{product_id}")
+async def remove_from_wishlist(product_id: int, user_id: str = Depends(get_current_user)):
+    """Убрать товар из избранного"""
+    try:
+        async with db.pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM wishlists WHERE user_id=$1 AND product_id=$2",
+                user_id, product_id
+            )
+            return {"message": "Удалено из избранного"}
+    except Exception as e:
+        logger.error("remove_from_wishlist error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+# ============================================================
+# ДОКУМЕНТЫ ПОСТАВЩИКА
+# ============================================================
+
+DOCS_UPLOAD_DIR = UPLOAD_DIR / "docs"
+DOCS_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+ALLOWED_DOC_TYPES = {"partner", "warranty"}
+
+
+@app.get("/api/supplier-docs")
+async def get_supplier_docs():
+    """Получить список загруженных документов поставщика"""
+    try:
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT doc_type, filename, uploaded_at FROM supplier_documents ORDER BY doc_type"
+            )
+            return [{"doc_type": r["doc_type"], "filename": r["filename"], "url": f"/static/uploads/docs/{r['filename']}", "uploaded_at": r["uploaded_at"].isoformat() if r["uploaded_at"] else None} for r in rows]
+    except Exception as e:
+        logger.error("get_supplier_docs error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.post("/api/supplier-docs/{doc_type}")
+async def upload_supplier_doc(
+    doc_type: str,
+    file: UploadFile = File(...),
+    admin: dict = Depends(verify_admin)
+):
+    """Загрузить документ поставщика (только для admin)"""
+    if doc_type not in ALLOWED_DOC_TYPES:
+        raise HTTPException(status_code=400, detail="Недопустимый тип документа")
+    # Validate file type
+    allowed_exts = {".pdf", ".jpg", ".jpeg", ".png"}
+    suffix = Path(file.filename).suffix.lower() if file.filename else ""
+    if suffix not in allowed_exts:
+        raise HTTPException(status_code=400, detail="Разрешены только PDF и изображения")
+    # Save file
+    safe_name = f"{doc_type}{suffix}"
+    dest = DOCS_UPLOAD_DIR / safe_name
+    try:
+        content = await file.read()
+        if len(content) > 10 * 1024 * 1024:  # 10 MB limit
+            raise HTTPException(status_code=400, detail="Файл слишком большой (макс 10 МБ)")
+        async with aiofiles.open(dest, "wb") as f:
+            await f.write(content)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("upload_supplier_doc file write error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Ошибка сохранения файла")
+    # Upsert DB record
+    try:
+        async with db.pool.acquire() as conn:
+            await conn.execute('''
+                INSERT INTO supplier_documents (doc_type, filename, uploaded_at)
+                VALUES ($1, $2, NOW())
+                ON CONFLICT (doc_type) DO UPDATE SET filename=$2, uploaded_at=NOW()
+            ''', doc_type, safe_name)
+        return {"message": "Документ загружен", "filename": safe_name, "url": f"/static/uploads/docs/{safe_name}"}
+    except Exception as e:
+        logger.error("upload_supplier_doc db error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Ошибка базы данных")
+
+
+# ============================================================
+# ОТЗЫВЫ НА ТОВАРЫ
+# ============================================================
+
+@app.get("/api/products/{product_id}/reviews")
+async def get_product_reviews(product_id: int):
+    """Получить отзывы на товар"""
+    try:
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch('''
+                SELECT r.id, r.rating, r.review_text, r.created_at,
+                       u.username
+                FROM product_reviews r
+                JOIN users u ON u.id = r.user_id
+                WHERE r.product_id = $1
+                ORDER BY r.created_at DESC
+            ''', product_id)
+            result = []
+            for r in rows:
+                d = dict(r)
+                if isinstance(d.get('created_at'), datetime):
+                    d['created_at'] = d['created_at'].isoformat()
+                result.append(d)
+            return result
+    except Exception as e:
+        logger.error("get_reviews error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.post("/api/products/{product_id}/reviews")
+async def add_product_review(product_id: int, request: Request, user_id: str = Depends(get_current_user)):
+    """Добавить отзыв на товар (один отзыв на пользователя)"""
+    try:
+        data = await request.json()
+        rating = int(data.get('rating', 0))
+        review_text = str(data.get('review_text', '')).strip()[:2000]
+        if not 1 <= rating <= 5:
+            raise HTTPException(status_code=400, detail="Рейтинг должен быть от 1 до 5")
+        async with db.pool.acquire() as conn:
+            exists = await conn.fetchval("SELECT id FROM products WHERE id=$1", product_id)
+            if not exists:
+                raise HTTPException(status_code=404, detail="Товар не найден")
+            # Проверяем что пользователь покупал этот товар
+            purchased = await conn.fetchval('''
+                SELECT 1 FROM order_items oi
+                JOIN orders o ON o.id = oi.order_id
+                WHERE o.user_id=$1 AND oi.product_id=$2 AND o.status='completed'
+                LIMIT 1
+            ''', user_id, product_id)
+            if not purchased:
+                raise HTTPException(status_code=403, detail="Отзыв можно оставить только после покупки")
+            try:
+                review_id = await conn.fetchval('''
+                    INSERT INTO product_reviews (product_id, user_id, rating, review_text)
+                    VALUES ($1, $2, $3, $4) RETURNING id
+                ''', product_id, user_id, rating, review_text or None)
+            except asyncpg.UniqueViolationError:
+                raise HTTPException(status_code=409, detail="Вы уже оставили отзыв на этот товар")
+            return {"message": "Отзыв добавлен", "review_id": review_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("add_review error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.get("/api/products/{product_id}/reviews/stats")
+async def get_product_review_stats(product_id: int):
+    """Получить статистику отзывов товара (средний рейтинг, количество)"""
+    try:
+        async with db.pool.acquire() as conn:
+            row = await conn.fetchrow('''
+                SELECT COUNT(*) as total, ROUND(AVG(rating)::numeric, 1) as avg_rating
+                FROM product_reviews WHERE product_id=$1
+            ''', product_id)
+            return {
+                "total": int(row['total']),
+                "avg_rating": float(row['avg_rating']) if row['avg_rating'] else None
+            }
+    except Exception as e:
+        logger.error("review_stats error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+# ============================================================
+# ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ (обновление данных)
+# ============================================================
+
+@app.put("/api/me")
+async def update_profile(request: Request, user_id: str = Depends(get_current_user)):
+    """Обновить профиль пользователя (имя, телефон)"""
+    try:
+        data = await request.json()
+        full_name = str(data.get('full_name', '')).strip()
+        phone = str(data.get('phone', '')).strip()
+        if not full_name:
+            raise HTTPException(status_code=400, detail="Имя не может быть пустым")
+        async with db.pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE users SET full_name=$1, phone=$2 WHERE id=$3",
+                full_name, phone or None, user_id
+            )
+        return {"message": "Профиль обновлён"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("update_profile error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.put("/api/me/password")
+async def change_password(request: Request, user_id: str = Depends(get_current_user)):
+    """Изменить пароль пользователя"""
+    try:
+        data = await request.json()
+        old_password = str(data.get('old_password', ''))
+        new_password = str(data.get('new_password', ''))
+        if len(new_password) < 8:
+            raise HTTPException(status_code=400, detail="Новый пароль должен быть не менее 8 символов")
+        async with db.pool.acquire() as conn:
+            row = await conn.fetchrow("SELECT password_hash FROM users WHERE id=$1", user_id)
+            if not row or not PasswordHasher.verify(old_password, row['password_hash']):
+                raise HTTPException(status_code=400, detail="Неверный текущий пароль")
+            new_hash = PasswordHasher.hash(new_password)
+            await conn.execute("UPDATE users SET password_hash=$1 WHERE id=$2", new_hash, user_id)
+        return {"message": "Пароль изменён"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("change_password error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+# ============================================================
+# СТРАНИЦА ЛИЧНОГО КАБИНЕТА
+# ============================================================
+
+@app.get("/account", response_class=HTMLResponse)
+async def account_page(request: Request):
+    """Страница личного кабинета"""
+    return templates.TemplateResponse("account.html", {"request": request, "ym_counter_id": YM_COUNTER_ID})
+
+
+# ============================================================
+# ПОХОЖИЕ ТОВАРЫ
+# ============================================================
+
+@app.get("/api/products/{product_id}/similar")
+async def get_similar_products(product_id: int):
+    """Получить похожие товары из той же категории"""
+    try:
+        async with db.pool.acquire() as conn:
+            product = await conn.fetchrow("SELECT category FROM products WHERE id=$1", product_id)
+            if not product:
+                raise HTTPException(status_code=404, detail="Товар не найден")
+            rows = await conn.fetch('''
+                SELECT id, name, price, image_url, in_stock, preorder, discount_percent
+                FROM products
+                WHERE category=$1 AND id != $2
+                ORDER BY RANDOM()
+                LIMIT 4
+            ''', product['category'], product_id)
+            result = []
+            for r in rows:
+                d = dict(r)
+                d['price'] = float(d['price'])
+                result.append(d)
+            return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("similar_products error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+# ============================================================
+# 404 HANDLER
+# ============================================================
+
+from fastapi.exceptions import HTTPException as FastAPIHTTPException
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+@app.exception_handler(StarletteHTTPException)
+async def custom_404_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404:
+        try:
+            return templates.TemplateResponse(
+                "404.html",
+                {"request": request},
+                status_code=404
+            )
+        except Exception:
+            return HTMLResponse(
+                content="<h1>404 — Страница не найдена</h1><a href='/'>На главную</a>",
+                status_code=404
+            )
+    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
 
 
 if __name__ == "__main__":

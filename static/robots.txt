@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /admin
+Disallow: /api/
+Disallow: /api/admin/
+Disallow: /docs
+Disallow: /redoc
+Allow: /
+
+Sitemap: https://scooterparts.onrender.com/sitemap.xml

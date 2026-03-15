@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png?v=6">
+  <link rel="icon" type="image/svg+xml" href="/static/favicon/favicon.svg?v=6">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png?v=6">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png?v=6">
+  <link rel="shortcut icon" href="/static/favicon/favicon.ico?v=6">
+  <meta name="theme-color" content="#080A0F">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Личный кабинет — Fm TuN</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style nonce="{{ request.state.csp_nonce }}">
+    @font-face{font-family:'PP Neue Corp Tight';src:url('https://cdn.prod.website-files.com/673af51dea86ab95d124c3ee/673b0f5784f7060c0ac05534_PPNeueCorp-TightUltrabold.otf') format('opentype');font-weight:700;font-display:swap;}
+    :root{
+      --blue:#00D4FF;--blue-dim:rgba(0,212,255,.12);--blue-glow:rgba(0,212,255,.25);
+      --bg:#080A0F;--bg2:#0D1018;--bg3:#111520;--surface:#161C26;--surface2:#1E2635;
+      --border:rgba(255,255,255,.06);--border-h:rgba(0,212,255,.2);
+      --text:#F0F4F8;--text2:#7B8599;--text3:#3E4560;
+      --green:#00E5A0;--green-dim:rgba(0,229,160,.12);
+      --red:#FF4757;--red-dim:rgba(255,71,87,.12);--amber:#FFB020;
+      --r:10px;--rl:16px;--rx:24px;
+      --fd:'Syne',sans-serif;--fr:'Rajdhani',sans-serif;--fb:'DM Sans',sans-serif;
+      --fn:'PP Neue Corp Tight','Syne',sans-serif;
+      --ease:cubic-bezier(.16,1,.3,1);--ef:cubic-bezier(.4,0,.2,1);
+      --mp:2rem;
+    }
+    [data-theme="light"]{
+      --blue:#E8580A;--blue-dim:rgba(232,88,10,.1);--blue-glow:rgba(232,88,10,.22);
+      --bg:#F7F4EF;--bg2:#EDE9E3;--bg3:#E4E0D8;--surface:#D8D3CA;--surface2:#CBC5BB;
+      --border:rgba(0,0,0,.08);--border-h:rgba(232,88,10,.28);
+      --text:#1C1208;--text2:#6B5D4F;--text3:#A89080;
+      --green:#1A7A52;--green-dim:rgba(26,122,82,.1);
+      --red:#CC2200;--red-dim:rgba(204,34,0,.1);--amber:#B8720A;
+    }
+    [data-theme="light"] .header{background:rgba(247,244,239,.92)!important;border-bottom-color:rgba(0,0,0,.1)!important;}
+    [data-theme="light"] .logo-bolt{background:linear-gradient(135deg,#FFD700,#FFA500)!important;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important;background-clip:text!important;filter:drop-shadow(0 0 8px rgba(255,180,0,.45))!important;}
+    [data-theme="light"] body{background:var(--bg);}
+    [data-theme="light"] .account-card{background:rgba(232,225,215,.7);}
+    [data-theme="light"] .tab-btn.active{background:var(--blue);color:#fff;}
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    html{scroll-behavior:smooth;overflow-x:hidden;}
+    body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;}
+    ::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--bg2);}::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px;}
+    .container{max-width:1280px;margin:0 auto;padding:0 1.5rem;}
+    /* HEADER */
+    .header{position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,.78);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);z-index:200;}
+    .header-inner{display:flex;align-items:center;justify-content:space-between;height:64px;gap:1rem;}
+    .logo{display:flex;align-items:center;gap:10px;font-family:var(--fd);font-size:1.25rem;font-weight:800;color:var(--text);text-decoration:none;letter-spacing:.08em;}
+    .logo-bolt{font-size:22px;background:linear-gradient(135deg,#FFD700,#FFA500);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 8px rgba(255,190,0,.55));}
+    .logo-text span{color:var(--blue);}
+    .header-actions{display:flex;align-items:center;gap:.75rem;}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.625rem 1.25rem;font-family:var(--fd);font-size:.875rem;font-weight:700;border-radius:var(--r);border:none;cursor:pointer;text-decoration:none;transition:all .2s;white-space:nowrap;letter-spacing:.03em;}
+    .btn-primary{background:var(--blue);color:#000;box-shadow:0 0 24px var(--blue-glow);}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 0 36px var(--blue-glow);}
+    a.btn-primary{color:#000!important;}
+    .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);}
+    .btn-ghost:hover{color:var(--text);border-color:var(--border-h);}
+    .btn-sm{padding:.375rem .875rem;font-size:.8125rem;}
+    .btn-danger{background:transparent;color:var(--red);border:1px solid var(--red);opacity:.8;}
+    .btn-danger:hover{opacity:1;background:var(--red-dim);}
+    @media(max-width:640px){.header-actions a.btn-ghost{display:none!important;}}
+    /* MAIN */
+    .main{flex:1;padding:100px 0 4rem;}
+    .page-hero{margin-bottom:2.5rem;}
+    .page-title{font-family:var(--fn);font-size:clamp(2rem,5vw,3rem);font-weight:700;margin-bottom:.5rem;}
+    .page-subtitle{color:var(--text2);font-size:1rem;}
+    /* TABS */
+    .tabs{display:flex;gap:.5rem;margin-bottom:2rem;border-bottom:1px solid var(--border);padding-bottom:.75rem;flex-wrap:wrap;}
+    .tab-btn{background:none;border:none;color:var(--text2);font-family:var(--fr);font-size:.9375rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;padding:.5rem 1rem;border-radius:var(--r);transition:all .2s;}
+    .tab-btn:hover{color:var(--text);background:var(--surface);}
+    .tab-btn.active{background:var(--blue-dim);color:var(--blue);}
+    .tab-panel{display:none;}
+    .tab-panel.active{display:block;}
+    /* CARD */
+    .account-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:2rem;margin-bottom:1.5rem;}
+    .card-title{font-family:var(--fd);font-size:1.125rem;font-weight:700;margin-bottom:1.5rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);}
+    /* FORM */
+    .form-row{display:grid;gap:1rem;grid-template-columns:1fr 1fr;margin-bottom:1rem;}
+    @media(max-width:600px){.form-row{grid-template-columns:1fr;}}
+    .form-group{display:flex;flex-direction:column;gap:.4rem;}
+    .form-label{font-size:.8125rem;color:var(--text2);font-weight:500;letter-spacing:.03em;}
+    .form-input{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:.75rem 1rem;color:var(--text);font-size:.9375rem;font-family:var(--fb);transition:border-color .2s;width:100%;}
+    .form-input:focus{outline:none;border-color:var(--blue);}
+    [data-theme="light"] .form-input{background:rgba(255,255,255,.6);border-color:rgba(0,0,0,.12);}
+    .form-actions{display:flex;gap:1rem;margin-top:1.25rem;flex-wrap:wrap;}
+    /* PROFILE INFO */
+    .profile-info{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.5rem;}
+    @media(max-width:600px){.profile-info{grid-template-columns:1fr;}}
+    .info-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1rem;}
+    .info-label{font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.25rem;}
+    .info-value{color:var(--text);font-weight:500;}
+    /* ORDERS */
+    .orders-list{display:flex;flex-direction:column;gap:1rem;}
+    .order-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;transition:border-color .2s;}
+    .order-item:hover{border-color:var(--border-h);}
+    .order-meta{display:flex;flex-direction:column;gap:.25rem;}
+    .order-num{font-family:var(--fr);font-weight:700;font-size:1rem;letter-spacing:.04em;}
+    .order-date{font-size:.8125rem;color:var(--text2);}
+    .order-status{font-size:.8125rem;padding:.25rem .625rem;border-radius:6px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+    .status-created,.status-processing,.status-pending{background:var(--amber);color:#000;}
+    .status-confirmed{background:var(--blue-dim);color:var(--blue);}
+    .status-in_transit,.status-customs,.status-warehouse,.status-delivery{background:var(--green-dim);color:var(--green);}
+    .status-completed{background:var(--green-dim);color:var(--green);}
+    .status-cancelled{background:var(--red-dim);color:var(--red);}
+    .order-total{font-family:var(--fr);font-size:1.125rem;font-weight:700;white-space:nowrap;}
+    /* AVATAR */
+    .profile-header{display:flex;align-items:center;gap:1.5rem;margin-bottom:2rem;flex-wrap:wrap;}
+    .avatar-big{width:72px;height:72px;border-radius:50%;background:var(--blue-dim);border:2px solid var(--blue);display:flex;align-items:center;justify-content:center;font-family:var(--fn);font-size:2rem;font-weight:700;color:var(--blue);flex-shrink:0;}
+    .profile-name{font-family:var(--fn);font-size:1.75rem;font-weight:700;}
+    .profile-badge{font-size:.8125rem;color:var(--text2);margin-top:.25rem;}
+    .discount-badge{display:inline-block;background:var(--green-dim);color:var(--green);font-weight:700;font-size:.8125rem;border-radius:6px;padding:.2rem .6rem;margin-left:.5rem;}
+    /* DANGER ZONE */
+    .danger-zone{border-color:var(--red-dim);background:var(--red-dim);}
+    .danger-zone .card-title{color:var(--red);}
+    .danger-desc{color:var(--text2);font-size:.9rem;margin-bottom:1.25rem;line-height:1.6;}
+    /* EMPTY */
+    .empty-state{text-align:center;padding:3rem 1rem;color:var(--text2);}
+    .empty-icon{font-size:2.5rem;margin-bottom:1rem;}
+    /* WISHLIST GRID */
+    .wishlist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;}
+    .wl-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;}
+    .wl-card-img{width:100%;height:140px;object-fit:cover;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:2.5rem;}
+    .wl-card-img img{width:100%;height:100%;object-fit:cover;}
+    .wl-card-body{padding:.875rem;flex:1;display:flex;flex-direction:column;gap:.5rem;}
+    .wl-card-name{font-size:.875rem;font-weight:600;color:var(--text);line-height:1.35;}
+    .wl-card-price{font-family:'JetBrains Mono',monospace;font-size:.9rem;font-weight:700;color:var(--blue);}
+    .wl-card-remove{margin-top:auto;background:none;border:1px solid var(--border);color:var(--text3);border-radius:6px;padding:.35rem .75rem;font-size:.78rem;cursor:pointer;transition:all .15s;}
+    .wl-card-remove:hover{border-color:var(--red);color:var(--red);}
+    /* SPINNER */
+    .spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .loading-center{display:flex;justify-content:center;padding:2rem;}
+    /* MSG */
+    .msg{padding:.75rem 1rem;border-radius:var(--r);font-size:.875rem;margin-top:.75rem;}
+    .msg-success{background:var(--green-dim);color:var(--green);border:1px solid rgba(0,229,160,.25);}
+    .msg-error{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,71,87,.25);}
+
+    /* NAV DRAWER */
+    .menu-button{display:flex;align-items:center;gap:.6rem;background:transparent;border:1px solid var(--border);border-radius:var(--r);color:var(--text);cursor:pointer;padding:.5rem 1rem;font-family:var(--fr);font-size:.9rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;transition:border-color .2s,background .2s;flex-shrink:0;}
+    .menu-button:hover{border-color:var(--border-h);background:rgba(0,212,255,.05);}
+    .menu-button-text{display:flex;flex-direction:column;align-items:flex-end;height:1.125em;overflow:hidden;}
+    .menu-button-text p{font-size:1em;font-family:var(--fr);font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin:0;}
+    .menu-button-text p:nth-child(2){transform:translateY(100%);}
+    .menu-button-icon{width:1em;height:1em;transition:transform .4s cubic-bezier(.65,.05,0,1);flex-shrink:0;}
+    .nav-panel{position:fixed;inset:0;z-index:500;display:none;width:100%;height:100vh;}
+    .nav-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);cursor:pointer;}
+    .nav-menu{position:relative;width:36em;max-width:100%;height:100%;margin-left:auto;padding-top:5rem;padding-bottom:2rem;display:flex;flex-direction:column;overflow:auto;}
+    .nav-menu-bg{position:absolute;inset:0;z-index:0;}
+    .nav-bg-panel{position:absolute;inset:0;background:#131820;border-top-left-radius:1.25em;border-bottom-left-radius:1.25em;}
+    .nav-bg-panel.first{background:var(--blue);}
+    .nav-bg-panel.second{background:#0a1520;}
+    .nav-close-btn{position:absolute;top:1.25rem;right:1.5rem;background:none;border:none;color:var(--text2);font-size:1.25rem;cursor:pointer;z-index:2;padding:.25rem .5rem;}
+    .nav-close-btn:hover{color:var(--text);}
+    .nav-menu-inner{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:space-between;height:100%;gap:3rem;}
+    .nav-menu-list{display:flex;flex-direction:column;width:100%;list-style:none;padding:0;margin:0;}
+    .nav-menu-item{position:relative;overflow:hidden;}
+    .nav-menu-link{display:flex;align-items:baseline;justify-content:flex-end;gap:.5em;width:100%;padding:.4em var(--mp);text-decoration:none;color:var(--text);cursor:pointer;background:none;border:none;text-align:right;}
+    .nav-link-heading{font-family:'PP Neue Corp Tight','Syne',sans-serif;font-size:clamp(2.8rem,8vw,4.4rem);font-weight:700;line-height:.9;text-transform:uppercase;letter-spacing:-.02em;position:relative;z-index:1;transition:color .4s ease,transform .65s cubic-bezier(.65,.05,0,1);white-space:nowrap;}
+    .nav-link-bg{position:absolute;inset:0;background:rgba(0,212,255,.06);transform:scaleX(0);transform-origin:right;transition:transform .4s cubic-bezier(.65,.05,0,1);}
+    .nav-eyebrow{font-family:var(--fr);font-size:.75rem;font-weight:600;color:var(--text3);letter-spacing:.12em;position:relative;z-index:1;}
+    .nav-menu-link:hover .nav-link-heading{color:var(--blue);transform:translateY(-1em);}
+    .nav-menu-link:hover .nav-link-bg{transform:scale3d(1,1,1);}
+    .nav-menu-link.active .nav-link-heading{color:var(--blue);}
+    .nav-menu-details{padding:0 var(--mp);display:flex;flex-direction:column;gap:.75rem;}
+    .nav-p-small{font-family:var(--fr);font-size:.75rem;font-weight:600;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;}
+    .nav-socials-row{display:flex;gap:1rem;flex-wrap:wrap;}
+    .nav-text-link{color:var(--text2);font-size:.875rem;text-decoration:none;transition:color .2s;}
+    .nav-text-link:hover{color:var(--blue);}
+    .theme-seg{padding:0 var(--mp);}
+    .theme-seg-label{font-family:var(--fr);font-size:.75rem;font-weight:600;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:.5rem;}
+    .theme-seg-ctrl{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:.2rem;gap:.2rem;}
+    .theme-seg-btn{flex:1;background:none;border:none;color:var(--text2);font-family:var(--fr);font-size:.8rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;padding:.35rem .5rem;border-radius:6px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.4rem;}
+    .theme-seg-btn.active{background:var(--surface2);color:var(--text);}
+    @media(max-width:768px){.menu-button-text{display:none!important;}.nav-menu{width:100%;padding-top:5.5rem;padding-bottom:2.5rem;}.nav-bg-panel{border-radius:0;}.nav-link-heading{font-size:clamp(2.2rem,11vw,3rem);}.nav-menu-link{padding:.35em 1.25em;}}
+    [data-theme="light"] .nav-bg-panel.second{background:#fff8f3;}
+    [data-theme="light"] .nav-bg-panel{background:#f5ece3;}
+    [data-theme="light"] .nav-bg-panel.first{background:var(--blue);}
+    [data-theme="light"] .nav-link-heading{color:var(--text);}
+    /* FOOTER */
+    .footer{background:var(--bg2);border-top:1px solid var(--border);padding:2rem 0;margin-top:auto;}
+    .footer-inner{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;}
+    .footer-copy{color:var(--text3);font-size:.8125rem;}
+  </style>
+</head>
+<body>
+  <script nonce="{{ request.state.csp_nonce }}">
+    (function(){var t=localStorage.getItem('fmtun_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();
+  </script>
+
+  <header class="header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="/" class="logo">
+          <span class="logo-bolt">⚡</span>
+          <span class="logo-text">Fm <span>TuN</span></span>
+        </a>
+        <div class="header-actions">
+          <a href="/products" class="btn btn-ghost btn-sm">Каталог</a>
+          <a href="/tracking" class="btn btn-ghost btn-sm">Заказы</a>
+          <div id="userMenu"></div>
+          <button data-menu-toggle class="menu-button" aria-expanded="false" aria-controls="navPanel" aria-label="Открыть меню">
+            <div class="menu-button-text"><p>Меню</p><p>Закрыть</p></div>
+            <svg class="menu-button-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+              <path d="M7.33333 16L7.33333 0L8.66667 0L8.66667 16L7.33333 16Z" fill="currentColor"/>
+              <path d="M16 8.66667L0 8.66667L0 7.33333L16 7.33333L16 8.66667Z" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+<!-- NAV DRAWER -->
+<div data-nav="closed" class="nav-panel" id="navPanel">
+  <div data-menu-toggle class="nav-overlay"></div>
+  <nav class="nav-menu">
+    <div class="nav-menu-bg">
+      <div class="nav-bg-panel first"></div>
+      <div class="nav-bg-panel second"></div>
+      <div class="nav-bg-panel"></div>
+    </div>
+    <button class="nav-close-btn" id="navCloseBtn" aria-label="Закрыть">✕</button>
+    <div class="nav-menu-inner">
+      <div class="theme-seg">
+        <p class="theme-seg-label">Тема</p>
+        <div class="theme-seg-ctrl" role="group" aria-label="Переключить тему">
+          <button class="theme-seg-btn seg-dark" data-seg="dark"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M11 7.5A5 5 0 0 1 4.5 1a5.5 5.5 0 1 0 6.5 6.5Z" fill="currentColor"/></svg>Тёмная</button>
+          <button class="theme-seg-btn seg-light" data-seg="light"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="2.2" fill="currentColor"/><path d="M6 .8V2.4M6 9.6v1.6M.8 6H2.4M9.6 6h1.6M2.34 2.34l1.13 1.13M8.53 8.53l1.13 1.13M9.66 2.34 8.53 3.47M3.47 8.53 2.34 9.66" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>Светлая</button>
+        </div>
+      </div>
+      <ul class="nav-menu-list">
+        <li class="nav-menu-item"><a href="/" class="nav-menu-link"><p class="nav-link-heading">Главная</p><p class="nav-eyebrow">01</p><div class="nav-link-bg"></div></a></li>
+        <li class="nav-menu-item"><a href="/products" class="nav-menu-link"><p class="nav-link-heading">Каталог</p><p class="nav-eyebrow">02</p><div class="nav-link-bg"></div></a></li>
+        <li class="nav-menu-item"><a href="/about" class="nav-menu-link"><p class="nav-link-heading">О нас</p><p class="nav-eyebrow">03</p><div class="nav-link-bg"></div></a></li>
+        <li class="nav-menu-item"><a href="/tracking" class="nav-menu-link"><p class="nav-link-heading">Заказы</p><p class="nav-eyebrow">04</p><div class="nav-link-bg"></div></a></li>
+        <li class="nav-menu-item"><a href="/cart" class="nav-menu-link"><p class="nav-link-heading">Корзина</p><p class="nav-eyebrow">05</p><div class="nav-link-bg"></div></a></li>
+        <li class="nav-menu-item"><a href="/account" class="nav-menu-link active"><p class="nav-link-heading">Кабинет</p><p class="nav-eyebrow">06</p><div class="nav-link-bg"></div></a></li>
+      </ul>
+      <div class="nav-menu-details">
+        <p data-menu-fade class="nav-p-small">Контакты</p>
+        <div class="nav-socials-row">
+          <a data-menu-fade href="tel:+78001234567" class="nav-text-link">+7 (800) 123-45-67</a>
+          <a data-menu-fade href="mailto:ilya.georgievskiy@gmail.com" class="nav-text-link">Email</a>
+          <a data-menu-fade href="https://t.me/FM_Tuning" class="nav-text-link" target="_blank" rel="noopener">Telegram</a>
+        </div>
+        <a data-menu-fade href="/legal" class="nav-text-link" style="font-size:.8em;color:rgba(255,255,255,.38)">Конфиденциальность</a>
+      </div>
+    </div>
+  </nav>
+</div>
+
+  <main class="main">
+    <div class="container">
+      <div id="authGate" style="display:none">
+        <div style="text-align:center;padding:4rem 1rem">
+          <div style="font-size:2.5rem;margin-bottom:1rem">🔒</div>
+          <h2 style="font-family:var(--fn);font-size:1.75rem;margin-bottom:.75rem">Войдите в аккаунт</h2>
+          <p style="color:var(--text2);margin-bottom:2rem">Для доступа к личному кабинету необходимо войти в систему.</p>
+          <a href="/auth?next=/account" class="btn btn-primary">Войти →</a>
+        </div>
+      </div>
+
+      <div id="accountContent" style="display:none">
+        <div class="page-hero">
+          <div class="profile-header">
+            <div class="avatar-big" id="avatarBig">?</div>
+            <div>
+              <div class="profile-name" id="profileName">—</div>
+              <div class="profile-badge" id="profileBadge"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="profile">Профиль</button>
+          <button class="tab-btn" data-tab="orders">История заказов</button>
+          <button class="tab-btn" data-tab="wishlist">Избранное</button>
+          <button class="tab-btn" data-tab="security">Безопасность</button>
+          <button class="tab-btn" data-tab="danger">Аккаунт</button>
+        </div>
+
+        <!-- ПРОФИЛЬ -->
+        <div class="tab-panel active" id="tab-profile">
+          <div class="account-card">
+            <div class="card-title">Личные данные</div>
+            <div class="profile-info" id="profileInfo">
+              <div class="loading-center"><div class="spinner"></div></div>
+            </div>
+            <div class="card-title" style="margin-top:1.5rem">Редактировать профиль</div>
+            <form id="profileForm">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Полное имя</label>
+                  <input class="form-input" type="text" id="editFullName" required placeholder="Иван Иванов">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Телефон</label>
+                  <input class="form-input" type="tel" id="editPhone" placeholder="+7 (999) 000-00-00">
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+              </div>
+              <div id="profileMsg"></div>
+            </form>
+          </div>
+        </div>
+
+        <!-- ИСТОРИЯ ЗАКАЗОВ -->
+        <div class="tab-panel" id="tab-orders">
+          <div class="account-card">
+            <div class="card-title">История заказов</div>
+            <div id="ordersList">
+              <div class="loading-center"><div class="spinner"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ИЗБРАННОЕ -->
+        <div class="tab-panel" id="tab-wishlist">
+          <div class="account-card">
+            <div class="card-title">Избранное</div>
+            <div id="wishlistList"><div class="loading-center"><div class="spinner"></div></div></div>
+          </div>
+        </div>
+
+        <!-- БЕЗОПАСНОСТЬ -->
+        <div class="tab-panel" id="tab-security">
+          <div class="account-card">
+            <div class="card-title">Изменить пароль</div>
+            <form id="passwordForm">
+              <div class="form-group" style="max-width:400px;margin-bottom:1rem">
+                <label class="form-label">Текущий пароль</label>
+                <input class="form-input" type="password" id="oldPassword" required placeholder="Введите текущий пароль">
+              </div>
+              <div class="form-group" style="max-width:400px;margin-bottom:1rem">
+                <label class="form-label">Новый пароль</label>
+                <input class="form-input" type="password" id="newPassword" required placeholder="Не менее 8 символов" minlength="8">
+              </div>
+              <div class="form-group" style="max-width:400px;margin-bottom:1rem">
+                <label class="form-label">Повторите новый пароль</label>
+                <input class="form-input" type="password" id="confirmPassword" required placeholder="Повторите пароль">
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Изменить пароль</button>
+              </div>
+              <div id="passwordMsg"></div>
+            </form>
+          </div>
+        </div>
+
+        <!-- АККАУНТ / DANGER ZONE -->
+        <div class="tab-panel" id="tab-danger">
+          <div class="account-card">
+            <div class="card-title">Выйти из аккаунта</div>
+            <p class="danger-desc">Выйти со всех устройств (завершить сессию).</p>
+            <button class="btn btn-ghost" id="logoutBtn">← Выйти</button>
+          </div>
+          <div class="account-card danger-zone">
+            <div class="card-title">⚠ Удалить аккаунт</div>
+            <p class="danger-desc">Это действие необратимо. Все ваши данные, заказы и история будут удалены навсегда. Корзина также будет очищена.</p>
+            <button class="btn btn-danger" id="deleteAccountBtn">Удалить аккаунт</button>
+            <div id="deleteMsg"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="footer-copy">© 2025 Fm TuN. Все права защищены.</span>
+        <div style="display:flex;gap:1rem">
+          <a href="/legal?doc=privacy" style="color:var(--text3);font-size:.8125rem;text-decoration:none">Конфиденциальность</a>
+          <a href="/legal?doc=terms" style="color:var(--text3);font-size:.8125rem;text-decoration:none">Условия</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/static/csrf-init.js"></script>
+  <script nonce="{{ request.state.csp_nonce }}">
+  var me = null;
+
+  // Init theme
+  (function(){
+    var t = localStorage.getItem('fmtun_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+
+  function gi(id){return document.getElementById(id);}
+  function fmt(n){return new Intl.NumberFormat('ru-RU').format(n);}
+  function fmtDate(iso){try{return new Date(iso).toLocaleDateString('ru-RU',{day:'2-digit',month:'long',year:'numeric'});}catch(e){return iso||'';}}
+  function escHtml(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+  function showMsg(elId, type, text){
+    var el = gi(elId);
+    if(!el) return;
+    el.innerHTML = '<div class="msg msg-'+type+'">'+escHtml(text)+'</div>';
+    setTimeout(function(){el.innerHTML='';}, 5000);
+  }
+
+  // Tabs
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+      document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+      btn.classList.add('active');
+      var panel = gi('tab-' + btn.dataset.tab);
+      if(panel) panel.classList.add('active');
+      if(btn.dataset.tab === 'orders') loadOrders();
+      if(btn.dataset.tab === 'wishlist') loadWishlist();
+    });
+  });
+
+  // Auth check
+  async function init(){
+    try{
+      var r = await fetch('/api/me', {credentials:'include'});
+      if(!r.ok){gi('authGate').style.display='';return;}
+      me = await r.json();
+      gi('accountContent').style.display = '';
+      renderUserMenu();
+      renderProfileHeader();
+      renderProfileInfo();
+      loadOrders();
+    }catch(e){gi('authGate').style.display='';}
+  }
+
+  function renderUserMenu(){
+    var um = gi('userMenu');
+    if(!me){um.innerHTML='<a href="/auth" class="btn btn-primary btn-sm">Войти</a>';return;}
+    var ini = (me.username||'?')[0].toUpperCase();
+    um.innerHTML =
+      '<div style="position:relative">'+
+        '<button class="btn btn-ghost btn-sm" id="uBtn" style="gap:.5rem">'+
+          '<div style="width:24px;height:24px;border-radius:50%;background:var(--blue-dim);color:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.875rem">'+ini+'</div>'+
+          '<span>'+escHtml(me.username)+'</span>'+
+        '</button>'+
+        '<div id="uDrop" style="position:absolute;right:0;top:calc(100% + .5rem);background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.5rem;min-width:160px;display:none;z-index:100">'+
+          (me.is_admin?'<a href="/admin" style="display:block;padding:.5rem .75rem;color:var(--text);text-decoration:none;border-radius:6px;font-size:.875rem">⚙ Админка</a>':'')+
+          '<button id="dropLogoutBtn" style="width:100%;text-align:left;background:none;border:none;padding:.5rem .75rem;color:var(--red);cursor:pointer;border-radius:6px;font-size:.875rem">← Выйти</button>'+
+        '</div>'+
+      '</div>';
+    gi('uBtn').onclick = function(e){e.stopPropagation();var d=gi('uDrop');d.style.display=d.style.display==='none'?'block':'none';};
+    document.addEventListener('click', function(){var d=gi('uDrop');if(d)d.style.display='none';});
+    var dlb=gi('dropLogoutBtn');if(dlb)dlb.addEventListener('click',doLogout);
+  }
+
+  function renderProfileHeader(){
+    if(!me) return;
+    var ini = (me.username||'?')[0].toUpperCase();
+    gi('avatarBig').textContent = ini;
+    gi('profileName').textContent = me.full_name || me.username;
+    var badge = '';
+    if(me.is_admin) badge = '<span style="color:var(--blue);font-weight:600">Администратор</span>';
+    else if(me.is_manager) badge = '<span style="color:var(--amber);font-weight:600">Менеджер</span>';
+    else badge = '@' + escHtml(me.username);
+    if(me.personal_discount > 0) badge += '<span class="discount-badge">−'+me.personal_discount+'%</span>';
+    gi('profileBadge').innerHTML = badge;
+  }
+
+  function renderProfileInfo(){
+    if(!me) return;
+    gi('profileInfo').innerHTML =
+      '<div class="info-item"><div class="info-label">Имя пользователя</div><div class="info-value">@'+escHtml(me.username)+'</div></div>'+
+      '<div class="info-item"><div class="info-label">Email</div><div class="info-value">'+escHtml(me.email)+'</div></div>'+
+      '<div class="info-item"><div class="info-label">Полное имя</div><div class="info-value">'+(me.full_name?escHtml(me.full_name):'—')+'</div></div>'+
+      '<div class="info-item"><div class="info-label">Телефон</div><div class="info-value">'+(me.phone?escHtml(me.phone):'—')+'</div></div>';
+    // Pre-fill edit form
+    if(gi('editFullName')) gi('editFullName').value = me.full_name || '';
+    if(gi('editPhone')) gi('editPhone').value = me.phone || '';
+  }
+
+  // Update profile
+  gi('profileForm').onsubmit = async function(e){
+    e.preventDefault();
+    var btn = this.querySelector('button[type=submit]');
+    btn.disabled = true;
+    try{
+      var r = await fetch('/api/me', {
+        method:'PUT', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({full_name: gi('editFullName').value.trim(), phone: gi('editPhone').value.trim()})
+      });
+      var d = await r.json();
+      if(r.ok){showMsg('profileMsg','success','Профиль обновлён');me.full_name=gi('editFullName').value.trim();me.phone=gi('editPhone').value.trim();renderProfileInfo();renderProfileHeader();}
+      else showMsg('profileMsg','error',d.detail||'Ошибка');
+    }catch(ex){showMsg('profileMsg','error','Ошибка сети');}
+    btn.disabled = false;
+  };
+
+  // Change password
+  gi('passwordForm').onsubmit = async function(e){
+    e.preventDefault();
+    var np = gi('newPassword').value, cp = gi('confirmPassword').value;
+    if(np !== cp){showMsg('passwordMsg','error','Пароли не совпадают');return;}
+    var btn = this.querySelector('button[type=submit]');
+    btn.disabled = true;
+    try{
+      var r = await fetch('/api/me/password', {
+        method:'PUT', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({old_password: gi('oldPassword').value, new_password: np})
+      });
+      var d = await r.json();
+      if(r.ok){showMsg('passwordMsg','success','Пароль успешно изменён');gi('passwordForm').reset();}
+      else showMsg('passwordMsg','error',d.detail||'Ошибка');
+    }catch(ex){showMsg('passwordMsg','error','Ошибка сети');}
+    btn.disabled = false;
+  };
+
+  // Orders
+  var STATUS_LABELS = {
+    created:'Создан',processing:'В обработке',confirmed:'Подтверждён',
+    in_transit:'В пути',customs:'На таможне',warehouse:'Прибыл на склад',
+    delivery:'Передан в доставку',completed:'Завершён',cancelled:'Отменён',
+    pending:'Создан',shipped:'В пути'
+  };
+
+  async function loadOrders(){
+    var ol = gi('ordersList');
+    if(!ol) return;
+    ol.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+    try{
+      var r = await fetch('/api/orders', {credentials:'include'});
+      if(!r.ok){ol.innerHTML='<div class="empty-state"><div class="empty-icon">🔒</div><p>Войдите в аккаунт</p></div>';return;}
+      var orders = await r.json();
+      if(!orders.length){ol.innerHTML='<div class="empty-state"><div class="empty-icon">📦</div><p>Заказов пока нет</p><a href="/products" class="btn btn-primary" style="margin-top:1rem">Перейти в каталог</a></div>';return;}
+      var html = '<div class="orders-list">';
+      orders.forEach(function(o){
+        var statusLabel = STATUS_LABELS[o.status] || o.status;
+        var statusCls = 'status-' + o.status;
+        html += '<div class="order-item">'+
+          '<div class="order-meta">'+
+            '<span class="order-num">Заказ #'+o.id+'</span>'+
+            '<span class="order-date">'+fmtDate(o.created_at)+'</span>'+
+            (o.items&&o.items.length?'<span style="color:var(--text3);font-size:.8125rem">'+o.items.length+' позиц.'+'</span>':'')+
+          '</div>'+
+          '<div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">'+
+            '<span class="order-status '+statusCls+'">'+statusLabel+'</span>'+
+            '<span class="order-total">'+fmt(o.total_amount)+' ₽</span>'+
+            '<a href="/tracking" class="btn btn-ghost btn-sm">Отследить →</a>'+
+          '</div>'+
+        '</div>';
+      });
+      html += '</div>';
+      ol.innerHTML = html;
+    }catch(ex){ol.innerHTML='<div class="empty-state"><div class="empty-icon">⚠</div><p>Ошибка загрузки</p></div>';}
+  }
+
+  // Wishlist
+  async function loadWishlist(){
+    var wl = gi('wishlistList');
+    if(!wl) return;
+    wl.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+    try{
+      var r = await fetch('/api/wishlist', {credentials:'include'});
+      if(!r.ok){wl.innerHTML='<div class="empty-state"><div class="empty-icon">🔒</div><p>Войдите в аккаунт</p></div>';return;}
+      var data = await r.json();
+      var items = data.items || data || [];
+      if(!items.length){wl.innerHTML='<div class="empty-state"><div class="empty-icon">♡</div><p>Список избранного пуст</p><a href="/products" class="btn btn-primary" style="margin-top:1rem">Перейти в каталог</a></div>';return;}
+      var html='<div class="wishlist-grid">';
+      items.forEach(function(item){
+        var imgHtml = item.image_url
+          ? '<img src="'+escHtml(item.image_url)+'" alt="'+escHtml(item.name||'')+'">'
+          : '<span>📦</span>';
+        var pid = item.product_id || item.id;
+        html += '<div class="wl-card" data-wl-id="'+pid+'">'+
+          '<div class="wl-card-img">'+imgHtml+'</div>'+
+          '<div class="wl-card-body">'+
+            '<div class="wl-card-name">'+escHtml(item.name||'Товар')+'</div>'+
+            '<div class="wl-card-price">'+fmt(item.price||0)+' ₽</div>'+
+            '<button class="wl-card-remove" data-remove-id="'+pid+'">✕ Удалить</button>'+
+          '</div>'+
+        '</div>';
+      });
+      html += '</div>';
+      wl.innerHTML = html;
+      wl.querySelectorAll('[data-remove-id]').forEach(function(btn){
+        btn.addEventListener('click', async function(){
+          var pid = parseInt(btn.dataset.removeId);
+          btn.disabled=true;
+          try{
+            var rd = await fetch('/api/wishlist/'+pid,{method:'DELETE',credentials:'include'});
+            if(rd.ok){ var card=wl.querySelector('[data-wl-id="'+pid+'"]'); if(card)card.remove(); if(!wl.querySelector('.wl-card')) loadWishlist(); }
+          }catch(e){}
+          btn.disabled=false;
+        });
+      });
+    }catch(ex){wl.innerHTML='<div class="empty-state"><div class="empty-icon">⚠</div><p>Ошибка загрузки</p></div>';}
+  }
+
+  // Delete account
+  function confirmDeleteAccount(){
+    if(!confirm('Вы уверены? Аккаунт будет удалён безвозвратно.')) return;
+    if(!confirm('Последнее предупреждение. Все данные будут уничтожены.')) return;
+    fetch('/api/users/me', {method:'DELETE', credentials:'include'}).then(function(r){
+      if(r.ok){alert('Аккаунт удалён.');window.location.href='/';}
+      else r.json().then(function(d){showMsg('deleteMsg','error',d.detail||'Ошибка');});
+    }).catch(function(){showMsg('deleteMsg','error','Ошибка сети');});
+  }
+
+  function doLogout(){
+    fetch('/api/logout',{method:'POST',credentials:'include'}).finally(function(){window.location.href='/';});
+  }
+
+  // Attach static button listeners (CSP-safe: no inline onclick)
+  var _lb=gi('logoutBtn');if(_lb)_lb.addEventListener('click',doLogout);
+  var _db=gi('deleteAccountBtn');if(_db)_db.addEventListener('click',confirmDeleteAccount);
+
+  init();
+  </script>
+  <script nonce="{{ request.state.csp_nonce }}">
+  // ── Nav drawer ──────────────────────────────────────
+  (function(){
+    var panel=document.getElementById('navPanel');
+    if(!panel) return;
+    var menu=panel.querySelector('.nav-menu');
+    var overlay=panel.querySelector('.nav-overlay');
+    var bgs=panel.querySelectorAll('.nav-bg-panel');
+    var links=panel.querySelectorAll('.nav-menu-link');
+    var btn=document.querySelector('.menu-button');
+    var btxt=btn?btn.querySelectorAll('p'):[];
+    var bico=btn?btn.querySelector('.menu-button-icon'):null;
+    var toggles=document.querySelectorAll('[data-menu-toggle]');
+    var navIsOpen=false;
+
+    function openNav(){
+      navIsOpen=true;
+      panel.setAttribute('data-nav','open');
+      panel.style.display='block';
+      document.body.style.overflow='hidden';
+      if(btn){btn.setAttribute('aria-expanded','true');btn.setAttribute('aria-label','Закрыть меню');}
+      if(window.gsap){
+        var tl=window.gsap.timeline();
+        tl.fromTo(bgs,{xPercent:108},{xPercent:0,stagger:.09,duration:.95,ease:'power3.out'})
+          .fromTo(links,{xPercent:22,autoAlpha:0},{xPercent:0,autoAlpha:1,stagger:.07,duration:.8,ease:'power3.out'},'<+=0.3')
+          .fromTo(overlay,{autoAlpha:0},{autoAlpha:1,duration:.7},'<');
+        if(bico) tl.fromTo(bico,{rotate:0},{rotate:315,duration:.6,ease:'power2.out'},'<');
+      }
+    }
+    function closeNav(){
+      navIsOpen=false;
+      document.body.style.overflow='';
+      if(btn){btn.setAttribute('aria-expanded','false');btn.setAttribute('aria-label','Открыть меню');}
+      if(window.gsap){
+        window.gsap.timeline()
+          .to(links,{xPercent:18,autoAlpha:0,stagger:.04,duration:.32,ease:'power2.in'})
+          .to(overlay,{autoAlpha:0,duration:.5},'<+=.05')
+          .to(menu,{xPercent:108,duration:.65,ease:'power3.in'},'<')
+          .call(function(){ panel.setAttribute('data-nav','closed'); panel.style.display='none'; menu.style.transform=''; });
+        if(bico) window.gsap.to(bico,{rotate:0,duration:.45,ease:'power2.out'});
+      } else {
+        panel.setAttribute('data-nav','closed');
+        panel.style.display='none';
+      }
+    }
+
+    // Theme seg buttons
+    var segs=panel.querySelectorAll('.theme-seg-btn');
+    var curTheme=document.documentElement.getAttribute('data-theme')||'dark';
+    segs.forEach(function(s){ if(s.dataset.seg===curTheme) s.classList.add('active'); });
+    segs.forEach(function(s){ s.addEventListener('click',function(){
+      var t=s.dataset.seg;
+      document.documentElement.setAttribute('data-theme',t);
+      localStorage.setItem('fmtun_theme',t);
+      segs.forEach(function(x){x.classList.toggle('active',x===s);});
+    }); });
+
+    toggles.forEach(function(t){ t.addEventListener('click',function(){ navIsOpen?closeNav():openNav(); }); });
+    var navCloseBtn=document.getElementById('navCloseBtn');
+    if(navCloseBtn) navCloseBtn.addEventListener('click',closeNav);
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&navIsOpen) closeNav(); });
+    links.forEach(function(l){ l.addEventListener('click',function(){ closeNav(); }); });
+    panel.style.display='none';
+  })();
+  </script>
+  <script src="/static/cookie-consent.js" defer></script>
+<!-- Яндекс.Метрика — заглушка. Замените YM_COUNTER_ID на реальный ID из metrika.yandex.ru -->
+<script nonce="{{ request.state.csp_nonce }}">
+(function(){
+  var YM_ID = '{{ ym_counter_id|default("") }}';
+  if(!YM_ID) return;
+  var loaded = false;
+  function loadYM(){
+    if(loaded) return; loaded = true;
+    (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+    m[i].l=1*new Date();k=e.createElement(t);a=e.getElementsByTagName(t)[0];
+    k.async=1;k.src=r;a.parentNode.insertBefore(k,a)})(
+    window,document,'script','https://mc.yandex.ru/metrika/tag.js','ym');
+    ym(YM_ID,'init',{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:false});
+  }
+  document.addEventListener('cookieConsentAnalytics', loadYM);
+  try{ var c=JSON.parse(localStorage.getItem('fmtun_consent')||'{}'); if(c.analytics) loadYM(); }catch(e){}
+})();
+</script>
+</body>
+</html>

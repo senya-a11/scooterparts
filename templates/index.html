@@ -11,6 +11,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#080A0F">
   <title>Fm TuN — Премиум запчасти для электросамокатов</title>
+  <meta name="description" content="Магазин запчастей для электросамокатов: аккумуляторы, контроллеры, двигатели, шины. Быстрая доставка по России.">
+  <meta name="keywords" content="запчасти самокат, электросамокат запчасти, аккумулятор самокат, ремонт самокат">
+  <link rel="canonical" href="https://scooterparts.onrender.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Fm TuN — ScooterParts">
+  <meta property="og:title" content="Fm TuN — Премиум запчасти для электросамокатов">
+  <meta property="og:description" content="Магазин запчастей для электросамокатов: аккумуляторы, контроллеры, двигатели, шины. Быстрая доставка по России.">
+  <meta property="og:url" content="https://scooterparts.onrender.com/">
+  <meta property="og:image" content="https://scooterparts.onrender.com/static/favicon/apple-touch-icon.png">
+  <meta property="og:locale" content="ru_RU">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style nonce="{{ request.state.csp_nonce }}">
@@ -380,10 +390,22 @@
     .footer-bottom a:hover{color:var(--blue)}
     .footer-legal-links{display:flex;gap:1.5rem;flex-wrap:wrap}
 
+    /* ── SUPPLIER SECTION ── */
+    .supplier-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;max-width:900px;margin:0 auto}
+    .supplier-docs-grid{display:grid;grid-template-columns:1fr 1fr;gap:.875rem}
+    .supplier-doc-card{background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:12px;padding:1.25rem;text-align:center}
+    .supplier-doc-status{font-size:.7rem;color:var(--text3);margin-top:.25rem}
+    .supplier-doc-link{font-size:.7rem;color:var(--blue);margin-top:.25rem;text-decoration:none;display:block}
+    .supplier-doc-link:hover{text-decoration:underline}
+
     /* ── RESPONSIVE ── */
     @media(max-width:768px){
       /* Десктопные элементы хедера — скрыты на мобильном */
       .cart-btn-header,#userMenu{display:none!important}
+      /* Поиск в хедере — скрыт на мобильном */
+      .header-actions form{display:none!important}
+      /* Текст кнопки «Меню» — скрыт на мобильном */
+      .menu-button-text{display:none!important}
       /* Мобильные пункты меню — показаны */
       .nav-menu-item.mobile-only{display:block}
       .nav-menu{width:100%;padding-top:5.5rem;padding-bottom:2.5rem}
@@ -397,13 +419,31 @@
       .product-actions{flex-direction:column}
       .qty-selector{width:100%;justify-content:space-between}
       .add-to-cart-btn{width:100%}
+      .supplier-grid{grid-template-columns:1fr;gap:2rem}
+      .supplier-docs-grid{grid-template-columns:1fr 1fr}
     }
     @media(max-width:480px){
       .footer-grid{grid-template-columns:1fr}
+      .supplier-docs-grid{grid-template-columns:1fr}
       .hero-stats{flex-direction:column;gap:1.5rem}
       .hero-stat::after{display:none}
     }
   
+    /* ── REVIEWS ── */
+    .reviews-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+    .rv-card{padding:2rem;border:1px solid var(--border);background:var(--surface);position:relative;border-radius:4px;transition:border-color .3s,transform .3s}
+    .rv-card:hover{border-color:rgba(0,212,255,.3);transform:translateY(-4px)}
+    .rv-stars{display:flex;gap:.25rem;margin-bottom:1rem}
+    .star{color:var(--amber,#F59E0B);font-size:1rem}
+    .rv-text{font-size:.9rem;line-height:1.7;color:var(--text2);margin-bottom:1.5rem}
+    .rv-author{display:flex;align-items:center;gap:.75rem;padding-top:1.25rem;border-top:1px solid var(--border)}
+    .rv-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--blue),rgba(0,212,255,.3));display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:.9rem;font-weight:800;color:#000;flex-shrink:0}
+    .rv-name{font-family:var(--fd);font-size:.95rem;font-weight:700}
+    .rv-meta{font-size:.75rem;color:var(--text3);margin-top:.15rem}
+    .rv-quote{position:absolute;top:1rem;right:1.25rem;font-size:3.5rem;line-height:1;color:rgba(0,212,255,.07);font-family:var(--fd);font-weight:800;pointer-events:none}
+    .rv-accent{position:absolute;top:0;right:0;width:40px;height:2px;background:var(--blue)}
+    @media(max-width:768px){.reviews-grid{grid-template-columns:1fr}}
+
     /* ── Performance: GPU compositing for animated elements ── */
     .nav-bg-panel,.nav-overlay,.nav-menu,.menu-button-icon{will-change:transform,opacity;}
     #starfield canvas,.parallax__layer-img{will-change:transform;}
@@ -417,6 +457,7 @@
 <script src="/static/csrf-init.js"></script>
 </head>
 <body>
+<a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:0;z-index:9999;padding:.5rem 1rem;background:var(--accent,#E8580A);color:#fff;font-weight:600;border-radius:4px;text-decoration:none;" onFocus="this.style.left='0'" onBlur="this.style.left='-9999px'">Перейти к основному содержимому</a>
 <!-- ═══════════════ PRELOADER (once per session) ═══════════════ -->
 <style nonce="{{ request.state.csp_nonce }}">
   @font-face{font-family:'PP Neue Corp';src:url('https://cdn.prod.website-files.com/6717aac16c9ea22eeef1e79e/6717de2d56e40b921572d2d9_PPNeueCorp-TightUltrabold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
@@ -532,12 +573,17 @@
   <div class="container"><div class="header-inner">
     <a href="/" class="logo"><div class="logo-bolt">&#9889;</div><span class="logo-text">Fm <span>TuN</span></span></a>
     <div class="header-actions">
+      <!-- Быстрый поиск (ведёт в каталог) -->
+      <form action="/products" method="get" style="display:flex;align-items:center;position:relative;margin-right:.25rem" onsubmit="var v=this.querySelector('input').value.trim();if(!v){window.location.href='/products';return false;}">
+        <input type="search" name="search" placeholder="Поиск…" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.4rem .75rem .4rem 2rem;color:var(--text);font-size:.8125rem;font-family:var(--fb);outline:none;width:160px;transition:all .2s;caret-color:var(--blue);" onfocus="this.style.borderColor='var(--blue)';this.style.width='200px';" onblur="this.style.borderColor='var(--border)';this.style.width='160px';">
+        <span style="position:absolute;left:.625rem;color:var(--text3);font-size:.875rem;pointer-events:none">🔍</span>
+      </form>
       <!-- Корзина: ведёт на страницу /cart -->
       <a href="/cart" class="btn btn-ghost btn-sm cart-btn-header" id="cartBtn" style="position:relative">&#128722; Корзина<span class="cart-count" id="cartCount">0</span></a>
       <!-- Войти / профиль: только на десктопе, слева от кнопки меню -->
       <div class="user-dropdown-wrap" id="userMenu"></div>
       <!-- Кнопка меню: всегда видна -->
-      <button data-menu-toggle class="menu-button">
+      <button data-menu-toggle class="menu-button" aria-expanded="false" aria-controls="navPanel" aria-label="Открыть меню">
         <div class="menu-button-text"><p>Меню</p><p>Закрыть</p></div>
         <svg class="menu-button-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
           <path d="M7.33333 16L7.33333 0L8.66667 0L8.66667 16L7.33333 16Z" fill="currentColor"/>
@@ -587,17 +633,15 @@
             <p class="nav-link-heading">Заказы</p><p class="nav-eyebrow">04</p><div class="nav-link-bg"></div>
           </a>
         </li>
-        <!-- mobile-only: Корзина -->
-        <li class="nav-menu-item mobile-only">
-          <button class="nav-menu-link" id="navCartTrigger">
-            <p class="nav-link-heading">Корзина</p><p class="nav-eyebrow">04</p><div class="nav-link-bg"></div>
-          </button>
+        <li class="nav-menu-item">
+          <a href="/cart" class="nav-menu-link" id="navCartLink">
+            <p class="nav-link-heading">Корзина</p><p class="nav-eyebrow">05</p><div class="nav-link-bg"></div>
+          </a>
         </li>
-        <!-- mobile-only: Войти / имя пользователя — обновляется через JS -->
-        <li class="nav-menu-item mobile-only">
-          <button class="nav-menu-link" id="navAuthTrigger">
-            <p class="nav-link-heading" id="navAuthLabel">Войти</p><p class="nav-eyebrow" id="navAuthNum">05</p><div class="nav-link-bg"></div>
-          </button>
+        <li class="nav-menu-item">
+          <a href="/account" class="nav-menu-link" id="navAuthLink">
+            <p class="nav-link-heading" id="navAuthLabel">Войти</p><p class="nav-eyebrow">06</p><div class="nav-link-bg"></div>
+          </a>
         </li>
       </ul>
       <div class="nav-menu-details">
@@ -643,7 +687,7 @@
 <!-- ── OFFICIAL SUPPLIER BLOCK ── -->
 <section class="section" style="background:rgba(0,212,255,.03);border-top:1px solid rgba(0,212,255,.08);border-bottom:1px solid rgba(0,212,255,.08)">
   <div class="container">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;max-width:900px;margin:0 auto">
+    <div class="supplier-grid">
       <div>
         <div class="section-tag">Партнёрство</div>
         <h2 class="section-title" style="margin-bottom:1rem">Официальный поставщик</h2>
@@ -665,27 +709,69 @@
           </div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.875rem" id="supplierDocs">
-        <!-- Documents will be added here by admin. Placeholder: -->
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:12px;padding:1.25rem;text-align:center">
-          <div style="font-size:2rem;margin-bottom:.5rem">📋</div>
-          <div style="font-size:.78rem;font-weight:700;color:var(--text)">Сертификат ISO</div>
-          <div style="font-size:.7rem;color:var(--text3);margin-top:.25rem">Документ будет добавлен</div>
-        </div>
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:12px;padding:1.25rem;text-align:center">
+      <div class="supplier-docs-grid" id="supplierDocs">
+        <div class="supplier-doc-card" id="supplierDocPartner">
           <div style="font-size:2rem;margin-bottom:.5rem">🏭</div>
           <div style="font-size:.78rem;font-weight:700;color:var(--text)">Партнёрский договор</div>
-          <div style="font-size:.7rem;color:var(--text3);margin-top:.25rem">Документ будет добавлен</div>
+          <div class="supplier-doc-status" id="supplierDocPartnerStatus">Документ будет добавлен</div>
         </div>
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:12px;padding:1.25rem;text-align:center">
+        <div class="supplier-doc-card" id="supplierDocWarranty">
           <div style="font-size:2rem;margin-bottom:.5rem">🛡️</div>
           <div style="font-size:.78rem;font-weight:700;color:var(--text)">Гарантийные условия</div>
-          <div style="font-size:.7rem;color:var(--text3);margin-top:.25rem">Документ будет добавлен</div>
+          <div class="supplier-doc-status" id="supplierDocWarrantyStatus">Документ будет добавлен</div>
         </div>
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:12px;padding:1.25rem;text-align:center">
-          <div style="font-size:2rem;margin-bottom:.5rem">📦</div>
-          <div style="font-size:.78rem;font-weight:700;color:var(--text)">Лицензия дистрибьютора</div>
-          <div style="font-size:.7rem;color:var(--text3);margin-top:.25rem">Документ будет добавлен</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-dark">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <div class="section-tag">Отзывы клиентов</div>
+        <h2 class="section-title">Что говорят покупатели</h2>
+      </div>
+      <a href="/about" class="btn btn-ghost btn-sm">Узнать о нас &#8594;</a>
+    </div>
+    <div class="reviews-grid">
+      <div class="rv-card">
+        <div class="rv-quote">&#8220;</div>
+        <div class="rv-accent"></div>
+        <div class="rv-stars"><span class="star">&#9733;</span><span class="star">&#9733;</span><span class="star">&#9733;</span><span class="star">&#9733;</span><span class="star">&#9733;</span></div>
+        <p class="rv-text">Брал контроллер для Ninebot — пришёл быстро, упакован отлично. Ставится без доработок, всё подошло идеально. Однозначно буду заказывать ещё.</p>
+        <div class="rv-author">
+          <div class="rv-avatar">Д</div>
+          <div>
+            <div class="rv-name">Дмитрий Л.</div>
+            <div class="rv-meta">Москва · Ninebot Max G30</div>
+          </div>
+        </div>
+      </div>
+      <div class="rv-card">
+        <div class="rv-quote">&#8220;</div>
+        <div class="rv-accent"></div>
+        <div class="rv-stars"><span class="star">&#9733;</span><span class="star">&#9733;</span><span class="star">&#9733;</span><span class="star">&#9733;</span><span class="star">&#9733;</span></div>
+        <p class="rv-text">Заказывала аккумулятор через предзаказ — уведомляли о каждом шаге. Статус менялся прямо в личном кабинете. Приятно когда всё прозрачно.</p>
+        <div class="rv-author">
+          <div class="rv-avatar">А</div>
+          <div>
+            <div class="rv-name">Анастасия М.</div>
+            <div class="rv-meta">Санкт-Петербург · Xiaomi Pro 2</div>
+          </div>
+        </div>
+      </div>
+      <div class="rv-card">
+        <div class="rv-quote">&#8220;</div>
+        <div class="rv-accent"></div>
+        <div class="rv-stars"><span class="star">&#9733;</span><span class="star">&#9733;</span><span class="star">&#9733;</span><span class="star">&#9733;</span><span class="star">&#9733;</span></div>
+        <p class="rv-text">Покупаю здесь уже третий раз. Цены адекватные, качество реально оригинальное. Моторное колесо поставил сам по инструкции из чата — менеджер помог с выбором.</p>
+        <div class="rv-author">
+          <div class="rv-avatar">И</div>
+          <div>
+            <div class="rv-name">Илья С.</div>
+            <div class="rv-meta">Екатеринбург · Kugoo G2 Pro</div>
+          </div>
         </div>
       </div>
     </div>
@@ -829,6 +915,8 @@ function initNav(){
   function openNav(){
     navIsOpen=true;
     panel.setAttribute('data-nav','open');
+    btn.setAttribute('aria-expanded','true');
+    btn.setAttribute('aria-label','Закрыть меню');
     document.body.style.overflow='hidden';
     gsap.set(menu,{xPercent:0});
     tl.clear()
@@ -845,6 +933,8 @@ function initNav(){
   function closeNav(){
     navIsOpen=false;
     panel.setAttribute('data-nav','closed');
+    btn.setAttribute('aria-expanded','false');
+    btn.setAttribute('aria-label','Открыть меню');
     document.body.style.overflow='';
     tl.clear()
       .to(links,{xPercent:18,autoAlpha:0,stagger:.04,duration:.32,ease:'power2.in'})
@@ -867,15 +957,9 @@ function initNav(){
   document.addEventListener('keydown',function(e){
     if(e.key==='Escape'&&navIsOpen)closeNav();
   });
-  // Закрываем на обычных ссылках, но не на кнопках с отдельной логикой
   links.forEach(function(l){
-    if(l.id!=='navCartTrigger'&&l.id!=='navAuthTrigger')
-      l.addEventListener('click',function(){closeNav();});
+    l.addEventListener('click',function(){closeNav();});
   });
-
-  // Корзина в мобильном меню
-  var ct=document.getElementById('navCartTrigger');
-  if(ct)ct.addEventListener('click',function(){closeNav();setTimeout(openCart,500);});
 }
 
 /* =========================================================
@@ -911,7 +995,7 @@ async function checkAuth(){
 function renderUser(){
   userMenu.innerHTML='';
   var navLabel=gi('navAuthLabel');
-  var navAt=gi('navAuthTrigger');
+  var navAuthLink=gi('navAuthLink');
 
   if(me){
     /* ── Десктоп: аватар + дропдаун ── */
@@ -927,6 +1011,8 @@ function renderUser(){
             '<div class="user-info-name">'+me.username+'</div>'+
             '<div class="user-info-email">'+me.email+'</div>'+
           '</div>'+
+          '<a href="/account" class="drop-item">&#128100; Личный кабинет</a>'+
+          '<a href="/tracking" class="drop-item">&#128230; Мои заказы</a>'+
           (me.is_admin?'<a href="/admin" class="drop-item">&#9881; Admin</a>':'')+
           (me.is_manager&&!me.is_admin?'<a href="/admin" class="drop-item">&#128203; Менеджер</a>':'')+
           '<button class="drop-item danger" id="headerLogoutBtn">&#8592; Выйти</button>'+
@@ -934,26 +1020,14 @@ function renderUser(){
       '</div>';
     gi('uBtn').onclick=function(e){e.stopPropagation();gi('uDrop').classList.toggle('active');};
 
-    /* ── Мобильный пункт: имя пользователя, клик = выход ── */
-    if(navLabel)navLabel.textContent=me.username;
-    if(navAt){
-      navAt.onclick=function(){
-        if(window._closeNav)window._closeNav();
-        setTimeout(function(){doLogout();},400);
-      };
-    }
+    if(navLabel)navLabel.textContent='Личный кабинет';
+    if(navAuthLink)navAuthLink.href='/account';
   }else{
     /* ── Десктоп: кнопка «Войти» ── */
     userMenu.innerHTML='<a href="/auth?next='+encodeURIComponent(window.location.pathname)+'" class="btn btn-primary btn-sm">Войти</a>';
 
-    /* ── Мобильный пункт: «Войти», клик = открыть модал ── */
     if(navLabel)navLabel.textContent='Войти';
-    if(navAt){
-      navAt.onclick=function(){
-        if(window._closeNav)window._closeNav();
-        setTimeout(function(){window.location.href='/auth?next='+encodeURIComponent(window.location.pathname);},300);
-      };
-    }
+    if(navAuthLink)navAuthLink.href='/auth?next='+encodeURIComponent(window.location.pathname);
   }
 }
 
@@ -1013,10 +1087,10 @@ async function loadCart(){
 function renderCart(){
   var cnt=cart.reduce(function(s,i){return s+i.quantity;},0);
   cartCnt.textContent=cnt;cartCnt.style.display=cnt>0?'flex':'none';
-  if(!cart.length){cartBody.innerHTML='<div class="cart-empty"><div class="cart-empty-icon">&#128722;</div><p>Корзина пуста</p></div>';cartTotal.textContent='0 &#8381;';checkBtn.disabled=true;}
+  if(!cart.length){cartBody.innerHTML='<div class="cart-empty"><div class="cart-empty-icon">&#128722;</div><p>Корзина пуста</p></div>';cartTotal.textContent='0 ₽';checkBtn.disabled=true;}
   else {
     var tot=cart.reduce(function(s,i){return s+i.item_total;},0);
-    cartTotal.textContent=fmt(tot)+' &#8381;';checkBtn.disabled=false;
+    cartTotal.textContent=fmt(tot)+' ₽';checkBtn.disabled=false;
     cartBody.innerHTML=cart.map(function(item){
       var p=item.product,sid=item.specification_id||'null';
       var hi=p.image_url&&p.image_url.trim()&&(p.image_url.startsWith('/static/')||p.image_url.startsWith('http'));
@@ -1279,7 +1353,34 @@ detModal.onclick=function(e){if(e.target===detModal)detModal.classList.remove('a
   loadProducts();
   loadStats();
   await checkAuth();
+  loadSupplierDocs();
 })();
+
+async function loadSupplierDocs(){
+  try{
+    var r=await fetch('/api/supplier-docs');
+    if(!r.ok)return;
+    var docs=await r.json();
+    var byType={};
+    docs.forEach(function(d){byType[d.doc_type]=d;});
+    var partnerStatus=document.getElementById('supplierDocPartnerStatus');
+    var warrantyStatus=document.getElementById('supplierDocWarrantyStatus');
+    if(partnerStatus){
+      if(byType.partner){
+        partnerStatus.innerHTML='<a class="supplier-doc-link" href="'+byType.partner.url+'" target="_blank" rel="noopener">📄 Посмотреть документ</a>';
+      }else{
+        partnerStatus.textContent='Документ будет добавлен';
+      }
+    }
+    if(warrantyStatus){
+      if(byType.warranty){
+        warrantyStatus.innerHTML='<a class="supplier-doc-link" href="'+byType.warranty.url+'" target="_blank" rel="noopener">📄 Посмотреть документ</a>';
+      }else{
+        warrantyStatus.textContent='Документ будет добавлен';
+      }
+    }
+  }catch(e){}
+}
 </script>
 <script nonce="{{ request.state.csp_nonce }}">
 /* ══ THEME SYSTEM ══ */
@@ -1313,5 +1414,23 @@ detModal.onclick=function(e){if(e.target===detModal)detModal.classList.remove('a
 })();
 </script>
 <script src="/static/cookie-consent.js" defer></script>
+<!-- Яндекс.Метрика — заглушка. Замените YM_COUNTER_ID на реальный ID из metrika.yandex.ru -->
+<script nonce="{{ request.state.csp_nonce }}">
+(function(){
+  var YM_ID = '{{ ym_counter_id|default("") }}';
+  if(!YM_ID) return;
+  var loaded = false;
+  function loadYM(){
+    if(loaded) return; loaded = true;
+    (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+    m[i].l=1*new Date();k=e.createElement(t);a=e.getElementsByTagName(t)[0];
+    k.async=1;k.src=r;a.parentNode.insertBefore(k,a)})(
+    window,document,'script','https://mc.yandex.ru/metrika/tag.js','ym');
+    ym(YM_ID,'init',{clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:false});
+  }
+  document.addEventListener('cookieConsentAnalytics', loadYM);
+  try{ var c=JSON.parse(localStorage.getItem('fmtun_consent')||'{}'); if(c.analytics) loadYM(); }catch(e){}
+})();
+</script>
 </body>
 </html>

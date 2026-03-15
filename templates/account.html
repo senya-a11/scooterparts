@@ -137,6 +137,48 @@
     .msg{padding:.75rem 1rem;border-radius:var(--r);font-size:.875rem;margin-top:.75rem;}
     .msg-success{background:var(--green-dim);color:var(--green);border:1px solid rgba(0,229,160,.25);}
     .msg-error{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,71,87,.25);}
+
+    /* NAV DRAWER */
+    .menu-button{display:flex;align-items:center;gap:.6rem;background:transparent;border:1px solid var(--border);border-radius:var(--r);color:var(--text);cursor:pointer;padding:.5rem 1rem;font-family:var(--fr);font-size:.9rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;transition:border-color .2s,background .2s;flex-shrink:0;}
+    .menu-button:hover{border-color:var(--border-h);background:rgba(0,212,255,.05);}
+    .menu-button-text{display:flex;flex-direction:column;align-items:flex-end;height:1.125em;overflow:hidden;}
+    .menu-button-text p{font-size:1em;font-family:var(--fr);font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin:0;}
+    .menu-button-text p:nth-child(2){transform:translateY(100%);}
+    .menu-button-icon{width:1em;height:1em;transition:transform .4s cubic-bezier(.65,.05,0,1);flex-shrink:0;}
+    .nav-panel{position:fixed;inset:0;z-index:500;display:none;width:100%;height:100vh;}
+    .nav-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);cursor:pointer;}
+    .nav-menu{position:relative;width:36em;max-width:100%;height:100%;margin-left:auto;padding-top:5rem;padding-bottom:2rem;display:flex;flex-direction:column;overflow:auto;}
+    .nav-menu-bg{position:absolute;inset:0;z-index:0;}
+    .nav-bg-panel{position:absolute;inset:0;background:#131820;border-top-left-radius:1.25em;border-bottom-left-radius:1.25em;}
+    .nav-bg-panel.first{background:var(--blue);}
+    .nav-bg-panel.second{background:#0a1520;}
+    .nav-close-btn{position:absolute;top:1.25rem;right:1.5rem;background:none;border:none;color:var(--text2);font-size:1.25rem;cursor:pointer;z-index:2;padding:.25rem .5rem;}
+    .nav-close-btn:hover{color:var(--text);}
+    .nav-menu-inner{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:space-between;height:100%;gap:3rem;}
+    .nav-menu-list{display:flex;flex-direction:column;width:100%;list-style:none;padding:0;margin:0;}
+    .nav-menu-item{position:relative;overflow:hidden;}
+    .nav-menu-link{display:flex;align-items:baseline;justify-content:flex-end;gap:.5em;width:100%;padding:.4em var(--mp);text-decoration:none;color:var(--text);cursor:pointer;background:none;border:none;text-align:right;}
+    .nav-link-heading{font-family:'PP Neue Corp Tight','Syne',sans-serif;font-size:clamp(2.8rem,8vw,4.4rem);font-weight:700;line-height:.9;text-transform:uppercase;letter-spacing:-.02em;position:relative;z-index:1;transition:color .4s ease,transform .65s cubic-bezier(.65,.05,0,1);white-space:nowrap;}
+    .nav-link-bg{position:absolute;inset:0;background:rgba(0,212,255,.06);transform:scaleX(0);transform-origin:right;transition:transform .4s cubic-bezier(.65,.05,0,1);}
+    .nav-eyebrow{font-family:var(--fr);font-size:.75rem;font-weight:600;color:var(--text3);letter-spacing:.12em;position:relative;z-index:1;}
+    .nav-menu-link:hover .nav-link-heading{color:var(--blue);transform:translateY(-1em);}
+    .nav-menu-link:hover .nav-link-bg{transform:scale3d(1,1,1);}
+    .nav-menu-link.active .nav-link-heading{color:var(--blue);}
+    .nav-menu-details{padding:0 var(--mp);display:flex;flex-direction:column;gap:.75rem;}
+    .nav-p-small{font-family:var(--fr);font-size:.75rem;font-weight:600;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;}
+    .nav-socials-row{display:flex;gap:1rem;flex-wrap:wrap;}
+    .nav-text-link{color:var(--text2);font-size:.875rem;text-decoration:none;transition:color .2s;}
+    .nav-text-link:hover{color:var(--blue);}
+    .theme-seg{padding:0 var(--mp);}
+    .theme-seg-label{font-family:var(--fr);font-size:.75rem;font-weight:600;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:.5rem;}
+    .theme-seg-ctrl{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:.2rem;gap:.2rem;}
+    .theme-seg-btn{flex:1;background:none;border:none;color:var(--text2);font-family:var(--fr);font-size:.8rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;padding:.35rem .5rem;border-radius:6px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.4rem;}
+    .theme-seg-btn.active{background:var(--surface2);color:var(--text);}
+    @media(max-width:768px){.menu-button-text{display:none!important;}.nav-menu{width:100%;padding-top:5.5rem;padding-bottom:2.5rem;}.nav-bg-panel{border-radius:0;}.nav-link-heading{font-size:clamp(2.2rem,11vw,3rem);}.nav-menu-link{padding:.35em 1.25em;}}
+    [data-theme="light"] .nav-bg-panel.second{background:#fff8f3;}
+    [data-theme="light"] .nav-bg-panel{background:#f5ece3;}
+    [data-theme="light"] .nav-bg-panel.first{background:var(--blue);}
+    [data-theme="light"] .nav-link-heading{color:var(--text);}
     /* FOOTER */
     .footer{background:var(--bg2);border-top:1px solid var(--border);padding:2rem 0;margin-top:auto;}
     .footer-inner{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;}
@@ -159,10 +201,56 @@
           <a href="/products" class="btn btn-ghost btn-sm">Каталог</a>
           <a href="/tracking" class="btn btn-ghost btn-sm">Заказы</a>
           <div id="userMenu"></div>
+          <button data-menu-toggle class="menu-button" aria-expanded="false" aria-controls="navPanel" aria-label="Открыть меню">
+            <div class="menu-button-text"><p>Меню</p><p>Закрыть</p></div>
+            <svg class="menu-button-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+              <path d="M7.33333 16L7.33333 0L8.66667 0L8.66667 16L7.33333 16Z" fill="currentColor"/>
+              <path d="M16 8.66667L0 8.66667L0 7.33333L16 7.33333L16 8.66667Z" fill="currentColor"/>
+            </svg>
+          </button>
         </div>
       </div>
     </div>
   </header>
+
+<!-- NAV DRAWER -->
+<div data-nav="closed" class="nav-panel" id="navPanel">
+  <div data-menu-toggle class="nav-overlay"></div>
+  <nav class="nav-menu">
+    <div class="nav-menu-bg">
+      <div class="nav-bg-panel first"></div>
+      <div class="nav-bg-panel second"></div>
+      <div class="nav-bg-panel"></div>
+    </div>
+    <button class="nav-close-btn" id="navCloseBtn" aria-label="Закрыть">✕</button>
+    <div class="nav-menu-inner">
+      <div class="theme-seg">
+        <p class="theme-seg-label">Тема</p>
+        <div class="theme-seg-ctrl" role="group" aria-label="Переключить тему">
+          <button class="theme-seg-btn seg-dark" data-seg="dark"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M11 7.5A5 5 0 0 1 4.5 1a5.5 5.5 0 1 0 6.5 6.5Z" fill="currentColor"/></svg>Тёмная</button>
+          <button class="theme-seg-btn seg-light" data-seg="light"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="2.2" fill="currentColor"/><path d="M6 .8V2.4M6 9.6v1.6M.8 6H2.4M9.6 6h1.6M2.34 2.34l1.13 1.13M8.53 8.53l1.13 1.13M9.66 2.34 8.53 3.47M3.47 8.53 2.34 9.66" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>Светлая</button>
+        </div>
+      </div>
+      <ul class="nav-menu-list">
+        <li class="nav-menu-item"><a href="/" class="nav-menu-link"><p class="nav-link-heading">Главная</p><p class="nav-eyebrow">01</p><div class="nav-link-bg"></div></a></li>
+        <li class="nav-menu-item"><a href="/products" class="nav-menu-link"><p class="nav-link-heading">Каталог</p><p class="nav-eyebrow">02</p><div class="nav-link-bg"></div></a></li>
+        <li class="nav-menu-item"><a href="/about" class="nav-menu-link"><p class="nav-link-heading">О нас</p><p class="nav-eyebrow">03</p><div class="nav-link-bg"></div></a></li>
+        <li class="nav-menu-item"><a href="/tracking" class="nav-menu-link"><p class="nav-link-heading">Заказы</p><p class="nav-eyebrow">04</p><div class="nav-link-bg"></div></a></li>
+        <li class="nav-menu-item"><a href="/cart" class="nav-menu-link"><p class="nav-link-heading">Корзина</p><p class="nav-eyebrow">05</p><div class="nav-link-bg"></div></a></li>
+        <li class="nav-menu-item"><a href="/account" class="nav-menu-link active"><p class="nav-link-heading">Кабинет</p><p class="nav-eyebrow">06</p><div class="nav-link-bg"></div></a></li>
+      </ul>
+      <div class="nav-menu-details">
+        <p data-menu-fade class="nav-p-small">Контакты</p>
+        <div class="nav-socials-row">
+          <a data-menu-fade href="tel:+78001234567" class="nav-text-link">+7 (800) 123-45-67</a>
+          <a data-menu-fade href="mailto:ilya.georgievskiy@gmail.com" class="nav-text-link">Email</a>
+          <a data-menu-fade href="https://t.me/FM_Tuning" class="nav-text-link" target="_blank" rel="noopener">Telegram</a>
+        </div>
+        <a data-menu-fade href="/legal" class="nav-text-link" style="font-size:.8em;color:rgba(255,255,255,.38)">Конфиденциальность</a>
+      </div>
+    </div>
+  </nav>
+</div>
 
   <main class="main">
     <div class="container">
@@ -526,6 +614,71 @@
   var _db=gi('deleteAccountBtn');if(_db)_db.addEventListener('click',confirmDeleteAccount);
 
   init();
+  </script>
+  <script nonce="{{ request.state.csp_nonce }}">
+  // ── Nav drawer ──────────────────────────────────────
+  (function(){
+    var panel=document.getElementById('navPanel');
+    if(!panel) return;
+    var menu=panel.querySelector('.nav-menu');
+    var overlay=panel.querySelector('.nav-overlay');
+    var bgs=panel.querySelectorAll('.nav-bg-panel');
+    var links=panel.querySelectorAll('.nav-menu-link');
+    var btn=document.querySelector('.menu-button');
+    var btxt=btn?btn.querySelectorAll('p'):[];
+    var bico=btn?btn.querySelector('.menu-button-icon'):null;
+    var toggles=document.querySelectorAll('[data-menu-toggle]');
+    var navIsOpen=false;
+
+    function openNav(){
+      navIsOpen=true;
+      panel.setAttribute('data-nav','open');
+      panel.style.display='block';
+      document.body.style.overflow='hidden';
+      if(btn){btn.setAttribute('aria-expanded','true');btn.setAttribute('aria-label','Закрыть меню');}
+      if(window.gsap){
+        var tl=window.gsap.timeline();
+        tl.fromTo(bgs,{xPercent:108},{xPercent:0,stagger:.09,duration:.95,ease:'power3.out'})
+          .fromTo(links,{xPercent:22,autoAlpha:0},{xPercent:0,autoAlpha:1,stagger:.07,duration:.8,ease:'power3.out'},'<+=0.3')
+          .fromTo(overlay,{autoAlpha:0},{autoAlpha:1,duration:.7},'<');
+        if(bico) tl.fromTo(bico,{rotate:0},{rotate:315,duration:.6,ease:'power2.out'},'<');
+      }
+    }
+    function closeNav(){
+      navIsOpen=false;
+      document.body.style.overflow='';
+      if(btn){btn.setAttribute('aria-expanded','false');btn.setAttribute('aria-label','Открыть меню');}
+      if(window.gsap){
+        window.gsap.timeline()
+          .to(links,{xPercent:18,autoAlpha:0,stagger:.04,duration:.32,ease:'power2.in'})
+          .to(overlay,{autoAlpha:0,duration:.5},'<+=.05')
+          .to(menu,{xPercent:108,duration:.65,ease:'power3.in'},'<')
+          .call(function(){ panel.setAttribute('data-nav','closed'); panel.style.display='none'; menu.style.transform=''; });
+        if(bico) window.gsap.to(bico,{rotate:0,duration:.45,ease:'power2.out'});
+      } else {
+        panel.setAttribute('data-nav','closed');
+        panel.style.display='none';
+      }
+    }
+
+    // Theme seg buttons
+    var segs=panel.querySelectorAll('.theme-seg-btn');
+    var curTheme=document.documentElement.getAttribute('data-theme')||'dark';
+    segs.forEach(function(s){ if(s.dataset.seg===curTheme) s.classList.add('active'); });
+    segs.forEach(function(s){ s.addEventListener('click',function(){
+      var t=s.dataset.seg;
+      document.documentElement.setAttribute('data-theme',t);
+      localStorage.setItem('fmtun_theme',t);
+      segs.forEach(function(x){x.classList.toggle('active',x===s);});
+    }); });
+
+    toggles.forEach(function(t){ t.addEventListener('click',function(){ navIsOpen?closeNav():openNav(); }); });
+    var navCloseBtn=document.getElementById('navCloseBtn');
+    if(navCloseBtn) navCloseBtn.addEventListener('click',closeNav);
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&navIsOpen) closeNav(); });
+    links.forEach(function(l){ l.addEventListener('click',function(){ closeNav(); }); });
+    panel.style.display='none';
+  })();
   </script>
   <script src="/static/cookie-consent.js" defer></script>
 <!-- Яндекс.Метрика — заглушка. Замените YM_COUNTER_ID на реальный ID из metrika.yandex.ru -->

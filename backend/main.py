@@ -1382,9 +1382,7 @@ async def robots_txt():
     robots_path = STATIC_DIR / "robots.txt"
     if robots_path.exists():
         return PlainTextResponse(robots_path.read_text())
-    return PlainTextResponse("User-agent: *
-Allow: /
-")
+    return PlainTextResponse("User-agent: *\nAllow: /\n")
 
 
 @app.get("/sitemap.xml", include_in_schema=False)
@@ -1403,8 +1401,7 @@ async def sitemap_xml():
             f"<url><loc>{base}{u}</loc><lastmod>{today}</lastmod><changefreq>weekly</changefreq></url>"
         )
     xml_parts.append("</urlset>")
-    return _Response(content="
-".join(xml_parts), media_type="application/xml")
+    return _Response(content="\n".join(xml_parts), media_type="application/xml")
 
 
 # ==========================================

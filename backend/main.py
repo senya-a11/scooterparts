@@ -30,6 +30,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 import smtplib
+import httpx
 import urllib.request
 import urllib.parse
 from email.mime.text import MIMEText
@@ -110,11 +111,14 @@ YM_COUNTER_ID = os.getenv("YM_COUNTER_ID", "")
 BASE_URL = os.getenv("BASE_URL", "https://scooterparts.onrender.com")
 
 # ── Email-уведомления ──
+# EMAIL_API_KEY=re_... → использует Resend HTTP API (работает на Render)
+# Если не задан — пробует SMTP (заблокирован на Render free tier)
+EMAIL_API_KEY = os.getenv("EMAIL_API_KEY", "")
 SMTP_HOST = os.getenv("SMTP_HOST", "")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASS = os.getenv("SMTP_PASS", "")
-SMTP_FROM = os.getenv("SMTP_FROM", "noreply@fmtun.ru")
+SMTP_FROM = os.getenv("SMTP_FROM", "fm.tun@yandex.ru")
 
 # ── Telegram-уведомления (бот для уведомлений) ──
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
@@ -178,8 +182,50 @@ def _build_status_timeline(current_status: str) -> str:
     return '<div style="border-left:2px solid rgba(0,212,255,.2);padding-left:1rem;margin:.5rem 0">' + ''.join(rows) + '</div>'
 
 
-def _send_email_sync(to_email: str, order_id: int, status: str, delay_note: str | None = None,
-                     items: list | None = None, order_info: dict | None = None):
+async def _send_email(to_email: str, subject: str, html_body: str) -> None:
+    """Отправить HTML-письмо через Resend API (приоритет) или SMTP."""
+    if EMAIL_API_KEY:
+        # Resend HTTP API — работает на Render (SMTP заблокирован на free tier)
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                resp = await client.post(
+                    "https://api.resend.com/emails",
+                    headers={"Authorization": f"Bearer {EMAIL_API_KEY}", "Content-Type": "application/json"},
+                    json={"from": f"Fm TuN <{SMTP_FROM}>", "to": [to_email], "subject": subject, "html": html_body},
+                )
+                if resp.status_code >= 400:
+                    logger.warning("Resend API error %s: %s", resp.status_code, resp.text)
+                else:
+                    logger.info("Email sent via Resend to %s", to_email)
+        except Exception as e:
+            logger.warning("Resend send to %s failed: %s", to_email, e)
+    elif SMTP_HOST and SMTP_USER and SMTP_PASS:
+        # Fallback: SMTP (не работает на Render free tier)
+        try:
+            from email.mime.multipart import MIMEMultipart as _MM
+            from email.mime.text import MIMEText as _MT
+            msg = _MM("alternative")
+            msg["Subject"] = subject
+            msg["From"] = SMTP_FROM
+            msg["To"] = to_email
+            msg.attach(_MT(html_body, "html", "utf-8"))
+            await asyncio.to_thread(_smtp_send, SMTP_FROM, to_email, msg.as_string())
+        except Exception as e:
+            logger.warning("SMTP send to %s failed: %s", to_email, e)
+    else:
+        logger.warning("Email not configured — skipping send to %s", to_email)
+
+
+def _smtp_send(from_addr: str, to_addr: str, msg_str: str) -> None:
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as srv:
+        srv.ehlo()
+        srv.starttls()
+        srv.login(SMTP_USER, SMTP_PASS)
+        srv.sendmail(from_addr, to_addr, msg_str)
+
+
+async def _send_email_sync(to_email: str, order_id: int, status: str, delay_note: str | None = None,
+                           items: list | None = None, order_info: dict | None = None):
     """Отправить email-уведомление клиенту об изменении статуса заказа."""
     if not SMTP_HOST or not SMTP_USER or not SMTP_PASS:
         return
@@ -235,16 +281,7 @@ def _send_email_sync(to_email: str, order_id: int, status: str, delay_note: str 
   <p style="color:#3A4055;font-size:.75rem;margin-top:1.5rem">© Fm TuN. Автоматическое уведомление — не отвечайте на это письмо.</p>
 </div></body></html>"""
     try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"Fm TuN — Заказ #{order_id}: {label}"
-        msg["From"] = SMTP_FROM
-        msg["To"] = to_email
-        msg.attach(MIMEText(body, "html", "utf-8"))
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as srv:
-            srv.ehlo()
-            srv.starttls()
-            srv.login(SMTP_USER, SMTP_PASS)
-            srv.sendmail(SMTP_FROM, to_email, msg.as_string())
+        await _send_email(to_email, f"Fm TuN — Заказ #{order_id}: {label}", body)
     except Exception as e:
         logger.warning("Email notification to %s failed: %s", to_email, e)
 
@@ -260,8 +297,8 @@ async def send_order_email(to_email: str, order_id: int, status: str, delay_note
             order_info = await conn.fetchrow(
                 "SELECT total_amount, track_number FROM orders WHERE id=$1", order_id
             )
-        await asyncio.to_thread(
-            _send_email_sync, to_email, order_id, status, delay_note,
+        await _send_email_sync(
+            to_email, order_id, status, delay_note,
             [dict(r) for r in items] if items else None,
             dict(order_info) if order_info else None
         )
@@ -269,10 +306,10 @@ async def send_order_email(to_email: str, order_id: int, status: str, delay_note
         logger.warning("send_order_email error: %s", e)
 
 
-def _send_verification_email_sync(to_email: str, token: str):
+async def send_verification_email(to_email: str, token: str):
     """Отправить письмо для подтверждения email."""
-    if not SMTP_HOST or not SMTP_USER or not SMTP_PASS:
-        logger.warning("SMTP not configured — verification email not sent to %s", to_email)
+    if not EMAIL_API_KEY and not (SMTP_HOST and SMTP_USER and SMTP_PASS):
+        logger.warning("Email not configured — verification email not sent to %s", to_email)
         return
     base_url = os.getenv("BASE_URL", "https://scooterparts.onrender.com")
     verify_url = f"{base_url}/api/verify-email?token={token}"
@@ -285,24 +322,7 @@ def _send_verification_email_sync(to_email: str, token: str):
   <hr style="border:none;border-top:1px solid rgba(255,255,255,.06);margin:1.5rem 0">
   <p style="color:#7B8599;font-size:.8rem">© Fm TuN. Автоматическое уведомление — не отвечайте на это письмо.</p>
 </div></body></html>"""
-    try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = "Fm TuN — Подтверждение email"
-        msg["From"] = SMTP_FROM
-        msg["To"] = to_email
-        msg.attach(MIMEText(body, "html", "utf-8"))
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as srv:
-            srv.ehlo()
-            srv.starttls()
-            srv.login(SMTP_USER, SMTP_PASS)
-            srv.sendmail(SMTP_FROM, to_email, msg.as_string())
-        logger.info("Verification email sent to %s", to_email)
-    except Exception as e:
-        logger.warning("Verification email to %s failed: %s", to_email, e)
-
-
-async def send_verification_email(to_email: str, token: str):
-    await asyncio.to_thread(_send_verification_email_sync, to_email, token)
+    await _send_email(to_email, "Fm TuN — Подтвердите ваш email", body)
 
 
 def _send_telegram_sync(text: str):

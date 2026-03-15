@@ -348,58 +348,6 @@
       .scroll-hint{display:none;}
       .parallax__layer-img,[data-parallax-layer]{transform:none!important;will-change:auto!important;}
     }
-    /* ── MOON/SUN THEME PILL (Theme button.txt) ── */
-    .nd-theme-pill{position:relative;width:60px;height:30px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:100px;cursor:pointer;display:flex;align-items:center;padding:0 3px;transition:background .25s,border-color .25s;flex-shrink:0;user-select:none;}
-    [data-theme="light"] .nd-theme-pill{background:rgba(232,88,10,.1);border-color:rgba(232,88,10,.35);}
-    .nd-tt-knob{position:absolute;left:3px;width:24px;height:24px;background:#fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.3);transition:transform .3s cubic-bezier(.16,1,.3,1),background .25s;display:flex;align-items:center;justify-content:center;}
-    [data-theme="light"] .nd-tt-knob{background:#E8580A;transform:translateX(30px);box-shadow:0 2px 12px rgba(232,88,10,.45);}
-    .nd-tt-icon{position:absolute;width:13px;height:13px;transition:opacity .25s;pointer-events:none;}
-    .nd-tt-moon{opacity:1;color:#111;}
-    .nd-tt-sun-slot{opacity:0;color:#111;}
-    [data-theme="light"] .nd-tt-moon{opacity:0;}
-    [data-theme="light"] .nd-tt-sun-slot{opacity:1;color:#fff;}
-    .nd-tt-bg-icon{position:absolute;display:flex;align-items:center;justify-content:center;}
-    .nd-tt-bg-icon.right{right:5px;}
-    .nd-tt-bg-icon.left{left:5px;}
-    .nd-tt-bg-icon svg{width:12px;height:12px;color:var(--text3);transition:opacity .25s;}
-    .nd-tt-bg-sun{opacity:.35;}
-    [data-theme="light"] .nd-tt-bg-sun{opacity:0;}
-    .nd-tt-bg-moon{opacity:0;}
-    [data-theme="light"] .nd-tt-bg-moon{opacity:.35;}
-    /* ── BOUNCING DOTS LOADER ── */
-    .nd-loader{display:flex;gap:7px;align-items:center;justify-content:center;padding:2.5rem 0;}
-    .nd-loader-dot{width:10px;height:10px;background:var(--blue);border-radius:50%;animation:ndBounce .6s ease-in-out infinite;}
-    .nd-loader-dot:nth-child(2){animation-delay:.15s;}
-    .nd-loader-dot:nth-child(3){animation-delay:.3s;}
-    @keyframes ndBounce{0%,100%{transform:translateY(0);opacity:1}50%{transform:translateY(-16px);opacity:.6}}
-    /* ── LOCATION CARD (location.txt) ── */
-    .nd-loc-wrap{perspective:1000px;cursor:pointer;user-select:none;display:inline-block;position:relative;margin-top:1.5rem;}
-    .nd-loc-card{position:relative;overflow:hidden;border-radius:16px;background:var(--surface);border:1px solid var(--border);transition:width .45s cubic-bezier(.4,0,.2,1),height .45s cubic-bezier(.4,0,.2,1);width:240px;height:140px;transform-style:preserve-3d;}
-    .nd-loc-card.expanded{width:360px;height:280px;}
-    .nd-loc-gradient{position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.03) 0%,transparent 50%,rgba(255,255,255,.06) 100%);pointer-events:none;z-index:1;}
-    /* Mini map (expanded state) */
-    .nd-loc-map{position:absolute;inset:0;background:var(--bg2);opacity:0;transition:opacity .35s .1s;pointer-events:none;}
-    .nd-loc-card.expanded .nd-loc-map{opacity:1;}
-    .nd-loc-map svg{width:100%;height:100%;}
-    /* Map gradient fade */
-    .nd-loc-map-fade{position:absolute;inset:0;background:linear-gradient(to top,var(--surface) 0%,transparent 40%);pointer-events:none;z-index:2;}
-    /* Content */
-    .nd-loc-content{position:relative;z-index:10;height:100%;display:flex;flex-direction:column;justify-content:space-between;padding:1.25rem;}
-    .nd-loc-status{display:flex;align-items:center;gap:6px;padding:.25rem .6rem;background:rgba(255,255,255,.05);border-radius:100px;backdrop-filter:blur(4px);}
-    .nd-loc-status-dot{width:6px;height:6px;border-radius:50%;background:#34D399;}
-    .nd-loc-status-text{font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text2);}
-    .nd-loc-icon{color:#34D399;}
-    .nd-loc-name{font-family:var(--fd,sans-serif);font-size:.875rem;font-weight:500;color:var(--text);transition:transform .3s cubic-bezier(.4,0,.2,1);}
-    .nd-loc-wrap:hover .nd-loc-name{transform:translateX(4px);}
-    .nd-loc-coords{font-size:.7rem;font-family:monospace;color:var(--text2);max-height:0;overflow:hidden;opacity:0;transition:max-height .25s,opacity .25s;}
-    .nd-loc-card.expanded .nd-loc-coords{max-height:2em;opacity:1;}
-    .nd-loc-underline{height:1px;background:linear-gradient(to right,rgba(52,211,153,.5),rgba(52,211,153,.2),transparent);transform:scaleX(.3);transform-origin:left;transition:transform .4s ease-out;}
-    .nd-loc-wrap:hover .nd-loc-underline,.nd-loc-card.expanded .nd-loc-underline{transform:scaleX(1);}
-    .nd-loc-hint{position:absolute;bottom:-1.75rem;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--text3);white-space:nowrap;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;}
-    .nd-loc-wrap:hover .nd-loc-hint{opacity:1;}
-    .nd-loc-card.expanded .nd-loc-hint{opacity:0;}
-    /* Marker */
-    .nd-loc-marker{position:absolute;z-index:5;}
   </style>
 <script src="/static/csrf-init.js"></script>
 </head>
@@ -435,23 +383,10 @@
     <div class="nav-menu-inner">
       <div class="theme-seg">
         <p class="theme-seg-label">Тема</p>
-        <!-- Moon/Sun pill toggle (Theme button.txt) -->
-        <button class="nd-theme-pill theme-pill" aria-label="Переключить тему" type="button">
-          <div class="nd-tt-knob">
-            <!-- Moon icon (dark mode) -->
-            <svg class="nd-tt-icon nd-tt-moon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-            <!-- Sun icon (light mode) -->
-            <svg class="nd-tt-icon nd-tt-sun-slot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-          </div>
-          <!-- Background Sun icon (visible when dark mode) -->
-          <span class="nd-tt-bg-icon right">
-            <svg class="nd-tt-bg-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-          </span>
-          <!-- Background Moon icon (visible when light mode) -->
-          <span class="nd-tt-bg-icon left">
-            <svg class="nd-tt-bg-moon" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-          </span>
-        </button>
+        <div class="theme-seg-ctrl" role="group" aria-label="Переключить тему">
+          <button class="theme-seg-btn seg-dark" data-seg="dark"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M11 7.5A5 5 0 0 1 4.5 1a5.5 5.5 0 1 0 6.5 6.5Z" fill="currentColor"/></svg>Тёмная</button>
+          <button class="theme-seg-btn seg-light" data-seg="light"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="2.2" fill="currentColor"/><path d="M6 .8V2.4M6 9.6v1.6M.8 6H2.4M9.6 6h1.6M2.34 2.34l1.13 1.13M8.53 8.53l1.13 1.13M9.66 2.34 8.53 3.47M3.47 8.53 2.34 9.66" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>Светлая</button>
+        </div>
       </div>
       <ul class="nav-menu-list">
         <li class="nav-menu-item">
@@ -622,59 +557,6 @@
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
       </a>
     </div>
-
-    <!-- Location Card (location.txt) -->
-    <div class="nd-loc-wrap reveal" id="ndLocWrap" aria-label="Карточка адреса — нажмите для развертывания">
-      <div class="nd-loc-card" id="ndLocCard">
-        <div class="nd-loc-gradient"></div>
-        <!-- Mini map SVG (expanded) -->
-        <div class="nd-loc-map" aria-hidden="true">
-          <svg viewBox="0 0 360 280" preserveAspectRatio="none">
-            <!-- Streets grid -->
-            <line x1="0" y1="98" x2="360" y2="98" stroke="rgba(255,255,255,.2)" stroke-width="3"/>
-            <line x1="0" y1="182" x2="360" y2="182" stroke="rgba(255,255,255,.2)" stroke-width="3"/>
-            <line x1="108" y1="0" x2="108" y2="280" stroke="rgba(255,255,255,.15)" stroke-width="2"/>
-            <line x1="252" y1="0" x2="252" y2="280" stroke="rgba(255,255,255,.15)" stroke-width="2"/>
-            <line x1="0" y1="56" x2="360" y2="56" stroke="rgba(255,255,255,.07)" stroke-width="1"/>
-            <line x1="0" y1="140" x2="360" y2="140" stroke="rgba(255,255,255,.07)" stroke-width="1"/>
-            <line x1="0" y1="224" x2="360" y2="224" stroke="rgba(255,255,255,.07)" stroke-width="1"/>
-            <line x1="54" y1="0" x2="54" y2="280" stroke="rgba(255,255,255,.07)" stroke-width="1"/>
-            <line x1="162" y1="0" x2="162" y2="280" stroke="rgba(255,255,255,.07)" stroke-width="1"/>
-            <line x1="306" y1="0" x2="306" y2="280" stroke="rgba(255,255,255,.07)" stroke-width="1"/>
-            <!-- Buildings -->
-            <rect x="36" y="112" width="54" height="56" rx="2" fill="rgba(255,255,255,.12)"/>
-            <rect x="126" y="42" width="43" height="42" rx="2" fill="rgba(255,255,255,.1)"/>
-            <rect x="270" y="196" width="65" height="50" rx="2" fill="rgba(255,255,255,.11)"/>
-            <rect x="316" y="56" width="36" height="70" rx="2" fill="rgba(255,255,255,.09)"/>
-            <rect x="18" y="154" width="29" height="34" rx="2" fill="rgba(255,255,255,.08)"/>
-          </svg>
-          <!-- Location pin -->
-          <div class="nd-loc-marker" style="top:calc(50% - 18px);left:50%;transform:translateX(-50%);">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="filter:drop-shadow(0 0 8px rgba(52,211,153,.6))">
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#34D399"/>
-              <circle cx="12" cy="9" r="2.5" fill="rgba(8,10,15,.6)"/>
-            </svg>
-          </div>
-          <div class="nd-loc-map-fade"></div>
-        </div>
-        <!-- Card content -->
-        <div class="nd-loc-content">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;">
-            <svg class="nd-loc-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>
-            <div class="nd-loc-status">
-              <div class="nd-loc-status-dot"></div>
-              <span class="nd-loc-status-text">Открыто</span>
-            </div>
-          </div>
-          <div>
-            <div class="nd-loc-name">М. Университет, Строителей 4/2</div>
-            <div class="nd-loc-coords">55.6838° N, 37.5227° E</div>
-            <div class="nd-loc-underline"></div>
-          </div>
-        </div>
-      </div>
-      <div class="nd-loc-hint">Нажмите для развертывания</div>
-    </div>
   </div>
 </section>
 
@@ -827,9 +709,9 @@
 </script>
 
 <!-- GSAP + Lenis (progressive enhancement — CDN allowlisted in CSP) -->
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/CustomEase.min.js" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" integrity="sha384-Z3REaz79l2IaAZqJsSABtTbhjgOUYyV3p90XNnAPCSHg3EMTz1fouunq9WZRtj3d" integrity="sha384-Z3REaz79l2IaAZqJsSABtTbhjgOUYyV3p90XNnAPCSHg3EMTz1fouunq9WZRtj3d" integrity="sha384-Z3REaz79l2IaAZqJsSABtTbhjgOUYyV3p90XNnAPCSHg3EMTz1fouunq9WZRtj3d" integrity="sha384-Z3REaz79l2IaAZqJsSABtTbhjgOUYyV3p90XNnAPCSHg3EMTz1fouunq9WZRtj3d" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" integrity="sha384-Z3REaz79l2IaAZqJsSABtTbhjgOUYyV3p90XNnAPCSHg3EMTz1fouunq9WZRtj3d" crossorigin="anonymous" integrity="sha384-Z3REaz79l2IaAZqJsSABtTbhjgOUYyV3p90XNnAPCSHg3EMTz1fouunq9WZRtj3d" crossorigin="anonymous"></script>
 <script nonce="{{ request.state.csp_nonce }}">
 /* ── NAV DRAWER ── */
 if(typeof gsap!=='undefined'&&typeof CustomEase!=='undefined'){
@@ -934,7 +816,7 @@ initNav();
   }catch(e){}
 })();
 </script>
-<script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js" integrity="sha384-O55L/6rhHr9CFvrxqv5luxOCcmVaBmETbZbJDP+Do8T0pztTACsFBD/IXCNkj7DV" integrity="sha384-O55L/6rhHr9CFvrxqv5luxOCcmVaBmETbZbJDP+Do8T0pztTACsFBD/IXCNkj7DV" integrity="sha384-O55L/6rhHr9CFvrxqv5luxOCcmVaBmETbZbJDP+Do8T0pztTACsFBD/IXCNkj7DV" integrity="sha384-O55L/6rhHr9CFvrxqv5luxOCcmVaBmETbZbJDP+Do8T0pztTACsFBD/IXCNkj7DV" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js" integrity="sha384-O55L/6rhHr9CFvrxqv5luxOCcmVaBmETbZbJDP+Do8T0pztTACsFBD/IXCNkj7DV" crossorigin="anonymous" integrity="sha384-O55L/6rhHr9CFvrxqv5luxOCcmVaBmETbZbJDP+Do8T0pztTACsFBD/IXCNkj7DV" crossorigin="anonymous"></script>
 
 <script nonce="{{ request.state.csp_nonce }}">
 try {
@@ -995,31 +877,6 @@ try {
     </div>
   </div>
 </div>
-<script nonce="{{ request.state.csp_nonce }}">
-// ── Location Card: 3D tilt + expand (location.txt) ──
-(function(){
-  var wrap=document.getElementById('ndLocWrap');
-  var card=document.getElementById('ndLocCard');
-  if(!wrap||!card)return;
-  var isExpanded=false;
-  function handleMouseMove(e){
-    var r=card.getBoundingClientRect();
-    var cx=r.left+r.width/2,cy=r.top+r.height/2;
-    var dx=e.clientX-cx,dy=e.clientY-cy;
-    var rx=(-dy/50)*8,ry=(dx/50)*8;
-    card.style.transform='rotateX('+rx.toFixed(2)+'deg) rotateY('+ry.toFixed(2)+'deg)';
-  }
-  function handleMouseLeave(){
-    card.style.transform='rotateX(0deg) rotateY(0deg)';
-  }
-  wrap.addEventListener('mousemove',handleMouseMove,{passive:true});
-  wrap.addEventListener('mouseleave',handleMouseLeave);
-  wrap.addEventListener('click',function(){
-    isExpanded=!isExpanded;
-    card.classList.toggle('expanded',isExpanded);
-  });
-})();
-</script>
 <script src="/static/cookie-consent.js" defer></script>
 <!-- Яндекс.Метрика — заглушка. Замените YM_COUNTER_ID на реальный ID из metrika.yandex.ru -->
 <script nonce="{{ request.state.csp_nonce }}">

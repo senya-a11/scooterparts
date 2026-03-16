@@ -16,7 +16,15 @@
 
 > **Электронное свидетельство** — юридический документ для Роспатента/госорганов. Для работы сайта не нужно.
 
-### 2. VPS сервер — обязательно
+### 2. VPS сервер — обязательно (без ISPmanager!)
+
+> **Почему не ISPmanager?**
+> ISPmanager — это панель для PHP-сайтов (WordPress, Битрикс). Наш проект (FastAPI + PostgreSQL + Docker) с ней несовместим:
+> - Python/FastAPI — не поддерживается
+> - База данных — только MySQL, а нам нужен PostgreSQL
+> - Docker — не поддерживается
+>
+> Вместо ISPmanager используем **Portainer** — браузерный интерфейс для Docker. Он даёт те же удобства (кнопки, логи, мониторинг) но работает с нашим стеком. Устанавливается один раз за 2 команды.
 
 Шаред-хостинг не подойдёт — Python/ASGI не поддерживается.
 
@@ -304,6 +312,52 @@ docker compose logs app --tail=50
 docker compose down
 docker compose up -d --build
 ```
+
+---
+
+### Шаг 8б: Установить Portainer (веб-интерфейс для управления Docker)
+
+**Что такое Portainer?**
+Portainer — это сайт который открывается в твоём браузере и позволяет управлять Docker-контейнерами без командной строки. После этого шага ты сможешь:
+- Видеть статус сайта и базы (запущены / упали)
+- Смотреть логи прямо в браузере
+- Перезапускать контейнеры кнопкой
+- Обновлять сайт (pull новой версии) через интерфейс
+
+Это делается **один раз** — дальше работа через браузер.
+
+```bash
+# Создать хранилище данных Portainer
+docker volume create portainer_data
+
+# Запустить Portainer (будет доступен на порту 9000)
+docker run -d \
+  --name portainer \
+  --restart=always \
+  -p 9000:9000 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v portainer_data:/data \
+  portainer/portainer-ce:latest
+```
+
+После запуска открыть в браузере: `http://<IP твоего VPS>:9000`
+
+При первом открытии:
+1. Придумать логин и пароль администратора Portainer
+2. Нажать **"Get Started"** → выбрать **"local"**
+3. Ты увидишь свои контейнеры (postgres и app)
+
+> **Важно:** Portainer доступен по IP:9000, не по домену. Это нормально — он только для тебя.
+
+**Что делать в Portainer вместо командной строки:**
+
+| Задача | В командной строке | В Portainer |
+|---|---|---|
+| Посмотреть логи | `docker compose logs -f app` | Containers → app → Logs |
+| Перезапустить | `docker compose restart app` | Containers → app → Restart (кнопка) |
+| Остановить | `docker compose down` | Containers → Stop (кнопка) |
+| Зайти в базу | `docker compose exec postgres psql ...` | Containers → postgres → Console |
+| Обновить сайт | `git pull && docker compose up -d --build` | Через Stacks → Update |
 
 ---
 

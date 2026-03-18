@@ -774,16 +774,10 @@
           </div>
         </div>
       </div>
-      <div class="supplier-docs-grid" id="supplierDocs">
+      <div class="supplier-docs-grid" id="supplierDocs" style="grid-template-columns:1fr">
         <div class="sdoc-card">
           <div class="sdoc-header">🏭 <span>Партнёрский договор</span></div>
           <div class="sdoc-gallery-wrap" id="sdocGalleryPartner">
-            <div class="sdoc-empty">Документ будет добавлен</div>
-          </div>
-        </div>
-        <div class="sdoc-card">
-          <div class="sdoc-header">🛡️ <span>Гарантийные условия</span></div>
-          <div class="sdoc-gallery-wrap" id="sdocGalleryWarranty">
             <div class="sdoc-empty">Документ будет добавлен</div>
           </div>
         </div>
@@ -1506,7 +1500,6 @@ async function loadSupplierDocs(){
     var byType={partner:[],warranty:[]};
     docs.forEach(function(d){if(byType[d.doc_type])byType[d.doc_type].push(d);});
     renderDocGallery('sdocGalleryPartner',byType.partner);
-    renderDocGallery('sdocGalleryWarranty',byType.warranty);
   }catch(e){}
 }
 

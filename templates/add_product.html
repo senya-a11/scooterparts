@@ -135,6 +135,10 @@
             <input type="checkbox" name="preorder" id="preorderCheck" value="true" style="width:18px;height:18px;cursor:pointer">
             <span style="font-size:.9375rem">📦 По предзаказу</span>
           </label>
+          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
+            <input type="checkbox" name="preorder_unavailable" id="preorderUnavailableCheck" value="true" style="width:18px;height:18px;cursor:pointer">
+            <span style="font-size:.9375rem">🚫 Предзаказ недоступен</span>
+          </label>
         </div>
         <div class="form-hint">Можно выбрать оба статуса одновременно</div>
       </div>
@@ -381,6 +385,7 @@ function addImageUpload() {
     // Обрабатываем чекбоксы правильно
     if (!formData.get('in_stock')) formData.set('in_stock', 'false');
     if (!formData.get('preorder')) formData.set('preorder', 'false');
+    if (!formData.get('preorder_unavailable')) formData.set('preorder_unavailable', 'false');
     
     try {
       const r = await fetch('/api/admin/products', { method:'POST', credentials:'include', body:formData });

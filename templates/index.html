@@ -201,13 +201,16 @@
     [data-theme="light"] .hero-title .accent{background:linear-gradient(135deg,#E8580A 0%,#ff8c42 50%,#E8580A 100%);-webkit-background-clip:text;background-clip:text;}
     .hero-desc{font-size:1.0625rem;color:var(--text2);max-width:540px;margin:0 auto 2.75rem;line-height:1.75;animation:fadeUp .7s .2s var(--ease) both}
     .hero-actions{display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;animation:fadeUp .7s .3s var(--ease) both}
-    .hero-stats{display:flex;align-items:center;justify-content:center;gap:0;margin-top:4rem;padding:1.5rem 0;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 0 0 1px rgba(0,212,255,.06),inset 0 1px 0 rgba(255,255,255,.03);animation:fadeUp .7s .45s var(--ease) both;flex-wrap:nowrap;position:relative;overflow:hidden}
-    .hero-stats::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(0,212,255,.4),transparent)}
-    .hero-stat{flex:1;min-width:0;padding:0 1.5rem;text-align:center;position:relative}
-    .hero-stat::after{content:'';position:absolute;right:0;top:15%;bottom:15%;width:1px;background:var(--border)}
-    .hero-stat:last-child::after{display:none}
-    .hero-stat-val{font-family:var(--fr);font-size:2.25rem;font-weight:700;color:var(--blue);display:block;letter-spacing:.02em;line-height:1}
-    .hero-stat-label{font-size:.75rem;color:var(--text3);margin-top:.375rem;font-family:var(--fr);letter-spacing:.12em;text-transform:uppercase}
+    .hero-stats{display:flex;align-items:center;justify-content:center;gap:0;margin-top:3.5rem;padding:2.25rem 0;animation:fadeUp .7s .45s var(--ease) both;flex-wrap:nowrap;position:relative}
+    .hero-stats::before{content:'';position:absolute;left:50%;transform:translateX(-50%);top:0;width:60%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,.25),transparent)}
+    .hero-stats::after{content:'';position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:60%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,.1),transparent)}
+    .hero-stat{flex:1;min-width:0;padding:0 1.75rem;text-align:center;position:relative}
+    .hero-stat-sep{position:absolute;right:0;top:15%;bottom:15%;width:1px;background:rgba(255,255,255,.1)}
+    .hero-stat:last-child .hero-stat-sep{display:none}
+    .hero-stat-val{font-family:var(--fn);font-size:2rem;font-weight:700;color:var(--blue);display:block;letter-spacing:.04em;line-height:1;text-shadow:0 0 28px rgba(0,212,255,.45)}
+    [data-theme="light"] .hero-stat-val{text-shadow:0 0 20px rgba(232,88,10,.3)}
+    .hero-stat-label{font-size:.68rem;color:rgba(255,255,255,.3);margin-top:.5rem;font-family:var(--fr);letter-spacing:.15em;text-transform:uppercase}
+    [data-theme="light"] .hero-stat-label{color:rgba(0,0,0,.4)}
     @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 
     .section{padding:5rem 0;position:relative;z-index:1}
@@ -413,7 +416,7 @@
       .nav-link-heading{font-size:clamp(2.2rem,11vw,3rem)}
       .nav-menu-link{padding:.35em 1.25em}
       .footer-grid{grid-template-columns:1fr 1fr;gap:2rem}
-      .hero-stat{padding:0 .75rem}.hero-stat-val{font-size:1.5rem}.hero-stat-label{font-size:.65rem;letter-spacing:.07em}
+      .hero-stat{padding:0 .875rem}.hero-stat-val{font-size:1.6rem}.hero-stat-label{font-size:.62rem;letter-spacing:.09em}
       .cookie-inner{flex-direction:column;align-items:flex-start}
       .product-detail-content{grid-template-columns:1fr;gap:1.5rem;padding:1.5rem}
       .product-actions{flex-direction:column}
@@ -425,17 +428,45 @@
     @media(max-width:480px){
       .footer-grid{grid-template-columns:1fr}
       .supplier-docs-grid{grid-template-columns:1fr}
-      .hero-stats{padding:1rem 0}
-      .hero-stat{padding:0 .5rem}
-      .hero-stat-val{font-size:1.25rem}
-      .hero-stat-label{font-size:.6rem;letter-spacing:.04em}
+      .hero-stats{padding:.75rem 0}
+      .hero-stat{padding:0 .4rem}
+      .hero-stat-val{font-size:1.1rem;letter-spacing:.02em}
+      .hero-stat-label{font-size:.55rem;letter-spacing:.06em}
+      .social-btns{gap:.5rem}
       .footer-legal-links{gap:.75rem}
       .footer-bottom{flex-direction:column;align-items:flex-start;gap:.5rem}
     }
   
     /* ── TRUST BAR ── */
-    .trust-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2.5rem}
-    @media(max-width:540px){.trust-bar{grid-template-columns:1fr}}
+    .trust-bar{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2.5rem}
+    @media(max-width:400px){.trust-bar{grid-template-columns:1fr}}
+    .trust-item{display:flex;flex-direction:column;align-items:center;gap:.625rem;padding:1.75rem 1.25rem;background:rgba(255,255,255,.025);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.07);border-radius:16px;text-decoration:none;transition:border-color .25s,transform .25s,background .25s;text-align:center}
+    .trust-item:hover{border-color:rgba(0,212,255,.3);background:rgba(0,212,255,.04);transform:translateY(-3px)}
+    .trust-item-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center}
+    .trust-item-num{font-family:var(--fn);font-size:2.25rem;font-weight:700;line-height:1;letter-spacing:.02em}
+    .trust-item-label{font-family:var(--fr);font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+    [data-theme="light"] .trust-item{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.07)}
+    [data-theme="light"] .trust-item:hover{border-color:rgba(232,88,10,.3);background:rgba(232,88,10,.04)}
+    [data-theme="light"] .trust-item-label{color:rgba(0,0,0,.4)}
+    /* ── SOCIAL PILL BUTTONS ── */
+    .social-btns{display:flex;flex-wrap:wrap;gap:.75rem;justify-content:center;margin-top:2.5rem}
+    .social-btn{display:inline-flex;align-items:center;gap:.625rem;padding:.75rem 1.375rem;border-radius:100px;font-family:var(--fr);font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;transition:all .22s;position:relative;overflow:hidden}
+    .social-btn::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .22s}
+    .social-btn:hover::before{opacity:1}
+    .social-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+    .social-btn svg{flex-shrink:0}
+    .social-btn--tg{color:#00D4FF;border:1.5px solid rgba(0,212,255,.4);background:rgba(0,212,255,.07)}
+    .social-btn--tg::before{background:rgba(0,212,255,.08)}
+    .social-btn--tg:hover{border-color:#00D4FF;box-shadow:0 8px 24px rgba(0,212,255,.2)}
+    .social-btn--av{color:#97CF26;border:1.5px solid rgba(151,207,38,.4);background:rgba(151,207,38,.07)}
+    .social-btn--av::before{background:rgba(151,207,38,.08)}
+    .social-btn--av:hover{border-color:#97CF26;box-shadow:0 8px 24px rgba(151,207,38,.15)}
+    .social-btn--ym{color:#F59E0B;border:1.5px solid rgba(245,158,11,.4);background:rgba(245,158,11,.07)}
+    .social-btn--ym::before{background:rgba(245,158,11,.08)}
+    .social-btn--ym:hover{border-color:#F59E0B;box-shadow:0 8px 24px rgba(245,158,11,.15)}
+    [data-theme="light"] .social-btn--tg{background:rgba(0,212,255,.06)}
+    [data-theme="light"] .social-btn--av{background:rgba(151,207,38,.06)}
+    [data-theme="light"] .social-btn--ym{background:rgba(245,158,11,.06)}
     /* ── REVIEWS ── */
     .reviews-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
     .rv-card{padding:2rem;border:1px solid var(--border);background:var(--surface);position:relative;border-radius:4px;transition:border-color .3s,transform .3s}
@@ -676,10 +707,10 @@
       <a href="/auth?next=/" class="btn btn-ghost btn-lg">Создать аккаунт</a>
     </div>
     <div class="hero-stats">
-      <div class="hero-stat"><span class="hero-stat-val" id="sProd">&#8212;</span><div class="hero-stat-label">Товаров</div></div>
-      <div class="hero-stat"><span class="hero-stat-val" id="sCat">&#8212;</span><div class="hero-stat-label">Категорий</div></div>
-      <div class="hero-stat"><span class="hero-stat-val" id="sOrd">&#8212;</span><div class="hero-stat-label">Заказов</div></div>
-      <div class="hero-stat"><span class="hero-stat-val">24/7</span><div class="hero-stat-label">Поддержка</div></div>
+      <div class="hero-stat"><span class="hero-stat-val" id="sProd">&#8212;</span><div class="hero-stat-label">Товаров</div><span class="hero-stat-sep"></span></div>
+      <div class="hero-stat"><span class="hero-stat-val" id="sCat">&#8212;</span><div class="hero-stat-label">Категорий</div><span class="hero-stat-sep"></span></div>
+      <div class="hero-stat"><span class="hero-stat-val" id="sOrd">&#8212;</span><div class="hero-stat-label">Заказов</div><span class="hero-stat-sep"></span></div>
+      <div class="hero-stat"><span class="hero-stat-val">24/7</span><div class="hero-stat-label">Поддержка</div><span class="hero-stat-sep"></span></div>
     </div>
   </div></div>
 </section>
@@ -766,29 +797,19 @@
     </div>
     <!-- Trust bar: platform stats -->
     <div class="trust-bar">
-      <a href="https://t.me/FmTunotzova" target="_blank" rel="noopener noreferrer"
-         style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1.25rem 1rem;background:var(--surface);border:1px solid rgba(0,212,255,.15);border-radius:10px;text-decoration:none;transition:border-color .2s,transform .2s;text-align:center"
-         onmouseover="this.style.borderColor='rgba(0,212,255,.4)';this.style.transform='translateY(-2px)'"
-         onmouseout="this.style.borderColor='rgba(0,212,255,.15)';this.style.transform='none'">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="#00D4FF"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L8.32 14.617l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.828.942z"/></svg>
-        <span style="font-family:var(--fd);font-size:1.5rem;font-weight:800;color:var(--blue);line-height:1">+300</span>
-        <span style="font-family:var(--fr);font-size:.7rem;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">отзывов в Telegram</span>
+      <a href="https://t.me/FmTunotzova" target="_blank" rel="noopener noreferrer" class="trust-item">
+        <div class="trust-item-icon" style="background:rgba(0,212,255,.1)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#00D4FF"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L8.32 14.617l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.828.942z"/></svg>
+        </div>
+        <span class="trust-item-num" style="color:#00D4FF;text-shadow:0 0 24px rgba(0,212,255,.4)">+300</span>
+        <span class="trust-item-label">отзывов · Telegram</span>
       </a>
-      <a href="https://yandex.ru/maps/org/fastmotion/1182084478/" target="_blank" rel="noopener noreferrer"
-         style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1.25rem 1rem;background:var(--surface);border:1px solid rgba(0,212,255,.15);border-radius:10px;text-decoration:none;transition:border-color .2s,transform .2s;text-align:center"
-         onmouseover="this.style.borderColor='rgba(0,212,255,.4)';this.style.transform='translateY(-2px)'"
-         onmouseout="this.style.borderColor='rgba(0,212,255,.15)';this.style.transform='none'">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-        <span style="font-family:var(--fd);font-size:1.5rem;font-weight:800;color:#F59E0B;line-height:1">5.0 ★</span>
-        <span style="font-family:var(--fr);font-size:.7rem;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">на Яндекс.Картах</span>
-      </a>
-      <a href="https://yandex.ru/maps/org/fastmotion/1182084478/" target="_blank" rel="noopener noreferrer"
-         style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1.25rem 1rem;background:var(--surface);border:1px solid rgba(0,212,255,.15);border-radius:10px;text-decoration:none;transition:border-color .2s,transform .2s;text-align:center"
-         onmouseover="this.style.borderColor='rgba(0,212,255,.4)';this.style.transform='translateY(-2px)'"
-         onmouseout="this.style.borderColor='rgba(0,212,255,.15)';this.style.transform='none'">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="#00D4FF"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
-        <span style="font-family:var(--fd);font-size:1.5rem;font-weight:800;color:var(--blue);line-height:1">190</span>
-        <span style="font-family:var(--fr);font-size:.7rem;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">отзывов ФастМоушн</span>
+      <a href="https://yandex.ru/maps/org/fastmotion/1182084478/" target="_blank" rel="noopener noreferrer" class="trust-item">
+        <div class="trust-item-icon" style="background:rgba(245,158,11,.1)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        </div>
+        <span class="trust-item-num" style="color:#F59E0B;text-shadow:0 0 24px rgba(245,158,11,.35)">5.0 ★</span>
+        <span class="trust-item-label">рейтинг · Яндекс.Карты</span>
       </a>
     </div>
     <div class="reviews-grid">
@@ -832,33 +853,19 @@
         </div>
       </div>
     </div>
-    <div style="display:flex;justify-content:center;margin-top:2.5rem;">
-      <div style="display:inline-flex;border:1px solid rgba(0,212,255,.2);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.03);">
-        <a href="https://t.me/FmTunotzova" target="_blank" rel="noopener noreferrer"
-           style="display:inline-flex;align-items:center;gap:.55rem;padding:.8rem 1.5rem;color:#00D4FF;font-family:var(--fr);font-size:.8rem;font-weight:700;letter-spacing:.08em;text-decoration:none;text-transform:uppercase;transition:background .2s;border-right:1px solid rgba(0,212,255,.2);"
-           onmouseover="this.style.background='rgba(0,212,255,.1)'"
-           onmouseout="this.style.background='transparent'">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#00D4FF"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L8.32 14.617l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.828.942z"/></svg>
-          Отзывы в Telegram
-        </a>
-        <a href="https://www.avito.ru/brands/11e42f6a54bf637606a2152cee284225?src=sharing" target="_blank" rel="noopener noreferrer"
-           style="display:inline-flex;align-items:center;gap:.55rem;padding:.8rem 1.5rem;color:#97CF26;font-family:var(--fr);font-size:.8rem;font-weight:700;letter-spacing:.08em;text-decoration:none;text-transform:uppercase;transition:background .2s;border-right:1px solid rgba(0,212,255,.2);"
-           onmouseover="this.style.background='rgba(151,207,38,.1)'"
-           onmouseout="this.style.background='transparent'">
-          <svg width="16" height="16" viewBox="0 0 40 40" fill="none">
-            <rect width="40" height="40" rx="8" fill="#97CF26"/>
-            <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="22" fill="white">a</text>
-          </svg>
-          Магазин на Авито
-        </a>
-        <a href="https://yandex.ru/maps/org/fastmotion/1182084478/" target="_blank" rel="noopener noreferrer"
-           style="display:inline-flex;align-items:center;gap:.55rem;padding:.8rem 1.5rem;color:#F59E0B;font-family:var(--fr);font-size:.8rem;font-weight:700;letter-spacing:.08em;text-decoration:none;text-transform:uppercase;transition:background .2s;"
-           onmouseover="this.style.background='rgba(245,158,11,.1)'"
-           onmouseout="this.style.background='transparent'">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-          Яндекс.Карты
-        </a>
-      </div>
+    <div class="social-btns">
+      <a href="https://t.me/FmTunotzova" target="_blank" rel="noopener noreferrer" class="social-btn social-btn--tg">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L8.32 14.617l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.828.942z"/></svg>
+        Отзывы в Telegram
+      </a>
+      <a href="https://www.avito.ru/brands/11e42f6a54bf637606a2152cee284225?src=sharing" target="_blank" rel="noopener noreferrer" class="social-btn social-btn--av">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M4.5 0C2.015 0 0 2.015 0 4.5v15C0 21.985 2.015 24 4.5 24h15c2.485 0 4.5-2.015 4.5-4.5v-15C24 2.015 21.985 0 19.5 0h-15zm7.14 4.5c1.38 0 2.5 1.12 2.5 2.5S12.02 9.5 10.64 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5zm-4.14 6h2v9h-2v-9zm5.5 0c2.21 0 3.5 1.49 3.5 3.5V19.5h-2v-5c0-1.1-.9-2-2-2s-2 .9-2 2v5h-2v-9h2v1.18c.6-.8 1.5-1.18 2.5-1.18z"/></svg>
+        Магазин на Авито
+      </a>
+      <a href="https://yandex.ru/maps/org/fastmotion/1182084478/" target="_blank" rel="noopener noreferrer" class="social-btn social-btn--ym">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        Яндекс.Карты
+      </a>
     </div>
   </div>
 </section>

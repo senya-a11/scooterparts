@@ -211,7 +211,6 @@
       html,body{overflow:hidden;height:100%}
       .auth-page{flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;height:100%;justify-content:flex-start;padding-top:calc(64px + 1.5rem);padding-bottom:calc(2rem + 60px)}
       .auth-page::-webkit-scrollbar{display:none}
-      .auth-footer{position:fixed;bottom:0;left:0;right:0;z-index:50;}
       .auth-left{width:100%;}
       .auth-left{padding:1.5rem 1.25rem;justify-content:center;overflow:visible}
       .auth-right{display:none;}  /* hide animation on mobile */
@@ -233,6 +232,9 @@
     .auth-footer-links{display:flex;gap:1.5rem;flex-wrap:wrap;}
     .auth-footer-links a{font-family:var(--fr);font-size:.8rem;color:var(--text3);text-decoration:none;transition:color .2s;letter-spacing:.05em;}
     .auth-footer-links a:hover{color:var(--blue);}
+    @media(max-width:900px){
+      .auth-footer{position:fixed;bottom:0;left:0;right:0;z-index:50;}
+    }
   </style>
 <script src="/static/csrf-init.js"></script>
 </head>

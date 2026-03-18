@@ -1367,6 +1367,7 @@ class AppMiddleware(BaseHTTPMiddleware):
             f"frame-ancestors 'none'; "
             f"base-uri 'self'; "
             f"form-action 'self'; "
+            f"worker-src 'self' blob:; "
             f"object-src 'none';"
         )
         response.headers["Content-Security-Policy"]   = csp

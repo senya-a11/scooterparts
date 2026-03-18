@@ -411,6 +411,10 @@
     .sdoc-slide-pdf .sdoc-pdf-name{font-size:.65rem;color:var(--text3);word-break:break-all;max-width:100%}
     .sdoc-slide-pdf a{font-size:.72rem;color:var(--blue);text-decoration:none;border:1px solid rgba(0,212,255,.35);border-radius:6px;padding:.3rem .75rem}
     .sdoc-slide-pdf a:hover{background:rgba(0,212,255,.1)}
+    .sdoc-slide-pdf-wrap{position:relative;display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:.5rem}
+    .sdoc-pdf-canvas{width:100%;border-radius:6px;display:block;border:1px solid var(--border)}
+    .sdoc-pdf-open-btn{font-size:.72rem;color:var(--blue);text-decoration:none;border:1px solid rgba(0,212,255,.35);border-radius:6px;padding:.3rem .75rem;margin-top:.25rem}
+    .sdoc-pdf-open-btn:hover{background:rgba(0,212,255,.1)}
     .sdoc-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.65);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);color:var(--text);width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;transition:all .2s;line-height:1;font-family:sans-serif}
     .sdoc-btn:hover{background:var(--blue);color:#000;border-color:var(--blue)}
     .sdoc-btn-prev{left:.4rem}
@@ -955,6 +959,8 @@
   </div>
 </div>
 
+<script src="https://unpkg.com/pdfjs-dist@3.11.174/legacy/build/pdf.min.js" crossorigin="anonymous"></script>
+<script nonce="{{ request.state.csp_nonce }}">if(typeof pdfjsLib!=='undefined')pdfjsLib.GlobalWorkerOptions.workerSrc='/static/pdf.worker.min.js';</script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous" integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/CustomEase.min.js" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous" integrity="sha384-BXj4dUwqsTW7BsafEOy150542LwVf57RoKjTk3Ay1dXyFXRwipZgJWd1QKIxStwq" crossorigin="anonymous"></script>
 <script nonce="{{ request.state.csp_nonce }}">
@@ -1502,14 +1508,16 @@ function renderDocGallery(containerId,docs){
     wrap.innerHTML='<div class="sdoc-empty">Документ будет добавлен</div>';
     return;
   }
+  var pdfUrls=[];
   var slides=docs.map(function(d,i){
     var isPdf=d.filename.toLowerCase().endsWith('.pdf');
     if(isPdf){
-      return '<div class="sdoc-slide"><div class="sdoc-slide-pdf">'+
-        '<div class="sdoc-pdf-icon">📄</div>'+
-        '<div class="sdoc-pdf-name">'+d.filename+'</div>'+
-        '<a href="'+d.url+'" target="_blank" rel="noopener">Открыть PDF</a>'+
-        '</div></div>';
+      var cid='pdfprev-'+Math.random().toString(36).slice(2,9);
+      pdfUrls.push({id:cid,url:d.url});
+      return '<div class="sdoc-slide sdoc-slide-pdf-wrap">'+
+        '<canvas id="'+cid+'" class="sdoc-pdf-canvas"></canvas>'+
+        '<a href="'+d.url+'" target="_blank" rel="noopener" class="sdoc-pdf-open-btn">Открыть PDF</a>'+
+        '</div>';
     }
     return '<div class="sdoc-slide"><img src="'+d.url+'" alt="Документ '+(i+1)+'" draggable="false" loading="lazy"></div>';
   }).join('');
@@ -1519,6 +1527,23 @@ function renderDocGallery(containerId,docs){
   var btns=n>1?'<button class="sdoc-btn sdoc-btn-prev">&#8249;</button><button class="sdoc-btn sdoc-btn-next">&#8250;</button>':'';
   wrap.innerHTML='<div class="sdoc-track-outer"><div class="sdoc-track">'+slides+'</div>'+btns+count+dots+'</div>';
   if(n>1)initDocSlider(wrap.querySelector('.sdoc-track-outer'),n);
+  pdfUrls.forEach(function(p){renderPdfThumb(p.id,p.url);});
+}
+
+function renderPdfThumb(canvasId,url){
+  if(typeof pdfjsLib==='undefined')return;
+  pdfjsLib.getDocument(url).promise.then(function(pdf){
+    return pdf.getPage(1);
+  }).then(function(page){
+    var canvas=document.getElementById(canvasId);
+    if(!canvas)return;
+    var vp=page.getViewport({scale:1});
+    var w=canvas.parentElement?canvas.parentElement.offsetWidth||280:280;
+    var scale=w/vp.width;
+    var vps=page.getViewport({scale:scale});
+    canvas.width=vps.width;canvas.height=vps.height;
+    page.render({canvasContext:canvas.getContext('2d'),viewport:vps});
+  }).catch(function(){});
 }
 
 function initDocSlider(outer,total){

@@ -1174,6 +1174,14 @@ class Database:
             except Exception as e:
                 print(f"⚠️ Миграция v28 (users): {e}")
 
+            # ── v29: хранение файлов документов в БД (Render ephemeral FS fix) ──
+            try:
+                await conn.execute("ALTER TABLE supplier_documents ADD COLUMN IF NOT EXISTS file_content BYTEA")
+                await conn.execute("ALTER TABLE supplier_documents ADD COLUMN IF NOT EXISTS content_type VARCHAR(100)")
+                print("✅ Миграция v29: file_content, content_type в supplier_documents")
+            except Exception as e:
+                print(f"⚠️ Миграция v29 (supplier_documents): {e}")
+
             # --- Начальные категории ---
             for slug, name, emoji, desc in DEFAULT_CATEGORIES:
                 exists = await conn.fetchval(
@@ -4577,7 +4585,7 @@ async def get_supplier_docs():
             rows = await conn.fetch(
                 "SELECT id, doc_type, filename, uploaded_at FROM supplier_documents ORDER BY doc_type, uploaded_at"
             )
-            return [{"id": r["id"], "doc_type": r["doc_type"], "filename": r["filename"], "url": f"/static/uploads/docs/{r['filename']}", "uploaded_at": r["uploaded_at"].isoformat() if r["uploaded_at"] else None} for r in rows]
+            return [{"id": r["id"], "doc_type": r["doc_type"], "filename": r["filename"], "url": f"/api/supplier-docs/{r['id']}/file", "uploaded_at": r["uploaded_at"].isoformat() if r["uploaded_at"] else None} for r in rows]
     except Exception as e:
         logger.error("get_supplier_docs error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
@@ -4614,17 +4622,48 @@ async def upload_supplier_doc(
     except Exception as e:
         logger.error("upload_supplier_doc file write error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Ошибка сохранения файла")
-    # Insert DB record (multiple docs per type allowed)
+    # Insert DB record — store file content in DB for persistence across Render.com redeploys
+    _ct_map = {".pdf": "application/pdf", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
+    file_ct = _ct_map.get(suffix, "application/octet-stream")
     try:
         async with db.pool.acquire() as conn:
-            await conn.execute('''
-                INSERT INTO supplier_documents (doc_type, filename, uploaded_at)
-                VALUES ($1, $2, NOW())
-            ''', doc_type, safe_name)
-        return {"message": "Документ загружен", "filename": safe_name, "url": f"/static/uploads/docs/{safe_name}"}
+            row = await conn.fetchrow('''
+                INSERT INTO supplier_documents (doc_type, filename, file_content, content_type, uploaded_at)
+                VALUES ($1, $2, $3, $4, NOW())
+                RETURNING id
+            ''', doc_type, safe_name, content, file_ct)
+        doc_id = row["id"]
+        return {"message": "Документ загружен", "filename": safe_name, "url": f"/api/supplier-docs/{doc_id}/file"}
     except Exception as e:
         logger.error("upload_supplier_doc db error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Ошибка базы данных")
+
+
+@app.get("/api/supplier-docs/{doc_id}/file")
+async def get_supplier_doc_file(doc_id: int):
+    """Отдать файл документа из БД (не зависит от файловой системы)"""
+    from fastapi.responses import Response as _Resp
+    try:
+        async with db.pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT filename, file_content, content_type FROM supplier_documents WHERE id=$1", doc_id
+            )
+        if not row or not row["file_content"]:
+            raise HTTPException(status_code=404, detail="Файл не найден")
+        ct = row["content_type"] or "application/octet-stream"
+        return _Resp(
+            content=bytes(row["file_content"]),
+            media_type=ct,
+            headers={
+                "Content-Disposition": f'inline; filename="{row["filename"]}"',
+                "Cache-Control": "public, max-age=86400",
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("get_supplier_doc_file error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.delete("/api/supplier-docs/{doc_id}")

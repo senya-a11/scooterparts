@@ -973,14 +973,14 @@
 (function(){
   var c=document.getElementById('starfield'),ctx=c.getContext('2d');
   // Fix СКОРОСТЬ: меньше звёзд, замедлены, ограничены до 24fps
-  var COUNT = window.innerWidth < 768 ? 18 : 32, TRAIL = 26;
+  var COUNT = window.innerWidth < 768 ? 32 : 55, TRAIL = 24;
   var _FPS = 1000/24, _lastT = 0;
   function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
   function make(){
-    var a=Math.random()*Math.PI*2,spd=Math.random()*.8+.3;
+    var a=Math.random()*Math.PI*2,spd=Math.random()*.9+.4;
     return{x:Math.random()*W,y:Math.random()*H,
       vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
-      r:Math.random()*.6+.2,alpha:Math.random()*.14+.05,
+      r:Math.random()*.8+.25,alpha:Math.random()*.28+.14,
       tw:Math.random()*Math.PI*2,tws:Math.random()*.008+.003,trail:[]};
   }
   function init(){resize();stars=Array.from({length:COUNT},make);}
@@ -1001,16 +1001,18 @@
         ctx.beginPath();ctx.moveTo(s.trail[0].x,s.trail[0].y);
         for(var t=1;t<s.trail.length;t++)ctx.lineTo(s.trail[t].x,s.trail[t].y);
         var g=ctx.createLinearGradient(s.trail[0].x,s.trail[0].y,s.trail[s.trail.length-1].x,s.trail[s.trail.length-1].y);
-        g.addColorStop(0,'rgba(180,180,180,0)');g.addColorStop(1,'rgba(180,180,180,'+(s.alpha*.15)+')');
-        ctx.strokeStyle=g;ctx.lineWidth=Math.max(0.5,s.r*.9);ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
+        /* след: серо-синеватый, почти сливается с фоном */
+        g.addColorStop(0,'rgba(140,155,170,0)');g.addColorStop(1,'rgba(140,155,170,'+(s.alpha*.45)+')');
+        ctx.strokeStyle=g;ctx.lineWidth=Math.max(0.8,s.r*1.1);ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
       }
-      var pulse=Math.sin(s.tw)*.1+.9,al=s.alpha*pulse;
-      ctx.beginPath();ctx.arc(s.x,s.y,s.r*2.8,0,Math.PI*2);
-      ctx.fillStyle='rgba(200,200,200,'+(al*.05)+')';ctx.fill();
-      ctx.beginPath();ctx.arc(s.x,s.y,s.r*1.6,0,Math.PI*2);
-      ctx.fillStyle='rgba(200,200,200,'+(al*.1)+')';ctx.fill();
+      var pulse=Math.sin(s.tw)*.15+.85,al=s.alpha*pulse;
+      /* голова — небольшая, с мягким свечением */
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r*3.2,0,Math.PI*2);
+      ctx.fillStyle='rgba(180,200,220,'+(al*.07)+')';ctx.fill();
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r*1.8,0,Math.PI*2);
+      ctx.fillStyle='rgba(190,210,230,'+(al*.16)+')';ctx.fill();
       ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-      ctx.fillStyle='rgba(220,220,220,'+(al*.25)+')';ctx.fill();
+      ctx.fillStyle='rgba(210,225,240,'+(al*.45)+')';ctx.fill();
     }
     if(!_sfStop)_sfId=requestAnimationFrame(draw);
   }
@@ -1517,9 +1519,9 @@ function renderDocGallery(containerId,docs){
     var isPdf=d.filename.toLowerCase().endsWith('.pdf');
     if(isPdf){
       var cid='pdfprev-'+Math.random().toString(36).slice(2,9);
-      pdfUrls.push({id:cid,url:d.url});
+      pdfUrls.push({id:cid,url:d.url,filename:d.filename});
       return '<div class="sdoc-slide sdoc-slide-pdf-wrap">'+
-        '<canvas id="'+cid+'" class="sdoc-pdf-canvas"></canvas>'+
+        '<canvas id="'+cid+'" class="sdoc-pdf-canvas" data-filename="'+d.filename+'"></canvas>'+
         '<a href="'+d.url+'" target="_blank" rel="noopener" class="sdoc-pdf-open-btn">Открыть PDF</a>'+
         '</div>';
     }
@@ -1531,39 +1533,39 @@ function renderDocGallery(containerId,docs){
   var btns=n>1?'<button class="sdoc-btn sdoc-btn-prev">&#8249;</button><button class="sdoc-btn sdoc-btn-next">&#8250;</button>':'';
   wrap.innerHTML='<div class="sdoc-track-outer"><div class="sdoc-track">'+slides+'</div>'+btns+count+dots+'</div>';
   if(n>1)initDocSlider(wrap.querySelector('.sdoc-track-outer'),n);
-  pdfUrls.forEach(function(p){renderPdfThumb(p.id,p.url);});
+  pdfUrls.forEach(function(p){renderPdfThumb(p.id,p.url,p.filename);});
 }
 
-function renderPdfThumb(canvasId,url){
+function renderPdfThumb(canvasId,url,filename){
   var canvas=document.getElementById(canvasId);
   if(!canvas)return;
   var wrap=canvas.parentElement;
-  /* show skeleton */
-  canvas.style.minHeight='200px';
-  if(typeof pdfjsLib==='undefined'){showPdfFallback(wrap,url);return;}
-  pdfjsLib.getDocument({url:url,cMapUrl:'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',cMapPacked:true}).promise.then(function(pdf){
+  canvas.style.minHeight='220px';
+  if(typeof pdfjsLib==='undefined'){showPdfFallback(wrap,filename);return;}
+  /* same-origin URL — no cMapUrl needed for Russian PDFs */
+  pdfjsLib.getDocument(url).promise.then(function(pdf){
     return pdf.getPage(1);
   }).then(function(page){
-    canvas=document.getElementById(canvasId);if(!canvas)return;
+    var cv=document.getElementById(canvasId);if(!cv)return;
     var vp=page.getViewport({scale:1});
-    var w=Math.min(wrap?wrap.offsetWidth||300:300,600);
+    var w=Math.min(cv.parentElement?cv.parentElement.offsetWidth-16||300:300,600);
     var scale=w/vp.width;
     var vps=page.getViewport({scale:scale});
-    canvas.width=vps.width;canvas.height=vps.height;
-    canvas.style.minHeight='';
-    return page.render({canvasContext:canvas.getContext('2d'),viewport:vps}).promise;
+    cv.width=vps.width;cv.height=vps.height;
+    cv.style.minHeight='';
+    return page.render({canvasContext:cv.getContext('2d'),viewport:vps}).promise;
   }).catch(function(){
-    canvas=document.getElementById(canvasId);
-    if(canvas)showPdfFallback(canvas.parentElement,url);
+    var cv=document.getElementById(canvasId);
+    if(cv)showPdfFallback(cv.parentElement,filename||'документ.pdf');
   });
 }
-function showPdfFallback(wrap,url){
+function showPdfFallback(wrap,fname){
   if(!wrap)return;
   var c=wrap.querySelector('.sdoc-pdf-canvas');
   if(c)c.style.display='none';
   var fb=document.createElement('div');
   fb.className='sdoc-pdf-fallback';
-  fb.innerHTML='<div style="font-size:2.5rem">📄</div><div style="font-size:.75rem;color:var(--text2);margin-top:.5rem">partner.pdf</div>';
+  fb.innerHTML='<div style="font-size:2.5rem">📄</div><div style="font-size:.75rem;color:var(--text2);margin-top:.5rem">'+(fname||'документ.pdf')+'</div>';
   wrap.insertBefore(fb,wrap.querySelector('.sdoc-pdf-open-btn'));
 }
 

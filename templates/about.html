@@ -883,12 +883,12 @@ try {
 (function(){
   var c=document.getElementById('starfield');if(!c)return;
   var ctx=c.getContext('2d'),W,H,stars=[],_sfId=null,_sfStop=false;
-  var COUNT=window.innerWidth<768?20:38,TRAIL=24,_FPS=1000/24,_lastT=0;
+  var COUNT=window.innerWidth<768?32:55,TRAIL=24,_FPS=1000/24,_lastT=0;
   function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
   function make(){
-    var a=Math.random()*Math.PI*2,spd=Math.random()*1.0+.5;
+    var a=Math.random()*Math.PI*2,spd=Math.random()*.9+.4;
     return{x:Math.random()*W,y:Math.random()*H,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
-      r:Math.random()*.9+.25,alpha:Math.random()*.18+.07,
+      r:Math.random()*.8+.25,alpha:Math.random()*.28+.14,
       tw:Math.random()*Math.PI*2,tws:Math.random()*.008+.003,trail:[]};
   }
   function init(){resize();stars=Array.from({length:COUNT},make);}
@@ -908,16 +908,16 @@ try {
         ctx.beginPath();ctx.moveTo(s.trail[0].x,s.trail[0].y);
         for(var t=1;t<s.trail.length;t++)ctx.lineTo(s.trail[t].x,s.trail[t].y);
         var g=ctx.createLinearGradient(s.trail[0].x,s.trail[0].y,s.trail[s.trail.length-1].x,s.trail[s.trail.length-1].y);
-        g.addColorStop(0,'rgba(200,200,200,0)');g.addColorStop(1,'rgba(200,200,200,'+(s.alpha*.18)+')');
-        ctx.strokeStyle=g;ctx.lineWidth=Math.max(0.6,s.r*1.1);ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
+        g.addColorStop(0,'rgba(140,155,170,0)');g.addColorStop(1,'rgba(140,155,170,'+(s.alpha*.45)+')');
+        ctx.strokeStyle=g;ctx.lineWidth=Math.max(0.8,s.r*1.1);ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
       }
       var pulse=Math.sin(s.tw)*.15+.85,al=s.alpha*pulse;
-      ctx.beginPath();ctx.arc(s.x,s.y,s.r*3.5,0,Math.PI*2);
-      ctx.fillStyle='rgba(210,210,210,'+(al*.06)+')';ctx.fill();
-      ctx.beginPath();ctx.arc(s.x,s.y,s.r*2.0,0,Math.PI*2);
-      ctx.fillStyle='rgba(210,210,210,'+(al*.12)+')';ctx.fill();
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r*3.2,0,Math.PI*2);
+      ctx.fillStyle='rgba(180,200,220,'+(al*.07)+')';ctx.fill();
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r*1.8,0,Math.PI*2);
+      ctx.fillStyle='rgba(190,210,230,'+(al*.16)+')';ctx.fill();
       ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-      ctx.fillStyle='rgba(230,230,230,'+(al*.28)+')';ctx.fill();
+      ctx.fillStyle='rgba(210,225,240,'+(al*.45)+')';ctx.fill();
     }
     if(!_sfStop)_sfId=requestAnimationFrame(draw);
   }

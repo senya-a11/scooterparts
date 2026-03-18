@@ -107,7 +107,7 @@ PAYMENT_SHOP_ID    = os.getenv("PAYMENT_SHOP_ID", "")
 PAYMENT_SECRET_KEY = os.getenv("PAYMENT_SECRET_KEY", "")
 PAYMENT_CALLBACK_URL = os.getenv("PAYMENT_CALLBACK_URL", "https://your-domain.com/api/payment/callback")
 YM_COUNTER_ID = os.getenv("YM_COUNTER_ID", "")
-BASE_URL = os.getenv("BASE_URL", "https://scooterparts.onrender.com")
+BASE_URL = os.getenv("BASE_URL", "https://fmtun.ru")
 
 # ── Email-уведомления ──
 SMTP_HOST = os.getenv("SMTP_HOST", "")
@@ -444,6 +444,7 @@ class ProductCreate(BaseModel):
     featured: bool = False
     in_stock: bool = False  # В наличии
     preorder: bool = False  # Доступен по предзаказу
+    preorder_unavailable: bool = False  # Предзаказ временно недоступен
     cost_price: Optional[float] = None  # Себестоимость (только для админа)
 
 
@@ -456,6 +457,7 @@ class ProductUpdate(BaseModel):
     featured: Optional[bool] = None
     in_stock: Optional[bool] = None  # В наличии
     preorder: Optional[bool] = None  # Доступен по предзаказу
+    preorder_unavailable: Optional[bool] = None  # Предзаказ временно недоступен
     cost_price: Optional[float] = None  # Себестоимость
 
 
@@ -808,6 +810,15 @@ class Database:
                 print("✅ Миграция v18: поле weight_kg добавлено")
             except Exception as e:
                 print(f"⚠️ Миграция v18 (weight_kg): {e}")
+
+            # Миграция v19: бейджик «Предзаказ недоступен»
+            try:
+                await conn.execute('''
+                    ALTER TABLE products ADD COLUMN IF NOT EXISTS preorder_unavailable BOOLEAN DEFAULT FALSE
+                ''')
+                print("✅ Миграция v19: поле preorder_unavailable добавлено")
+            except Exception as e:
+                print(f"⚠️ Миграция v19 (preorder_unavailable): {e}")
 
             # Таблица настроек доставки
             await conn.execute('''
@@ -3720,6 +3731,7 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
         # ИСПРАВЛЕНИЕ: Автоматически определяем in_stock на основе stock
         in_stock = stock > 0
         preorder = str(form.get("preorder","false")).lower() == "true"
+        preorder_unavailable = str(form.get("preorder_unavailable","false")).lower() == "true"
         cost_price_str = str(form.get("cost_price","")).strip()
         cost_price = float(cost_price_str) if cost_price_str else None
         discount_percent_str = str(form.get("discount_percent","0")).strip()
@@ -3825,9 +3837,9 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
             
             # Создаем товар
             row = await conn.fetchrow('''
-                INSERT INTO products (name,category,price,description,image_url,stock,featured,in_stock,preorder,cost_price,price_preorder_auto,price_preorder_air,discount_percent,weight_kg)
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *
-            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, discount_percent, weight_kg)
+                INSERT INTO products (name,category,price,description,image_url,stock,featured,in_stock,preorder,cost_price,price_preorder_auto,price_preorder_air,discount_percent,weight_kg,preorder_unavailable)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *
+            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, discount_percent, weight_kg, preorder_unavailable)
             
             product_id = row['id']
             
@@ -3869,6 +3881,7 @@ async def update_product(product_id: int, request: Request, admin=Depends(verify
             # ИСПРАВЛЕНИЕ: Автоматически определяем in_stock на основе stock
             in_stock = stock > 0
             preorder = str(form.get("preorder", str(existing.get('preorder', False)))).lower() == "true"
+            preorder_unavailable = str(form.get("preorder_unavailable", str(existing.get('preorder_unavailable', False)))).lower() == "true"
             cost_price_str = str(form.get("cost_price","")).strip()
             cost_price = float(cost_price_str) if cost_price_str else existing.get('cost_price')
             discount_percent_str = str(form.get("discount_percent","")).strip()
@@ -3925,8 +3938,9 @@ async def update_product(product_id: int, request: Request, admin=Depends(verify
             await conn.execute('''
                 UPDATE products SET name=$1,category=$2,price=$3,description=$4,
                 image_url=$5,stock=$6,featured=$7,in_stock=$8,preorder=$9,cost_price=$10,
-                price_preorder_auto=$11,price_preorder_air=$12,discount_percent=$13,weight_kg=$14 WHERE id=$15
-            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, discount_percent, weight_kg, product_id)
+                price_preorder_auto=$11,price_preorder_air=$12,discount_percent=$13,weight_kg=$14,
+                preorder_unavailable=$15 WHERE id=$16
+            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, discount_percent, weight_kg, preorder_unavailable, product_id)
 
             return {"success": True, "message": "Товар обновлён"}
     except HTTPException:

@@ -553,9 +553,23 @@ document.addEventListener('DOMContentLoaded',function(){
          +'<p style="color:var(--text2);font-size:.9rem;line-height:1.6;max-width:320px;margin:0;">Мы отправили письмо на<br><strong style="color:#00D4FF;">'+email+'</strong></p>'
          +'<p style="color:var(--text3);font-size:.8rem;line-height:1.6;max-width:300px;margin:0;">Перейдите по ссылке в письме чтобы активировать аккаунт и войти на сайт.</p>'
          +'<div style="padding:.75rem 1.25rem;background:rgba(255,200,0,.06);border:1px solid rgba(255,200,0,.2);border-radius:8px;color:#F5C400;font-size:.78rem;max-width:300px;">Не нашли письмо? Проверьте папку&nbsp;<strong>Спам</strong></div>'
-         +'<a href="#" id="toLoginFromVerify" style="font-size:.8rem;color:var(--text3);text-decoration:none;margin-top:.5rem;">← Вернуться к входу</a>'
+         +'<button id="resendConfirmBtn" style="padding:.5rem 1.5rem;border:1px solid rgba(0,212,255,.4);background:transparent;color:#00D4FF;border-radius:8px;cursor:pointer;font-size:.875rem;font-family:inherit;">Отправить письмо ещё раз</button>'
+         +'<a href="#" id="toLoginFromVerify" style="font-size:.8rem;color:var(--text3);text-decoration:none;">← Вернуться к входу</a>'
          +'</div>';
         document.getElementById('toLoginFromVerify').addEventListener('click',function(e){e.preventDefault();document.getElementById('toLogin').click();});
+        (function(){
+          var btn=document.getElementById('resendConfirmBtn');
+          var capturedEmail=email;
+          btn.addEventListener('click',async function(){
+            btn.disabled=true; btn.textContent='Отправляем…';
+            try{
+              var r=await fetch('/api/resend-verification',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:capturedEmail})});
+              if(r.ok){ btn.textContent='Письмо отправлено ✓'; authToast('success','Письмо отправлено'); }
+              else{ var d=await r.json(); btn.textContent='Ошибка'; authToast('error',d.detail||'Не удалось отправить'); }
+            }catch(e){ btn.textContent='Ошибка соединения'; }
+            setTimeout(function(){ btn.disabled=false; btn.textContent='Отправить ещё раз'; },30000);
+          });
+        })();
       }
       else{ authToast('error',d.detail||'Ошибка регистрации'); regBtn.disabled=false; regBtn.textContent='Создать аккаунт →'; }
     }catch(e){ authToast('error','Ошибка соединения'); regBtn.disabled=false; regBtn.textContent='Создать аккаунт →'; }

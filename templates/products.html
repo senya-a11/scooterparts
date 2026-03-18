@@ -1122,6 +1122,7 @@ function renderProducts() {
     if(p.in_stock) badges.push('<span class="product-badge badge-stock"><span class="badge-dot"></span>В наличии</span>');
     else if(!p.preorder) badges.push('<span class="product-badge badge-out"><span class="badge-dot"></span>Нет в наличии</span>');
     if(p.preorder) badges.push('<span class="product-badge badge-preorder"><span class="badge-dot"></span>Предзаказ</span>');
+    if(p.preorder_unavailable) badges.push('<span class="product-badge badge-out"><span class="badge-dot"></span>Предзаказ недоступен</span>');
     const badgesHtml = badges.length?`<div class="product-badges">${badges.join('')}</div>`:'';
 
     // ── Discount badge (personal or product discount, whichever higher) ──

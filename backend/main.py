@@ -611,13 +611,13 @@ def get_current_user(request: Request) -> str:
 
 
 def verify_admin(request: Request) -> dict:
-    """Fix #1 + #4: Проверяет is_admin из cookie-токена."""
+    """Lvl 2 Admin + Lvl 3 Superadmin: проверяет is_admin ИЛИ is_superadmin из cookie-токена."""
     token = request.cookies.get("access_token")
     if not token:
         raise HTTPException(status_code=401, detail="Не авторизован")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        if not payload.get("is_admin"):
+        if not (payload.get("is_admin") or payload.get("is_superadmin")):
             raise HTTPException(status_code=403, detail="Доступ запрещён")
         return payload
     except HTTPException:
@@ -626,14 +626,30 @@ def verify_admin(request: Request) -> dict:
         raise HTTPException(status_code=401, detail="Не авторизован")
 
 
-def verify_manager_or_admin(request: Request) -> dict:
-    """Доступ для менеджеров И администраторов (заказы, статусы, трек-номера)."""
+def verify_superadmin(request: Request) -> dict:
+    """Lvl 3 Superadmin only: проверяет is_superadmin из cookie-токена."""
     token = request.cookies.get("access_token")
     if not token:
         raise HTTPException(status_code=401, detail="Не авторизован")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        if not (payload.get("is_admin") or payload.get("is_manager")):
+        if not payload.get("is_superadmin"):
+            raise HTTPException(status_code=403, detail="Доступ запрещён: требуется уровень Суперадмин")
+        return payload
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=401, detail="Не авторизован")
+
+
+def verify_manager_or_admin(request: Request) -> dict:
+    """Lvl 1 Manager + Lvl 2 Admin + Lvl 3 Superadmin (заказы, статусы, трек-номера)."""
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Не авторизован")
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if not (payload.get("is_admin") or payload.get("is_manager") or payload.get("is_superadmin")):
             raise HTTPException(status_code=403, detail="Доступ запрещён")
         return payload
     except HTTPException:
@@ -820,6 +836,26 @@ class Database:
                 print("✅ Миграция v19: поле preorder_unavailable добавлено")
             except Exception as e:
                 print(f"⚠️ Миграция v19 (preorder_unavailable): {e}")
+
+            # Миграция v20: суперадмин + поля гарантии и сертификатов
+            try:
+                await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_superadmin BOOLEAN DEFAULT FALSE")
+                print("✅ Миграция v20: поле is_superadmin добавлено в users")
+            except Exception as e:
+                print(f"⚠️ Миграция v20 (is_superadmin): {e}")
+            try:
+                await conn.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS warranty_months INTEGER DEFAULT NULL")
+                await conn.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS warranty_enabled BOOLEAN DEFAULT TRUE")
+                await conn.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS certifications TEXT DEFAULT NULL")
+                print("✅ Миграция v20: поля warranty_months, warranty_enabled, certifications добавлены в products")
+            except Exception as e:
+                print(f"⚠️ Миграция v20 (products warranty/cert): {e}")
+            # Сделать главного admin-пользователя суперадмином
+            try:
+                await conn.execute("UPDATE users SET is_superadmin=TRUE WHERE username='admin' AND is_admin=TRUE")
+                print("✅ Миграция v20: пользователю admin выдан статус суперадмина")
+            except Exception as e:
+                print(f"⚠️ Миграция v20 (superadmin upgrade): {e}")
 
             # Таблица настроек доставки
             await conn.execute('''
@@ -1205,9 +1241,9 @@ class Database:
             # --- Админ ---
             if not await conn.fetchval("SELECT EXISTS(SELECT 1 FROM users WHERE username='admin')"):
                 await conn.execute(
-                    "INSERT INTO users (id,username,email,full_name,password_hash,is_admin,privacy_accepted) VALUES ($1,$2,$3,$4,$5,$6,$7)",
+                    "INSERT INTO users (id,username,email,full_name,password_hash,is_admin,is_superadmin,privacy_accepted) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
                     str(uuid4()), 'admin', 'admin@fmtun.ru', 'Администратор',
-                    hasher.get_password_hash(ADMIN_PASSWORD), True, True
+                    hasher.get_password_hash(ADMIN_PASSWORD), True, True, True
                 )
 
             # --- Демо-товары ---
@@ -1452,13 +1488,13 @@ async def products_page(request: Request):
 
 
 def _require_admin_cookie(request: Request):
-    """Серверная проверка — редирект на /auth если не admin и не manager."""
+    """Серверная проверка — редирект на /auth если не admin/manager/superadmin."""
     token = request.cookies.get("access_token")
     if not token:
         return None
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        if payload.get("is_admin") or payload.get("is_manager"):
+        if payload.get("is_admin") or payload.get("is_manager") or payload.get("is_superadmin"):
             return payload
     except Exception:
         pass
@@ -1469,8 +1505,15 @@ async def admin_panel(request: Request):
     payload = _require_admin_cookie(request)
     if not payload:
         return RedirectResponse("/auth?next=/admin", status_code=302)
-    is_manager = bool(payload.get("is_manager")) and not bool(payload.get("is_admin"))
-    return templates.TemplateResponse("admin.html", {"request": request, "is_manager": is_manager, "ym_counter_id": YM_COUNTER_ID})
+    is_superadmin = bool(payload.get("is_superadmin"))
+    is_admin = bool(payload.get("is_admin")) or is_superadmin
+    is_manager = bool(payload.get("is_manager")) and not is_admin
+    return templates.TemplateResponse("admin.html", {
+        "request": request,
+        "is_manager": is_manager,
+        "is_superadmin": is_superadmin,
+        "ym_counter_id": YM_COUNTER_ID
+    })
 
 @app.get("/admin/add-product")
 async def admin_add_product_page(request: Request):
@@ -1622,7 +1665,7 @@ async def login(login_data: UserLogin, response: Response):
     try:
         async with db.pool.acquire() as conn:
             user = await conn.fetchrow(
-                "SELECT id,username,email,full_name,password_hash,is_admin,is_manager,personal_discount,email_verified FROM users WHERE username=$1",
+                "SELECT id,username,email,full_name,password_hash,is_admin,is_manager,is_superadmin,personal_discount,email_verified FROM users WHERE username=$1",
                 login_data.username
             )
             if not user or not hasher.verify_password(login_data.password, user['password_hash']):
@@ -1637,7 +1680,8 @@ async def login(login_data: UserLogin, response: Response):
 
             user_id = str(user['id'])
             is_manager = bool(user.get('is_manager', False))
-            token = create_access_token({"user_id": user_id, "is_admin": user['is_admin'], "is_manager": is_manager})
+            is_superadmin = bool(user.get('is_superadmin', False))
+            token = create_access_token({"user_id": user_id, "is_admin": user['is_admin'], "is_manager": is_manager, "is_superadmin": is_superadmin})
 
             # Fix #1: токен в HttpOnly cookie — JS не может прочитать
             _is_https = os.getenv("ENVIRONMENT", "production") != "development"
@@ -2974,13 +3018,14 @@ async def admin_login(login_data: AdminLogin, response: Response):
     try:
         async with db.pool.acquire() as conn:
             admin = await conn.fetchrow(
-                "SELECT id, password_hash FROM users WHERE username=$1 AND is_admin=TRUE",
+                "SELECT id, password_hash, is_superadmin FROM users WHERE username=$1 AND is_admin=TRUE",
                 ADMIN_USERNAME
             )
             if not admin or not hasher.verify_password(login_data.password, admin['password_hash']):
                 logger.warning("Failed admin login attempt (bad password) for: %s", login_data.username)
                 raise HTTPException(status_code=401, detail="Неверные данные для входа")
-            token = create_access_token({"user_id": str(admin['id']), "username": ADMIN_USERNAME, "is_admin": True})
+            is_superadmin = bool(admin.get('is_superadmin', False))
+            token = create_access_token({"user_id": str(admin['id']), "username": ADMIN_USERNAME, "is_admin": True, "is_superadmin": is_superadmin})
             _is_https = os.getenv("ENVIRONMENT", "production") != "development"
             response.set_cookie(
                 key="access_token",
@@ -3271,6 +3316,39 @@ async def delete_customer_note(note_id: int, admin=Depends(verify_admin)):
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
+@app.get("/api/admin/customers/{user_id}/orders")
+async def get_customer_orders(user_id: str, admin=Depends(verify_admin)):
+    """История заказов конкретного клиента (FR-006, Lvl 2+)"""
+    try:
+        async with db.pool.acquire() as conn:
+            orders = await conn.fetch('''
+                SELECT o.id, o.status, o.total_amount, o.payment_status, o.created_at,
+                       o.delivery_address, o.track_number
+                FROM orders o
+                WHERE o.user_id=$1::uuid
+                ORDER BY o.created_at DESC
+                LIMIT 100
+            ''', user_id)
+            result = []
+            for o in orders:
+                d = dict(o)
+                d['total_amount'] = float(d['total_amount'])
+                if isinstance(d.get('created_at'), datetime):
+                    d['created_at'] = d['created_at'].isoformat()
+                # Позиции заказа
+                items = await conn.fetch('''
+                    SELECT product_name, quantity, price FROM order_items WHERE order_id=$1
+                ''', o['id'])
+                d['items'] = [dict(i) for i in items]
+                for it in d['items']:
+                    it['price'] = float(it['price'])
+                result.append(d)
+            return result
+    except Exception as e:
+        logger.error("get_customer_orders error: %s", e)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
 @app.put("/api/admin/orders/{order_id}/status")
 async def update_order_status(order_id: int, body: OrderStatusUpdate, admin=Depends(verify_manager_or_admin)):
     new_status = body.status
@@ -3437,7 +3515,7 @@ async def create_order_manual(request: Request, admin=Depends(verify_admin)):
 
 
 @app.get("/api/admin/users")
-async def admin_users_list(search: str = "", page: int = 1, limit: int = 50, admin=Depends(verify_admin)):
+async def admin_users_list(search: str = "", page: int = 1, limit: int = 50, admin=Depends(verify_superadmin)):
     """Список всех пользователей с поиском по ФИО / username / email."""
     try:
         offset = (page - 1) * limit
@@ -3483,7 +3561,7 @@ async def admin_users_list(search: str = "", page: int = 1, limit: int = 50, adm
 
 
 @app.get("/api/admin/users-autocomplete")
-async def admin_users_autocomplete(search: str = "", admin=Depends(verify_admin)):
+async def admin_users_autocomplete(search: str = "", admin=Depends(verify_superadmin)):
     """Автодополнение для поля ФИО при создании заказа вручную."""
     try:
         pattern = f"%{search}%"
@@ -3501,7 +3579,7 @@ async def admin_users_autocomplete(search: str = "", admin=Depends(verify_admin)
 
 
 @app.put("/api/admin/customers/{user_id}/discount")
-async def set_customer_discount(user_id: str, request: Request, admin=Depends(verify_admin)):
+async def set_customer_discount(user_id: str, request: Request, admin=Depends(verify_superadmin)):
     """Установить персональную скидку клиенту (ТЗ 16)"""
     try:
         data = await request.json()
@@ -3518,24 +3596,27 @@ async def set_customer_discount(user_id: str, request: Request, admin=Depends(ve
 
 
 @app.put("/api/admin/customers/{user_id}/role")
-async def set_customer_role(user_id: str, request: Request, admin=Depends(verify_admin)):
-    """Выдать / снять роль менеджера у клиента"""
+async def set_customer_role(user_id: str, request: Request, admin=Depends(verify_superadmin)):
+    """Выдать / снять роль у пользователя (только суперадмин)"""
     try:
         data = await request.json()
-        is_manager = bool(data.get('is_manager', False))
+        role = data.get('role', 'user')  # 'user' | 'manager' | 'admin' | 'superadmin'
+        is_manager = role == 'manager'
+        is_admin_role = role in ('admin', 'superadmin')
+        is_superadmin_role = role == 'superadmin'
         async with db.pool.acquire() as conn:
             await conn.execute(
-                "UPDATE users SET is_manager=$1 WHERE id=$2",
-                is_manager, user_id
+                "UPDATE users SET is_manager=$1, is_admin=$2, is_superadmin=$3 WHERE id=$4",
+                is_manager, is_admin_role, is_superadmin_role, user_id
             )
-        return {"success": True, "is_manager": is_manager}
+        return {"success": True, "role": role}
     except Exception as e:
         logger.error("Role set error: %s", e)
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @app.post("/api/admin/users/create")
-async def create_user_manual(request: Request, admin=Depends(verify_admin)):
+async def create_user_manual(request: Request, admin=Depends(verify_superadmin)):
     """Создать аккаунт вручную (ТЗ 10.1)"""
     try:
         data = await request.json()
@@ -3758,8 +3839,11 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
         price_preorder_auto = float(price_auto_str) if price_auto_str else None
         price_air_str = str(form.get("price_preorder_air","")).strip()
         price_preorder_air = float(price_air_str) if price_air_str else None
+        warranty_months_str = str(form.get("warranty_months","")).strip()
+        warranty_months = int(warranty_months_str) if warranty_months_str else None
+        warranty_enabled = str(form.get("warranty_enabled","true")).lower() != "false"
         image_url = str(form.get("image_url","")).strip()
-        
+
         # Получаем все файлы изображений (до 5 штук)
         image_files = []
         for i in range(5):
@@ -3852,9 +3936,9 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
             
             # Создаем товар
             row = await conn.fetchrow('''
-                INSERT INTO products (name,category,price,description,image_url,stock,featured,in_stock,preorder,cost_price,price_preorder_auto,price_preorder_air,discount_percent,weight_kg,preorder_unavailable)
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *
-            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, discount_percent, weight_kg, preorder_unavailable)
+                INSERT INTO products (name,category,price,description,image_url,stock,featured,in_stock,preorder,cost_price,price_preorder_auto,price_preorder_air,discount_percent,weight_kg,preorder_unavailable,warranty_months,warranty_enabled)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING *
+            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, discount_percent, weight_kg, preorder_unavailable, warranty_months, warranty_enabled)
             
             product_id = row['id']
             
@@ -3908,6 +3992,10 @@ async def update_product(product_id: int, request: Request, admin=Depends(verify
             price_preorder_air = float(price_air_str) if price_air_str else existing.get('price_preorder_air')
             weight_kg_str = str(form.get("weight_kg","")).strip()
             weight_kg = float(weight_kg_str) if weight_kg_str else existing.get('weight_kg')
+            warranty_months_str = str(form.get("warranty_months","")).strip()
+            warranty_months = int(warranty_months_str) if warranty_months_str else existing.get('warranty_months')
+            warranty_enabled_str = form.get("warranty_enabled")
+            warranty_enabled = str(warranty_enabled_str).lower() != "false" if warranty_enabled_str is not None else bool(existing.get('warranty_enabled', True))
             image_url = str(form.get("image_url","")).strip()
             image_file = form.get("image_file")
 
@@ -3954,14 +4042,83 @@ async def update_product(product_id: int, request: Request, admin=Depends(verify
                 UPDATE products SET name=$1,category=$2,price=$3,description=$4,
                 image_url=$5,stock=$6,featured=$7,in_stock=$8,preorder=$9,cost_price=$10,
                 price_preorder_auto=$11,price_preorder_air=$12,discount_percent=$13,weight_kg=$14,
-                preorder_unavailable=$15 WHERE id=$16
-            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, discount_percent, weight_kg, preorder_unavailable, product_id)
+                preorder_unavailable=$15,warranty_months=$16,warranty_enabled=$17 WHERE id=$18
+            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, discount_percent, weight_kg, preorder_unavailable, warranty_months, warranty_enabled, product_id)
 
             return {"success": True, "message": "Товар обновлён"}
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Internal error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.post("/api/admin/products/{product_id}/certificates")
+async def add_product_certificate(product_id: int, request: Request, admin=Depends(verify_admin)):
+    """Загрузить фото сертификата для товара (добавляется в JSON-массив)"""
+    try:
+        form = await request.form()
+        cert_file = form.get("cert_file")
+        if not cert_file or not hasattr(cert_file, 'filename') or not cert_file.filename:
+            raise HTTPException(status_code=400, detail="Файл не передан")
+        ext = Path(cert_file.filename).suffix.lower()
+        if ext not in ['.jpg', '.jpeg', '.png', '.webp']:
+            raise HTTPException(status_code=400, detail="Допустимы: jpg, jpeg, png, webp")
+        file_content = await cert_file.read()
+        if len(file_content) > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Файл слишком большой. Максимум 10MB")
+        optimized = await optimize_image(file_content)
+        b64 = base64.b64encode(optimized).decode('utf-8')
+        data_url = f"data:image/jpeg;base64,{b64}"
+        async with db.pool.acquire() as conn:
+            row = await conn.fetchrow("SELECT certifications FROM products WHERE id=$1", product_id)
+            if not row:
+                raise HTTPException(status_code=404, detail="Товар не найден")
+            existing = json.loads(row['certifications'] or '[]')
+            existing.append(data_url)
+            await conn.execute("UPDATE products SET certifications=$1 WHERE id=$2", json.dumps(existing), product_id)
+        return {"success": True, "count": len(existing)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("add_certificate error: %s", e)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.delete("/api/admin/products/{product_id}/certificates/{cert_index}")
+async def delete_product_certificate(product_id: int, cert_index: int, admin=Depends(verify_admin)):
+    """Удалить фото сертификата по индексу"""
+    try:
+        async with db.pool.acquire() as conn:
+            row = await conn.fetchrow("SELECT certifications FROM products WHERE id=$1", product_id)
+            if not row:
+                raise HTTPException(status_code=404, detail="Товар не найден")
+            certs = json.loads(row['certifications'] or '[]')
+            if cert_index < 0 or cert_index >= len(certs):
+                raise HTTPException(status_code=404, detail="Сертификат не найден")
+            certs.pop(cert_index)
+            await conn.execute("UPDATE products SET certifications=$1 WHERE id=$2", json.dumps(certs), product_id)
+        return {"success": True, "count": len(certs)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("delete_certificate error: %s", e)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.get("/api/admin/products/{product_id}/certificates")
+async def get_product_certificates(product_id: int, admin=Depends(verify_admin)):
+    """Получить список сертификатов товара"""
+    try:
+        async with db.pool.acquire() as conn:
+            row = await conn.fetchrow("SELECT certifications FROM products WHERE id=$1", product_id)
+            if not row:
+                raise HTTPException(status_code=404, detail="Товар не найден")
+            certs = json.loads(row['certifications'] or '[]')
+        return {"certifications": certs}
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
@@ -4338,7 +4495,7 @@ async def debug_uploads(admin=Depends(verify_admin)):
 # ══════════════════════════════════════════════
 
 @app.get("/api/admin/auto-discount")
-async def get_auto_discount(admin=Depends(verify_admin)):
+async def get_auto_discount(admin=Depends(verify_superadmin)):
     """Получить текущие настройки авто-скидки"""
     try:
         async with db.pool.acquire() as conn:
@@ -4356,7 +4513,7 @@ async def get_auto_discount(admin=Depends(verify_admin)):
 
 
 @app.post("/api/admin/auto-discount")
-async def set_auto_discount(request: Request, admin=Depends(verify_admin)):
+async def set_auto_discount(request: Request, admin=Depends(verify_superadmin)):
     """Установить авто-скидку (включить/выключить и размер)"""
     try:
         data = await request.json()
@@ -4382,7 +4539,7 @@ async def set_auto_discount(request: Request, admin=Depends(verify_admin)):
 # ══════════════════════════════════════════════
 
 @app.get("/api/admin/promo-codes")
-async def list_promo_codes(admin=Depends(verify_admin)):
+async def list_promo_codes(admin=Depends(verify_superadmin)):
     """Список всех промокодов"""
     try:
         async with db.pool.acquire() as conn:
@@ -4405,7 +4562,7 @@ async def list_promo_codes(admin=Depends(verify_admin)):
 
 
 @app.post("/api/admin/promo-codes")
-async def create_promo_code(request: Request, admin=Depends(verify_admin)):
+async def create_promo_code(request: Request, admin=Depends(verify_superadmin)):
     """Создать промокод"""
     try:
         data = await request.json()
@@ -4446,7 +4603,7 @@ async def create_promo_code(request: Request, admin=Depends(verify_admin)):
 
 
 @app.delete("/api/admin/promo-codes/{code_id}")
-async def delete_promo_code(code_id: int, admin=Depends(verify_admin)):
+async def delete_promo_code(code_id: int, admin=Depends(verify_superadmin)):
     """Удалить промокод"""
     try:
         async with db.pool.acquire() as conn:

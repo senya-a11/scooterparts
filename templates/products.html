@@ -477,6 +477,19 @@
     .product-detail-cat{font-family:var(--font-raj);font-size:.8rem;color:var(--blue);font-weight:700;text-transform:uppercase;letter-spacing:.1em}
     .product-detail-price{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;color:var(--blue)}
     .product-detail-desc{font-size:.9375rem;line-height:1.7;color:var(--text2)}
+    .product-warranty-block{display:flex;align-items:center;gap:.6rem;background:rgba(0,229,160,.07);border:1px solid rgba(0,229,160,.2);border-radius:10px;padding:.65rem 1rem;font-size:.88rem;color:var(--text2)}
+    .warranty-icon{font-size:1.1rem}
+    .warranty-text strong{color:var(--green)}
+    .product-certs-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem}
+    .cert-badges-row{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.75rem}
+    .cert-badge{font-size:.75rem;font-family:var(--font-raj);font-weight:700;letter-spacing:.05em;padding:.25rem .55rem;border-radius:6px;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.18);color:var(--blue)}
+    .cert-slider-wrap{position:relative}
+    .cert-slider{display:flex;overflow:hidden;border-radius:8px;background:var(--bg2);transition:transform .35s ease}
+    .cert-slide{min-width:100%;height:160px;object-fit:contain;flex-shrink:0}
+    .cert-slider-nav{display:flex;align-items:center;justify-content:center;gap:.75rem;margin-top:.5rem}
+    .cert-nav-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;width:2rem;height:2rem;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;transition:background .2s}
+    .cert-nav-btn:hover{background:var(--blue);color:#000}
+    .cert-nav-counter{font-family:var(--font-raj);font-size:.82rem;color:var(--text2)}
     .product-characteristics{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem}
     .char-title{font-family:var(--font-d);font-size:1rem;font-weight:700;margin-bottom:1rem}
     .char-list{display:flex;flex-direction:column;gap:.75rem}
@@ -1804,6 +1817,40 @@ function renderProductDetail(p) {
       ${specsHtml}
       <div class="product-detail-desc"><strong>Описание:</strong><br>${(selectedSpec?selectedSpec.description||p.description:p.description||'').replace(/\n/g,'<br>')}</div>
       ${charsHtml}
+      ${(()=>{
+        let extras='';
+        // Гарантия
+        if(p.warranty_enabled && p.warranty_months){
+          extras+=`<div class="product-warranty-block">
+            <span class="warranty-icon">🛡</span>
+            <span class="warranty-text">Гарантия: <strong>${p.warranty_months} мес.</strong>${p.warranty_text?` — ${p.warranty_text}`:''}</span>
+          </div>`;
+        }
+        // Сертификаты
+        let certs=[];
+        try{if(p.certifications)certs=JSON.parse(p.certifications);}catch(e){}
+        const CERT_ICONS={
+          'UL1642':'🔋','UN38.3':'✈️','ATEX':'⚡','CE':'🇪🇺','ISO':'📋'
+        };
+        const CERT_LABELS=['UL1642','UN38.3','ATEX','CE','ISO'];
+        if(certs.length){
+          const photos=certs.filter(c=>c.startsWith('data:'));
+          extras+=`<div class="product-certs-block">
+            <div class="cert-badges-row">${CERT_LABELS.map(l=>`<span class="cert-badge">${CERT_ICONS[l]||'📄'} ${l}</span>`).join('')}</div>
+            ${photos.length?`<div class="cert-slider-wrap">
+              <div class="cert-slider" id="certSlider">
+                ${photos.map((src,i)=>`<img class="cert-slide" src="${src}" alt="Сертификат ${i+1}" loading="lazy">`).join('')}
+              </div>
+              ${photos.length>1?`<div class="cert-slider-nav">
+                <button class="cert-nav-btn" id="certPrev">‹</button>
+                <span class="cert-nav-counter" id="certCounter">1 / ${photos.length}</span>
+                <button class="cert-nav-btn" id="certNext">›</button>
+              </div>`:''}
+            </div>`:''}
+          </div>`;
+        }
+        return extras;
+      })()}
       <div class="product-actions">
         <div class="qty-selector">
           <span class="qty-label">Кол-во:</span>
@@ -1824,6 +1871,25 @@ function renderProductDetail(p) {
         </button>
       </div>
     </div>`;
+  // Инициализируем слайдер сертификатов если есть
+  initCertSlider();
+}
+
+function initCertSlider(){
+  const slider=document.getElementById('certSlider');
+  if(!slider) return;
+  const slides=slider.querySelectorAll('.cert-slide');
+  if(slides.length<=1) return;
+  let cur=0;
+  const counter=document.getElementById('certCounter');
+  function go(idx){
+    cur=((idx%slides.length)+slides.length)%slides.length;
+    slider.style.transform=`translateX(-${cur*100}%)`;
+    if(counter) counter.textContent=`${cur+1} / ${slides.length}`;
+  }
+  slider.style.transition='transform .35s ease';
+  document.getElementById('certPrev')?.addEventListener('click',()=>go(cur-1));
+  document.getElementById('certNext')?.addEventListener('click',()=>go(cur+1));
 }
 
 /* ════════════════════════════════════════

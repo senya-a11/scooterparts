@@ -437,8 +437,8 @@
       <div id="productsMsg"></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Фото</th><th>Название</th><th>Категория</th><th>Цена</th><th>Склад</th><th>Себестоимость</th><th>В наличии</th><th>Предзаказ</th><th>Хит</th><th>Действия</th></tr></thead>
-          <tbody id="productsTableBody"><tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка…</td></tr></tbody>
+          <thead><tr><th>Фото</th><th>Название</th><th>Категория</th><th>Цена</th><th>Склад</th><th>Себестоимость</th><th>Вес, кг</th><th>В наличии</th><th>Предзаказ</th><th>Хит</th><th>Действия</th></tr></thead>
+          <tbody id="productsTableBody"><tr><td colspan="11" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -828,10 +828,11 @@
               <th>Оплачено</th>
               <th>Всего потрачено</th>
               <th>Последний заказ</th>
+              <th>История</th>
             </tr>
           </thead>
           <tbody id="topClientsTableBody">
-            <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка...</td></tr>
+            <tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка...</td></tr>
           </tbody>
         </table>
       </div>
@@ -920,12 +921,14 @@
               <span style="font-size:.8rem;color:var(--text3)">%</span>
               <button class="btn btn-ghost btn-xs" id="saveDiscountBtn">💾 Сохранить скидку</button>
             </div>
-            <div style="margin-top:.625rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
-              <span style="color:var(--text2);font-size:.8rem">Роль менеджера:</span>
-              <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer">
-                <input type="checkbox" id="notesCManager" style="width:16px;height:16px;accent-color:var(--blue);cursor:pointer">
-                <span id="notesCManagerLabel" style="font-size:.8rem;color:var(--text2)">Менеджер</span>
-              </label>
+            <div id="roleManagementBlock" style="margin-top:.625rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+              <span style="color:var(--text2);font-size:.8rem">Роль:</span>
+              <select id="notesCRole" style="padding:.3rem .6rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font-b);font-size:.8rem">
+                <option value="user">Пользователь</option>
+                <option value="manager">Lvl 1 — Менеджер</option>
+                <option value="admin">Lvl 2 — Админ</option>
+                <option value="superadmin">Lvl 3 — Суперадмин</option>
+              </select>
               <button class="btn btn-ghost btn-xs" id="saveManagerRoleBtn">💾 Сохранить роль</button>
             </div>
           </div>
@@ -935,6 +938,17 @@
             <button class="btn btn-primary" id="saveNoteBtn">💾 Сохранить заметку</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Order History Modal -->
+    <div class="modal-overlay" id="orderHistoryModal">
+      <div class="modal-box" style="max-width:700px">
+        <div class="modal-header">
+          <h3 class="modal-title">📋 История заказов: <span id="orderHistoryCustomerName"></span></h3>
+          <button class="modal-close" onclick="document.getElementById('orderHistoryModal').classList.remove('active')">✕</button>
+        </div>
+        <div id="orderHistoryContent" style="max-height:65vh;overflow-y:auto"></div>
       </div>
     </div>
 
@@ -1055,6 +1069,19 @@
           <div class="form-group">
             <label class="form-label">⚖️ Вес (кг) <span style="color:var(--text3);text-transform:none;letter-spacing:0;font-weight:400;font-size:.75rem">— для расчёта стоимости доставки</span></label>
             <input type="number" name="weight_kg" class="form-input" placeholder="1.500" min="0" step="0.001">
+          </div>
+
+          <!-- Warranty -->
+          <div class="form-group">
+            <label class="form-label">🛡️ Гарантия</label>
+            <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+              <input type="number" name="warranty_months" class="form-input" placeholder="Срок (месяцев)" min="1" max="120" style="max-width:180px">
+              <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;font-size:.85rem;color:var(--text2)">
+                <input type="checkbox" name="warranty_enabled" value="true" checked style="accent-color:var(--accent)">
+                Гарантия включена
+              </label>
+            </div>
+            <div class="form-hint">Оставьте пустым если гарантии нет. Основные условия прописаны в оферте.</div>
           </div>
 
           <!-- Preorder delivery pricing -->
@@ -1247,6 +1274,19 @@
           <div class="form-group">
             <label class="form-label">⚖️ Вес (кг) <span style="color:var(--text3);text-transform:none;letter-spacing:0;font-weight:400;font-size:.75rem">— для расчёта стоимости доставки</span></label>
             <input type="number" name="weight_kg" class="form-input" placeholder="1.500" min="0" step="0.001">
+          </div>
+
+          <!-- Warranty -->
+          <div class="form-group">
+            <label class="form-label">🛡️ Гарантия</label>
+            <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+              <input type="number" name="warranty_months" class="form-input" placeholder="Срок (месяцев)" min="1" max="120" style="max-width:180px">
+              <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;font-size:.85rem;color:var(--text2)">
+                <input type="checkbox" name="warranty_enabled" value="true" checked style="accent-color:var(--accent)">
+                Гарантия включена
+              </label>
+            </div>
+            <div class="form-hint">Оставьте пустым если гарантии нет.</div>
           </div>
 
           <!-- Preorder delivery pricing for spec -->
@@ -1522,10 +1562,34 @@
         </div>
       </div>
       <div class="form-group">
+        <label class="form-label">🛡️ Гарантия</label>
+        <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+          <input type="number" name="warranty_months" class="form-input" id="editProductWarrantyMonths" placeholder="Срок (месяцев)" min="1" max="120" style="max-width:180px">
+          <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;font-size:.85rem;color:var(--text2)">
+            <input type="checkbox" name="warranty_enabled" id="editProductWarrantyEnabled" value="true" checked style="accent-color:var(--accent)">
+            Гарантия включена
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
         <label class="form-label">Новое изображение (файл)</label>
         <input type="file" name="image_file" class="form-input" accept=".jpg,.jpeg,.png,.gif,.webp">
       </div>
       <div class="form-group"><label class="form-label">— или URL</label><input type="url" name="image_url" class="form-input" id="editProductImgUrl" placeholder="https://…"></div>
+
+      <!-- Сертификаты товара -->
+      <div class="form-group" id="editProductCertsSection">
+        <label class="form-label">🏅 Сертификаты (фото)</label>
+        <div id="editCertsList" style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.75rem"></div>
+        <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+          <input type="file" id="certFileInput" accept=".jpg,.jpeg,.png,.webp" style="display:none">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('certFileInput').click()">📎 Выбрать фото</button>
+          <span id="certFileName" style="font-size:.8rem;color:var(--text3)">Файл не выбран</span>
+          <button type="button" class="btn btn-secondary btn-sm" id="uploadCertBtn">📤 Загрузить</button>
+        </div>
+        <div class="form-hint">Добавьте фото физических сертификатов (UL1642, CE, ISO и т.д.)</div>
+      </div>
+
       <div style="display:flex;gap:.75rem;margin-top:1rem">
         <button type="submit" class="btn btn-primary" style="flex:1">Сохранить</button>
         <button type="button" id="cancelEditProductBtn" class="btn btn-ghost">Отмена</button>
@@ -1577,32 +1641,52 @@
     }
   });
 
-  // Роль из серверного рендера (Jinja2)
+  // Роли из серверного рендера (Jinja2)
   const IS_MANAGER = {{ 'true' if is_manager else 'false' }};
+  const IS_SUPERADMIN = {{ 'true' if is_superadmin else 'false' }};
+  // IS_ADMIN = не менеджер и не суперадмин (Lvl 2)
+  const IS_ADMIN = !IS_MANAGER && !IS_SUPERADMIN;
 
-  // Секции, недоступные менеджеру
-  const MANAGER_HIDDEN_SECTIONS = ['dashboard','products','categories','top-clients','crm','add-product','add-product-specs','delivery-settings','installation'];
+  // Секции недоступные менеджеру (видит только заказы + товары для управления наличием)
+  const MANAGER_HIDDEN_SECTIONS = ['dashboard','categories','top-clients','users-list','crm','add-product','add-product-specs','delivery-settings','supplier-docs','auto-discount','promo-codes','installation'];
+  // Секции только для суперадмина
+  const SUPERADMIN_ONLY_SECTIONS = ['users-list','auto-discount','promo-codes','crm'];
 
-  function applyManagerRestrictions() {
-    if (!IS_MANAGER) return;
-    MANAGER_HIDDEN_SECTIONS.forEach(sec => {
-      document.querySelectorAll(`[data-sec="${sec}"]`).forEach(el => el.style.display = 'none');
-    });
+  function applyRoleRestrictions() {
+    if (IS_MANAGER) {
+      MANAGER_HIDDEN_SECTIONS.forEach(sec => {
+        document.querySelectorAll(`[data-sec="${sec}"]`).forEach(el => el.style.display = 'none');
+      });
+    }
+    if (!IS_SUPERADMIN) {
+      SUPERADMIN_ONLY_SECTIONS.forEach(sec => {
+        document.querySelectorAll(`[data-sec="${sec}"]`).forEach(el => el.style.display = 'none');
+      });
+    }
+    // Обновляем бейдж роли
+    const badge = document.querySelector('.admin-badge');
+    if (badge) {
+      if (IS_SUPERADMIN) { badge.textContent = 'СУПЕРАДМИН'; badge.style.background='rgba(255,71,87,.15)'; badge.style.color='#FF4757'; }
+      else if (IS_MANAGER) { badge.textContent = 'МЕНЕДЖЕР'; badge.style.background='rgba(0,229,160,.12)'; badge.style.color='#00E5A0'; }
+      else { badge.textContent = 'ADMIN'; }
+    }
   }
 
   function showAdminPanel() {
     document.getElementById('loginScreen').style.display = 'none';
     const panel = document.getElementById('adminPanel');
     panel.style.display = 'flex';
-    applyManagerRestrictions();
-    
-    // Менеджер начинает с раздела Заказы, админ — с Дашборда
-    switchSection(IS_MANAGER ? 'orders' : 'dashboard');
-    
-    // Загружаем категории для всех форм
+    applyRoleRestrictions();
+
+    // Стартовый раздел по роли
+    if (IS_MANAGER) switchSection('orders');
+    else switchSection('dashboard');
+
+    // Загружаем категории для форм (не менеджеру)
     if (!IS_MANAGER) loadCategories();
-    
-    console.log('✅ Панель загружена, роль:', IS_MANAGER ? 'Менеджер' : 'Админ');
+
+    const role = IS_SUPERADMIN ? 'Суперадмин' : IS_MANAGER ? 'Менеджер' : 'Админ';
+    console.log('✅ Панель загружена, роль:', role);
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -1615,7 +1699,7 @@
   // Auto-restore session — проверяем cookie через /api/me
   (async () => {
     try {
-      const endpoint = IS_MANAGER ? '/api/me' : '/api/admin/stats';
+      const endpoint = (IS_MANAGER && !IS_SUPERADMIN) ? '/api/me' : '/api/admin/stats';
       const r = await fetch(endpoint, {credentials:'include'});
       if (r.ok) { showAdminPanel(); }
     } catch {}
@@ -1786,7 +1870,7 @@
   // ── Products ──
   async function loadProducts() {
     const tbody = document.getElementById('productsTableBody');
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка товаров...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка товаров...</td></tr>';
     
     try {
       console.log('🔄 Загрузка товаров...');
@@ -1794,7 +1878,7 @@
       
       if (!r.ok) {
         console.error(`❌ Ошибка загрузки товаров: HTTP ${r.status} ${r.statusText}`);
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--red)">Ошибка загрузки: ${r.status} ${r.statusText}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:2rem;color:var(--red)">Ошибка загрузки: ${r.status} ${r.statusText}</td></tr>`;
         return;
       }
       
@@ -1808,7 +1892,7 @@
       }
       
       const catMap = Object.fromEntries(categories.map(c => [c.slug, `${c.emoji} ${c.name}`]));
-      if (!products.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text3)">Товаров нет</td></tr>'; return; }
+      if (!products.length) { tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:2rem;color:var(--text3)">Товаров нет</td></tr>'; return; }
       tbody.innerHTML = products.map(p => {
         // П.4 - Улучшенная проверка изображений
         const hasValidImage = p.image_url && p.image_url.trim() && 
@@ -1832,6 +1916,7 @@
           <td class="editable-cell" data-edit-price="${p.id}|${p.price}">${fmt(p.price)} ₽</td>
           <td class="editable-cell" data-edit-stock="${p.id}|${p.stock}"><span style="color:${p.stock>0?'var(--green)':'var(--red)'}">${p.stock}</span></td>
           <td class="editable-cell" data-edit-cost="${p.id}|${p.cost_price || 0}">${p.cost_price ? fmt(p.cost_price) + ' ₽' : '—'}</td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--text2)">${p.weight_kg != null ? p.weight_kg + ' кг' : '—'}</td>
           <td><input type="checkbox" ${p.in_stock?'checked':''} data-toggle-stock="${p.id}" style="width:18px;height:18px;cursor:pointer"></td>
           <td><input type="checkbox" ${p.preorder?'checked':''} data-toggle-preorder="${p.id}" style="width:18px;height:18px;cursor:pointer"></td>
           <td>${p.featured ? '⭐' : '—'}</td>
@@ -1843,7 +1928,7 @@
       }).join('');
     } catch (error) {
       console.error('❌ Критическая ошибка при загрузке товаров:', error);
-      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--red)">Критическая ошибка загрузки. Проверьте консоль.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:2rem;color:var(--red)">Критическая ошибка загрузки. Проверьте консоль.</td></tr>';
     }
   }
 
@@ -2417,7 +2502,10 @@
     loadProducts();
   }
 
+  let _currentEditProductId = null;
+
   function openEditProduct(product) {
+    _currentEditProductId = product.id;
     document.getElementById('editProductId').value = product.id;
     document.getElementById('editProductName').value = product.name;
     document.getElementById('editProductPrice').value = product.price;
@@ -2429,13 +2517,65 @@
     document.getElementById('editPriceAuto').value = product.price_preorder_auto || '';
     document.getElementById('editPriceAir').value = product.price_preorder_air || '';
     document.getElementById('editProductWeight').value = product.weight_kg || '';
+    // Warranty fields
+    document.getElementById('editProductWarrantyMonths').value = product.warranty_months || '';
+    document.getElementById('editProductWarrantyEnabled').checked = product.warranty_enabled !== false;
     // Show/hide preorder price block based on current value
     document.getElementById('editPreorderPricesBlock').style.display = product.preorder ? '' : 'none';
     // Populate category select
     const sel = document.getElementById('editProductCategory');
     sel.innerHTML = categories.map(c => `<option value="${c.slug}" ${c.slug===product.category?'selected':''}>${c.emoji} ${c.name}</option>`).join('');
+    // Load certificates
+    loadProductCerts(product.id);
     document.getElementById('editProductModal').classList.add('active');
   }
+
+  async function loadProductCerts(productId) {
+    const list = document.getElementById('editCertsList');
+    list.innerHTML = '<span style="font-size:.78rem;color:var(--text3)">Загрузка...</span>';
+    try {
+      const r = await fetch(`/api/admin/products/${productId}/certificates`, {credentials:'include'});
+      if (!r.ok) { list.innerHTML = ''; return; }
+      const d = await r.json();
+      const certs = d.certifications || [];
+      if (!certs.length) { list.innerHTML = '<span style="font-size:.78rem;color:var(--text3)">Нет сертификатов</span>'; return; }
+      list.innerHTML = certs.map((src, idx) => `
+        <div style="position:relative;width:80px;height:80px">
+          <img src="${src}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
+          <button onclick="deleteCert(${productId},${idx})" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;background:var(--red);color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:.7rem;display:flex;align-items:center;justify-content:center">✕</button>
+        </div>`).join('');
+    } catch { list.innerHTML = ''; }
+  }
+
+  async function deleteCert(productId, idx) {
+    if (!confirm('Удалить этот сертификат?')) return;
+    const r = await fetch(`/api/admin/products/${productId}/certificates/${idx}`, {credentials:'include', method:'DELETE'});
+    if (r.ok) { loadProductCerts(productId); showToast('success','Сертификат удалён'); }
+    else showToast('error','Ошибка удаления');
+  }
+
+  document.getElementById('certFileInput').addEventListener('change', function() {
+    document.getElementById('certFileName').textContent = this.files[0]?.name || 'Файл не выбран';
+  });
+
+  document.getElementById('uploadCertBtn').addEventListener('click', async function() {
+    const file = document.getElementById('certFileInput').files[0];
+    if (!file) { showToast('error','Выберите файл'); return; }
+    if (!_currentEditProductId) { showToast('error','Сначала откройте товар'); return; }
+    const fd = new FormData();
+    fd.append('cert_file', file);
+    this.disabled = true; this.textContent = 'Загрузка...';
+    try {
+      const r = await fetch(`/api/admin/products/${_currentEditProductId}/certificates`, {credentials:'include', method:'POST', body:fd});
+      if (r.ok) {
+        showToast('success','✅ Сертификат загружен');
+        document.getElementById('certFileInput').value = '';
+        document.getElementById('certFileName').textContent = 'Файл не выбран';
+        loadProductCerts(_currentEditProductId);
+      } else { const d = await r.json(); showToast('error', d.detail || 'Ошибка'); }
+    } catch { showToast('error','Ошибка соединения'); }
+    finally { this.disabled = false; this.textContent = '📤 Загрузить'; }
+  });
 
   // Toggle preorder price blocks on select change
   document.getElementById('editProductPreorder').addEventListener('change', function() {
@@ -2447,8 +2587,11 @@
     const productId = document.getElementById('editProductId').value;
     const formData = new FormData(e.target);
     formData.delete('product_id');
+    // Явно передаём warranty_enabled как строку (checkbox может не попасть в FormData если не checked)
+    const warrantyEnabled = document.getElementById('editProductWarrantyEnabled').checked;
+    formData.set('warranty_enabled', warrantyEnabled ? 'true' : 'false');
     try {
-      const r = await fetch(`/api/admin/products/${productId}`, {credentials:'include', 
+      const r = await fetch(`/api/admin/products/${productId}`, {credentials:'include',
         method: 'PUT',
         body: formData
       });
@@ -2939,7 +3082,8 @@
       tbody.innerHTML = customers.map((c, idx) => {
         const lastOrder = c.last_order_date ? new Date(c.last_order_date).toLocaleDateString('ru-RU') : '—';
         const profit = (c.total_spent || 0).toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        
+        const safeId = escH(c.id);
+        const safeName = escH(c.full_name || c.username).replace(/"/g,'&quot;');
         return `
           <tr>
             <td><strong>${idx + 1}</strong></td>
@@ -2950,6 +3094,7 @@
             <td><span class="badge badge-success">${c.paid_orders}</span></td>
             <td><strong style="font-family:'JetBrains Mono',monospace;color:var(--green)">${profit} ₽</strong></td>
             <td style="color:var(--text2);font-size:.8125rem">${lastOrder}</td>
+            <td><button class="btn btn-xs btn-secondary" onclick="openOrderHistory('${safeId}','${safeName}')">📋 История</button></td>
           </tr>
         `;
       }).join('');
@@ -2996,13 +3141,15 @@
         const safePhone = escH(c.phone || '').replace(/"/g,'&quot;');
         const safeFull  = escH(c.full_name || '').replace(/"/g,'&quot;');
         const discount  = c.personal_discount || 0;
-        const isManager = c.is_manager ? '1' : '0';
-        const managerBadge = c.is_manager ? '<span style="font-size:.68rem;background:rgba(0,212,255,.1);color:var(--blue);padding:.1rem .35rem;border-radius:4px;margin-left:.35rem">Менеджер</span>' : '';
-        
+        const role = c.is_superadmin ? 'superadmin' : c.is_admin ? 'admin' : c.is_manager ? 'manager' : 'user';
+        const roleBadge = c.is_superadmin ? '<span style="font-size:.68rem;background:rgba(255,71,87,.12);color:var(--red);padding:.1rem .35rem;border-radius:4px;margin-left:.35rem">Суперадмин</span>'
+          : c.is_admin ? '<span style="font-size:.68rem;background:rgba(255,176,32,.12);color:var(--amber);padding:.1rem .35rem;border-radius:4px;margin-left:.35rem">Админ</span>'
+          : c.is_manager ? '<span style="font-size:.68rem;background:rgba(0,212,255,.1);color:var(--accent);padding:.1rem .35rem;border-radius:4px;margin-left:.35rem">Менеджер</span>' : '';
+
         return `
           <tr>
             <td>
-              <strong>${c.full_name || c.username}</strong>${vipBadge}${discountBadge}${managerBadge}
+              <strong>${c.full_name || c.username}</strong>${vipBadge}${discountBadge}${roleBadge}
               <div style="font-size:.75rem;color:var(--text3)">${c.email}</div>
             </td>
             <td style="font-size:.8rem;color:var(--text2)">
@@ -3013,7 +3160,8 @@
             <td>${discount > 0 ? `<span style="font-family:var(--font-mono);font-size:.8rem;color:var(--red)">−${discount}%</span>` : '<span style="color:var(--text3);font-size:.8rem">0%</span>'}</td>
             <td style="color:var(--text2);font-size:.8125rem">${lastOrder}</td>
             <td style="white-space:nowrap">
-              <button class="btn btn-xs btn-secondary" data-open-notes-id="${safeId}" data-open-notes-name="${safeName}" data-open-notes-email="${safeEmail}" data-open-notes-phone="${safePhone}" data-open-notes-fullname="${safeFull}" data-open-notes-discount="${discount}" data-open-notes-manager="${isManager}">📝 Карточка</button>
+              <button class="btn btn-xs btn-secondary" data-open-notes-id="${safeId}" data-open-notes-name="${safeName}" data-open-notes-email="${safeEmail}" data-open-notes-phone="${safePhone}" data-open-notes-fullname="${safeFull}" data-open-notes-discount="${discount}" data-open-notes-role="${role}">📝 Карточка</button>
+              <button class="btn btn-xs btn-ghost" onclick="openOrderHistory('${safeId}','${safeName}')">📋 Заказы</button>
             </td>
           </tr>
         `;
@@ -3024,7 +3172,7 @@
     }
   }
 
-  async function openNotes(userId, userName, email, phone, fullName, discount, isManager) {
+  async function openNotes(userId, userName, email, phone, fullName, discount, roleStr) {
     currentCustomerId = userId;
     document.getElementById('notesCustomerName').textContent = userName;
     // Fill info block
@@ -3034,8 +3182,11 @@
     document.getElementById('notesCPhone').textContent    = phone    || '—';
     document.getElementById('notesCFullName').textContent = fullName || '—';
     document.getElementById('notesCDiscount').value       = discount || 0;
-    const managerChk = document.getElementById('notesCManager');
-    if (managerChk) managerChk.checked = isManager === '1' || isManager === true;
+    const roleSelect = document.getElementById('notesCRole');
+    if (roleSelect) roleSelect.value = roleStr || 'user';
+    // Управление ролями — только суперадмин
+    const roleBlock = document.getElementById('roleManagementBlock');
+    if (roleBlock) roleBlock.style.display = IS_SUPERADMIN ? '' : 'none';
     document.getElementById('notesModal').classList.add('active');
     await loadNotes(userId);
   }
@@ -3053,16 +3204,17 @@
     } catch { showToast('error', 'Ошибка соединения'); }
   });
 
-  // Manager role save
+  // Role save (3 levels)
   document.getElementById('saveManagerRoleBtn')?.addEventListener('click', async function() {
-    const is_manager = document.getElementById('notesCManager')?.checked || false;
+    const role = document.getElementById('notesCRole')?.value || 'user';
+    const roleLabels = {user:'Пользователь', manager:'Менеджер (Lvl 1)', admin:'Админ (Lvl 2)', superadmin:'Суперадмин (Lvl 3)'};
     try {
       const r = await fetch(`/api/admin/customers/${currentCustomerId}/role`, {credentials:'include',
         method:'PUT', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({is_manager})
+        body: JSON.stringify({role})
       });
       if (r.ok) {
-        showToast('success', is_manager ? '✅ Роль менеджера выдана' : '✅ Роль менеджера снята');
+        showToast('success', `✅ Роль обновлена: ${roleLabels[role] || role}`);
         loadCRM();
       } else showToast('error', 'Ошибка сохранения роли');
     } catch { showToast('error', 'Ошибка соединения'); }
@@ -3102,6 +3254,42 @@
     } catch { document.getElementById('createUserMsg').innerHTML = '<div class="msg msg-error">Ошибка соединения</div>'; }
     finally { this.disabled = false; this.textContent = '✅ Создать аккаунт'; }
   });
+
+  // Order history modal (FR-006, Lvl 2+)
+  async function openOrderHistory(userId, userName) {
+    document.getElementById('orderHistoryCustomerName').textContent = userName;
+    const content = document.getElementById('orderHistoryContent');
+    content.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3)">Загрузка...</div>';
+    document.getElementById('orderHistoryModal').classList.add('active');
+    try {
+      const r = await fetch(`/api/admin/customers/${userId}/orders`, {credentials:'include'});
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const orders = await r.json();
+      if (!orders.length) {
+        content.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3)">Заказов нет</div>';
+        return;
+      }
+      const statusLabels = {created:'Создан',processing:'В обработке',confirmed:'Подтверждён',in_transit:'В пути',customs:'На таможне',warehouse:'На складе',delivery:'Передан в доставку',completed:'Завершён',cancelled:'Отменён',pending:'Создан',shipped:'В пути'};
+      content.innerHTML = orders.map(o => {
+        const dt = new Date(o.created_at).toLocaleDateString('ru-RU', {day:'2-digit',month:'2-digit',year:'numeric'});
+        const statusLabel = statusLabels[o.status] || o.status;
+        const statusColor = o.status === 'completed' ? 'var(--green)' : o.status === 'cancelled' ? 'var(--red)' : 'var(--amber)';
+        const items = (o.items || []).map(it => `<div style="font-size:.76rem;color:var(--text2);padding:.15rem 0">${escH(it.product_name)} × ${it.quantity} — ${parseFloat(it.price).toLocaleString('ru-RU')} ₽</div>`).join('');
+        return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:.75rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;flex-wrap:wrap;gap:.5rem">
+            <span style="font-weight:700;font-family:var(--font-mono);color:var(--accent)">Заказ #${o.id}</span>
+            <span style="font-size:.78rem;color:var(--text3)">${dt}</span>
+            <span style="font-size:.78rem;font-weight:700;color:${statusColor}">${statusLabel}</span>
+            <span style="font-weight:700;color:var(--green)">${parseFloat(o.total_amount).toLocaleString('ru-RU')} ₽</span>
+          </div>
+          ${items}
+          ${o.track_number ? `<div style="font-size:.76rem;color:var(--accent);margin-top:.35rem">Трек: ${escH(o.track_number)}</div>` : ''}
+        </div>`;
+      }).join('');
+    } catch(e) {
+      content.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--red)">Ошибка загрузки</div>';
+    }
+  }
 
   async function loadNotes(userId) {
     const notesList = document.getElementById('notesList');
@@ -3369,7 +3557,7 @@
     // ── CRM table delegation ──
     document.getElementById('crmTableBody')?.addEventListener('click', function(e) {
       const notesBtn = e.target.closest('[data-open-notes-id]');
-      if (notesBtn) { openNotes(notesBtn.dataset.openNotesId, notesBtn.dataset.openNotesName, notesBtn.dataset.openNotesEmail, notesBtn.dataset.openNotesPhone, notesBtn.dataset.openNotesFullname, notesBtn.dataset.openNotesDiscount, notesBtn.dataset.openNotesManager); return; }
+      if (notesBtn) { openNotes(notesBtn.dataset.openNotesId, notesBtn.dataset.openNotesName, notesBtn.dataset.openNotesEmail, notesBtn.dataset.openNotesPhone, notesBtn.dataset.openNotesFullname, notesBtn.dataset.openNotesDiscount, notesBtn.dataset.openNotesRole); return; }
     });
 
     // ── Notes list delegation ──

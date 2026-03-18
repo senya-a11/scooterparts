@@ -1528,7 +1528,7 @@ function renderDocGallery(containerId,docs){
         '<a href="'+d.url+'" target="_blank" rel="noopener" class="sdoc-pdf-open-btn">Открыть PDF</a>'+
         '</div>';
     }
-    return '<div class="sdoc-slide"><img src="'+d.url+'" alt="Документ '+(i+1)+'" draggable="false" loading="lazy"></div>';
+    return '<div class="sdoc-slide"><a href="'+d.url+'" target="_blank" rel="noopener" style="display:block;width:100%;height:100%"><img src="'+d.url+'" alt="Документ '+(i+1)+'" draggable="false" loading="lazy" style="cursor:pointer"></a></div>';
   }).join('');
   var n=docs.length;
   var dots=n>1?'<div class="sdoc-dots">'+docs.map(function(_,i){return '<span class="sdoc-dot'+(i===0?' active':'')+'"></span>';}).join('')+'</div>':'';

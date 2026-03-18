@@ -209,7 +209,7 @@
 
     @media(max-width:900px){
       html,body{overflow:hidden;height:100%}
-      .auth-page{flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;height:100%;justify-content:flex-start;padding-top:calc(64px + 1.5rem);padding-bottom:calc(2rem + 60px)}
+      .auth-page{flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;height:100%;justify-content:flex-start;padding-top:calc(64px + 1.5rem);padding-bottom:0}
       .auth-page::-webkit-scrollbar{display:none}
       .auth-left{width:100%;}
       .auth-left{padding:1.5rem 1.25rem;justify-content:center;overflow:visible}
@@ -227,14 +227,11 @@
       [data-flip-button="button"]{font-size:.65rem;padding:.38rem .2rem;}
     }
     /* ── AUTH FOOTER ── */
-    .auth-footer{background:var(--bg2);border-top:1px solid var(--border);padding:1.25rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;position:relative;z-index:10;}
+    .auth-footer{background:var(--bg2);border-top:1px solid var(--border);padding:1.25rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;position:relative;z-index:10;margin-top:auto;width:100%;}
     .auth-footer span{font-family:var(--fr);font-size:.8rem;color:var(--text3);letter-spacing:.05em;}
     .auth-footer-links{display:flex;gap:1.5rem;flex-wrap:wrap;}
     .auth-footer-links a{font-family:var(--fr);font-size:.8rem;color:var(--text3);text-decoration:none;transition:color .2s;letter-spacing:.05em;}
     .auth-footer-links a:hover{color:var(--blue);}
-    @media(max-width:900px){
-      .auth-footer{position:fixed;bottom:0;left:0;right:0;z-index:50;}
-    }
   </style>
 <script src="/static/csrf-init.js"></script>
 </head>
@@ -318,6 +315,15 @@
       </div>
     </div>
   </div>
+  <footer class="auth-footer">
+    <span>&copy; 2026 Fm TuN.</span>
+    <div class="auth-footer-links">
+      <a href="/terms">Соглашение</a>
+      <a href="/privacy-policy">Конфиденциальность</a>
+      <a href="/offer">Оферта</a>
+      <a href="/returns">Возврат</a>
+    </div>
+  </footer>
 </div>
 <script nonce="{{ request.state.csp_nonce }}">
 // ── FIX 1: регистрируем плагины GSAP до использования ──
@@ -617,15 +623,6 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 </script>
 
-<footer class="auth-footer">
-  <span>&copy; 2026 Fm TuN.</span>
-  <div class="auth-footer-links">
-    <a href="/terms">Соглашение</a>
-    <a href="/privacy-policy">Конфиденциальность</a>
-    <a href="/offer">Оферта</a>
-    <a href="/returns">Возврат</a>
-  </div>
-</footer>
 <div class="cookie-banner" id="cookieBanner" role="dialog" aria-label="Уведомление об использовании Cookie" aria-live="polite">
   <div class="cookie-inner">
     <div class="cookie-icon" aria-hidden="true">&#127850;</div>

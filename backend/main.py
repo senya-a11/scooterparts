@@ -1135,11 +1135,16 @@ class Database:
             await conn.execute('''
                 CREATE TABLE IF NOT EXISTS supplier_documents (
                     id SERIAL PRIMARY KEY,
-                    doc_type VARCHAR(64) NOT NULL UNIQUE,
+                    doc_type VARCHAR(64) NOT NULL,
                     filename VARCHAR(255) NOT NULL,
                     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+            # Миграция: убрать UNIQUE-ограничение на doc_type (поддержка нескольких файлов на тип)
+            try:
+                await conn.execute("DROP INDEX IF EXISTS supplier_documents_doc_type_key")
+            except Exception:
+                pass
 
             # ── v26: поля заказа ──
             try:
@@ -4569,9 +4574,9 @@ async def get_supplier_docs():
     try:
         async with db.pool.acquire() as conn:
             rows = await conn.fetch(
-                "SELECT doc_type, filename, uploaded_at FROM supplier_documents ORDER BY doc_type"
+                "SELECT id, doc_type, filename, uploaded_at FROM supplier_documents ORDER BY doc_type, uploaded_at"
             )
-            return [{"doc_type": r["doc_type"], "filename": r["filename"], "url": f"/static/uploads/docs/{r['filename']}", "uploaded_at": r["uploaded_at"].isoformat() if r["uploaded_at"] else None} for r in rows]
+            return [{"id": r["id"], "doc_type": r["doc_type"], "filename": r["filename"], "url": f"/static/uploads/docs/{r['filename']}", "uploaded_at": r["uploaded_at"].isoformat() if r["uploaded_at"] else None} for r in rows]
     except Exception as e:
         logger.error("get_supplier_docs error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
@@ -4591,8 +4596,11 @@ async def upload_supplier_doc(
     suffix = Path(file.filename).suffix.lower() if file.filename else ""
     if suffix not in allowed_exts:
         raise HTTPException(status_code=400, detail="Разрешены только PDF и изображения")
-    # Save file
-    safe_name = f"{doc_type}{suffix}"
+    # Save file with unique name
+    from datetime import datetime as _dt
+    ts = _dt.utcnow().strftime("%Y%m%d_%H%M%S")
+    uid = uuid4().hex[:8]
+    safe_name = f"{doc_type}_{ts}_{uid}{suffix}"
     dest = DOCS_UPLOAD_DIR / safe_name
     try:
         content = await file.read()
@@ -4605,18 +4613,39 @@ async def upload_supplier_doc(
     except Exception as e:
         logger.error("upload_supplier_doc file write error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Ошибка сохранения файла")
-    # Upsert DB record
+    # Insert DB record (multiple docs per type allowed)
     try:
         async with db.pool.acquire() as conn:
             await conn.execute('''
                 INSERT INTO supplier_documents (doc_type, filename, uploaded_at)
                 VALUES ($1, $2, NOW())
-                ON CONFLICT (doc_type) DO UPDATE SET filename=$2, uploaded_at=NOW()
             ''', doc_type, safe_name)
         return {"message": "Документ загружен", "filename": safe_name, "url": f"/static/uploads/docs/{safe_name}"}
     except Exception as e:
         logger.error("upload_supplier_doc db error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Ошибка базы данных")
+
+
+@app.delete("/api/supplier-docs/{doc_id}")
+async def delete_supplier_doc(doc_id: int, admin: dict = Depends(verify_admin)):
+    """Удалить документ поставщика (только для admin)"""
+    try:
+        async with db.pool.acquire() as conn:
+            row = await conn.fetchrow("SELECT filename FROM supplier_documents WHERE id=$1", doc_id)
+            if not row:
+                raise HTTPException(status_code=404, detail="Документ не найден")
+            file_path = DOCS_UPLOAD_DIR / row["filename"]
+            try:
+                file_path.unlink(missing_ok=True)
+            except Exception:
+                pass
+            await conn.execute("DELETE FROM supplier_documents WHERE id=$1", doc_id)
+        return {"message": "Документ удалён"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("delete_supplier_doc error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 # ============================================================

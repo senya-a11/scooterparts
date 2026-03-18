@@ -539,7 +539,7 @@
     <div class="service-info">
       <div class="si-card reveal"><div class="si-card__icon">&#128295;</div><div class="si-card__title">Любые виды ремонта</div><div class="si-card__text">Замена двигателей, контроллеров, тормозных систем. Диагностика любой сложности, обслуживание, гидроизоляция.</div></div>
       <div class="si-card reveal"><div class="si-card__icon">&#9889;</div><div class="si-card__title">Сборка custom</div><div class="si-card__text">Профессиональный монтаж деталей из нашего магазина, сборка акб, установка vecs. Постройка и разработка рамы с 0 и многие другие уникальные комплектующие. Гарантия на все работы.</div></div>
-      <div class="si-card reveal"><div class="si-card__icon">&#128757;</div><div class="si-card__title">7 лет опыта</div><div class="si-card__text">Xiaomi, Ninebot, Kugoo, syccyba, spead, savage, ultron, dualtron и другие бренды. Мастера знают самокаты насквозь.</div></div>
+      <div class="si-card reveal"><div class="si-card__icon">&#128757;</div><div class="si-card__title">7 лет опыта</div><div class="si-card__text">Xiaomi, Ninebot, Kugoo, syccyba, speadsavage, ultron, dualtron и другие бренды. Мастера знают самокаты насквозь.</div></div>
     </div>
 
     <div class="addr-bar reveal">
@@ -551,7 +551,7 @@
       <div class="addr-bar__sep"></div>
       <div>
         <div class="addr-bar__label">Режим работы</div>
-        <div class="addr-bar__val">Вт–Вс, 11:00 — 19:00</div>
+        <div class="addr-bar__val">Пн–Сб, 10:00 — 19:00</div>
       </div>
       <a href="https://t.me/fmsworkshops" class="addr-cta" target="_blank" rel="noopener noreferrer">
         Записаться в сервис
@@ -627,7 +627,7 @@
         <div class="contact-item"><div class="contact-item__label">Telegram магазин</div><div class="contact-item__value"><a href="https://t.me/FM_Tuning" style="color:var(--blue);text-decoration:none" target="_blank" rel="noopener noreferrer">@FM_Tuning</a></div></div>
         <div class="contact-item"><div class="contact-item__label">Telegram сервис</div><div class="contact-item__value"><a href="https://t.me/fmsworkshops" style="color:var(--blue);text-decoration:none" target="_blank" rel="noopener noreferrer">@fmsworkshops</a></div></div>
         <div class="contact-item"><div class="contact-item__label">Адрес сервиса</div><div class="contact-item__value" style="font-size:.95rem">М. Университет — ул. Строителей 4 стр. 2</div></div>
-        <div class="contact-item"><div class="contact-item__label">Режим работы</div><div class="contact-item__value">Вт–Вс, 11:00 — 19:00</div></div>
+        <div class="contact-item"><div class="contact-item__label">Режим работы</div><div class="contact-item__value">Пн–Сб, 10:00 — 19:00</div></div>
       </div>
     </div>
   </div>
@@ -883,10 +883,10 @@ try {
 (function(){
   var c=document.getElementById('starfield');if(!c)return;
   var ctx=c.getContext('2d'),W,H,stars=[],_sfId=null,_sfStop=false;
-  var COUNT=window.innerWidth<768?30:55,TRAIL=8,_FPS=1000/24,_lastT=0;
+  var COUNT=window.innerWidth<768?30:55,TRAIL=18,_FPS=1000/24,_lastT=0;
   function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
   function make(){
-    var a=Math.random()*Math.PI*2,spd=Math.random()*.28+.08;
+    var a=Math.random()*Math.PI*2,spd=Math.random()*1.0+.5;
     return{x:Math.random()*W,y:Math.random()*H,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
       r:Math.random()*.9+.25,alpha:Math.random()*.4+.2,
       tw:Math.random()*Math.PI*2,tws:Math.random()*.008+.003,trail:[]};
@@ -905,14 +905,15 @@ try {
       if(s.x<-10)s.x=W+10;if(s.x>W+10)s.x=-10;
       if(s.y<-10)s.y=H+10;if(s.y>H+10)s.y=-10;
       for(var t=1;t<s.trail.length;t++){
-        var p=t/s.trail.length,p2=p*p,tp=s.trail[t],tr=s.r*p*.6;
-        if(tr<.05)continue;
+        var p=t/s.trail.length,tp=s.trail[t],tr=s.r*(0.2+p*1.4);
         ctx.beginPath();ctx.arc(tp.x,tp.y,tr,0,Math.PI*2);
-        ctx.fillStyle=isLight?'rgba(180,70,0,'+(p2*s.alpha*.4)+')':'rgba(110,205,255,'+(p2*s.alpha*.5)+')';ctx.fill();
+        ctx.fillStyle=isLight?'rgba(200,80,0,'+(p*s.alpha*.9)+')':'rgba(100,220,255,'+(p*s.alpha*1.0)+')';ctx.fill();
       }
       var pulse=Math.sin(s.tw)*.2+.8,al=s.alpha*pulse;
-      ctx.beginPath();ctx.arc(s.x,s.y,s.r*2.2,0,Math.PI*2);
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r*4.0,0,Math.PI*2);
       ctx.fillStyle=isLight?'rgba(232,88,10,'+(al*.1)+')':'rgba(0,212,255,'+(al*.13)+')';ctx.fill();
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r*2.2,0,Math.PI*2);
+      ctx.fillStyle=isLight?'rgba(232,88,10,'+(al*.22)+')':'rgba(0,212,255,'+(al*.28)+')';ctx.fill();
       ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
       ctx.fillStyle=isLight?'rgba(200,80,0,'+al+')':'rgba(215,248,255,'+al+')';ctx.fill();
     }

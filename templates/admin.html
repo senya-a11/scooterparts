@@ -3451,16 +3451,32 @@
       try {
         const r = await fetch('/api/supplier-docs');
         const docs = r.ok ? await r.json() : [];
-        const byType = {};
-        docs.forEach(d => { byType[d.doc_type] = d; });
-        const partnerEl = document.getElementById('partnerDocStatus');
-        const warrantyEl = document.getElementById('warrantyDocStatus');
-        if(partnerEl) partnerEl.innerHTML = byType.partner
-          ? `✅ Загружен: <a href="${byType.partner.url}" target="_blank" style="color:var(--accent)">${byType.partner.filename}</a>`
-          : '⚠️ Не загружен';
-        if(warrantyEl) warrantyEl.innerHTML = byType.warranty
-          ? `✅ Загружен: <a href="${byType.warranty.url}" target="_blank" style="color:var(--accent)">${byType.warranty.filename}</a>`
-          : '⚠️ Не загружен';
+        const byType = {partner:[], warranty:[]};
+        docs.forEach(d => { if(byType[d.doc_type]) byType[d.doc_type].push(d); });
+        ['partner','warranty'].forEach(t => {
+          const el = document.getElementById(t+'DocStatus');
+          if(!el) return;
+          if(!byType[t].length){ el.innerHTML='⚠️ Не загружено'; return; }
+          el.innerHTML = byType[t].map(d =>
+            `<div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.3rem;background:rgba(255,255,255,.03);border-radius:6px;padding:.3rem .5rem">` +
+            (d.filename.toLowerCase().endsWith('.pdf')
+              ? `<span style="font-size:1rem">📄</span>`
+              : `<img src="${d.url}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0">`) +
+            `<a href="${d.url}" target="_blank" style="color:var(--accent);font-size:.75rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escH(d.filename)}</a>` +
+            `<button class="btn btn-ghost" style="padding:.15rem .4rem;font-size:.7rem;color:#f87171;flex-shrink:0" data-delete-doc="${d.id}">✕</button>` +
+            `</div>`
+          ).join('');
+          el.querySelectorAll('[data-delete-doc]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              if(!confirm('Удалить документ?')) return;
+              const id = btn.dataset.deleteDoc;
+              try {
+                await fetch('/api/supplier-docs/'+id, {method:'DELETE', credentials:'include'});
+              } catch(e){}
+              await loadSupplierDocsStatus();
+            });
+          });
+        });
       } catch(e) {}
     }
 

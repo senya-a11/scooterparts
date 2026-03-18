@@ -396,10 +396,29 @@
     /* ── SUPPLIER SECTION ── */
     .supplier-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;max-width:900px;margin:0 auto}
     .supplier-docs-grid{display:grid;grid-template-columns:1fr 1fr;gap:.875rem}
-    .supplier-doc-card{background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:12px;padding:1.25rem;text-align:center}
-    .supplier-doc-status{font-size:.7rem;color:var(--text3);margin-top:.25rem}
-    .supplier-doc-link{font-size:.7rem;color:var(--blue);margin-top:.25rem;text-decoration:none;display:block}
-    .supplier-doc-link:hover{text-decoration:underline}
+    /* Карточки документов — галерея */
+    .sdoc-card{background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+    .sdoc-header{display:flex;align-items:center;gap:.5rem;padding:.75rem 1rem;font-size:.78rem;font-weight:700;color:var(--text);border-bottom:1px solid rgba(255,255,255,.06)}
+    .sdoc-gallery-wrap{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;background:rgba(0,0,0,.25)}
+    .sdoc-empty{display:flex;align-items:center;justify-content:center;height:100%;font-size:.72rem;color:var(--text3);text-align:center;padding:1rem}
+    .sdoc-track-outer{position:absolute;inset:0;overflow:hidden;cursor:grab;user-select:none}
+    .sdoc-track-outer:active{cursor:grabbing}
+    .sdoc-track{display:flex;height:100%;will-change:transform}
+    .sdoc-slide{flex:none;width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .sdoc-slide img{width:100%;height:100%;object-fit:contain;pointer-events:none;background:#000}
+    .sdoc-slide-pdf{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;color:var(--text2);padding:1rem;text-align:center}
+    .sdoc-slide-pdf .sdoc-pdf-icon{font-size:2.75rem;line-height:1}
+    .sdoc-slide-pdf .sdoc-pdf-name{font-size:.65rem;color:var(--text3);word-break:break-all;max-width:100%}
+    .sdoc-slide-pdf a{font-size:.72rem;color:var(--blue);text-decoration:none;border:1px solid rgba(0,212,255,.35);border-radius:6px;padding:.3rem .75rem}
+    .sdoc-slide-pdf a:hover{background:rgba(0,212,255,.1)}
+    .sdoc-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.65);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);color:var(--text);width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;transition:all .2s;line-height:1;font-family:sans-serif}
+    .sdoc-btn:hover{background:var(--blue);color:#000;border-color:var(--blue)}
+    .sdoc-btn-prev{left:.4rem}
+    .sdoc-btn-next{right:.4rem}
+    .sdoc-count{position:absolute;top:.4rem;right:.4rem;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:.15rem .55rem;font-size:.65rem;color:var(--text2);font-family:var(--fr);z-index:10}
+    .sdoc-dots{position:absolute;bottom:.4rem;left:50%;transform:translateX(-50%);display:flex;gap:.35rem;z-index:10}
+    .sdoc-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.25);cursor:pointer;transition:all .2s}
+    .sdoc-dot.active{background:var(--blue);width:16px;border-radius:3px}
 
     /* ── RESPONSIVE ── */
     @media(max-width:768px){
@@ -428,6 +447,7 @@
     @media(max-width:480px){
       .footer-grid{grid-template-columns:1fr}
       .supplier-docs-grid{grid-template-columns:1fr}
+      .sdoc-gallery-wrap{aspect-ratio:3/2}
       .hero-stats{padding:.75rem 0}
       .hero-stat{padding:0 .4rem}
       .hero-stat-val{font-size:1.1rem;letter-spacing:.02em}
@@ -748,15 +768,17 @@
         </div>
       </div>
       <div class="supplier-docs-grid" id="supplierDocs">
-        <div class="supplier-doc-card" id="supplierDocPartner">
-          <div style="font-size:2rem;margin-bottom:.5rem">🏭</div>
-          <div style="font-size:.78rem;font-weight:700;color:var(--text)">Партнёрский договор</div>
-          <div class="supplier-doc-status" id="supplierDocPartnerStatus">Документ будет добавлен</div>
+        <div class="sdoc-card">
+          <div class="sdoc-header">🏭 <span>Партнёрский договор</span></div>
+          <div class="sdoc-gallery-wrap" id="sdocGalleryPartner">
+            <div class="sdoc-empty">Документ будет добавлен</div>
+          </div>
         </div>
-        <div class="supplier-doc-card" id="supplierDocWarranty">
-          <div style="font-size:2rem;margin-bottom:.5rem">🛡️</div>
-          <div style="font-size:.78rem;font-weight:700;color:var(--text)">Гарантийные условия</div>
-          <div class="supplier-doc-status" id="supplierDocWarrantyStatus">Документ будет добавлен</div>
+        <div class="sdoc-card">
+          <div class="sdoc-header">🛡️ <span>Гарантийные условия</span></div>
+          <div class="sdoc-gallery-wrap" id="sdocGalleryWarranty">
+            <div class="sdoc-empty">Документ будет добавлен</div>
+          </div>
         </div>
       </div>
     </div>
@@ -1454,25 +1476,71 @@ async function loadSupplierDocs(){
     var r=await fetch('/api/supplier-docs');
     if(!r.ok)return;
     var docs=await r.json();
-    var byType={};
-    docs.forEach(function(d){byType[d.doc_type]=d;});
-    var partnerStatus=document.getElementById('supplierDocPartnerStatus');
-    var warrantyStatus=document.getElementById('supplierDocWarrantyStatus');
-    if(partnerStatus){
-      if(byType.partner){
-        partnerStatus.innerHTML='<a class="supplier-doc-link" href="'+byType.partner.url+'" target="_blank" rel="noopener">📄 Посмотреть документ</a>';
-      }else{
-        partnerStatus.textContent='Документ будет добавлен';
-      }
-    }
-    if(warrantyStatus){
-      if(byType.warranty){
-        warrantyStatus.innerHTML='<a class="supplier-doc-link" href="'+byType.warranty.url+'" target="_blank" rel="noopener">📄 Посмотреть документ</a>';
-      }else{
-        warrantyStatus.textContent='Документ будет добавлен';
-      }
-    }
+    var byType={partner:[],warranty:[]};
+    docs.forEach(function(d){if(byType[d.doc_type])byType[d.doc_type].push(d);});
+    renderDocGallery('sdocGalleryPartner',byType.partner);
+    renderDocGallery('sdocGalleryWarranty',byType.warranty);
   }catch(e){}
+}
+
+function renderDocGallery(containerId,docs){
+  var wrap=document.getElementById(containerId);
+  if(!wrap)return;
+  if(!docs||!docs.length){
+    wrap.innerHTML='<div class="sdoc-empty">Документ будет добавлен</div>';
+    return;
+  }
+  var slides=docs.map(function(d,i){
+    var isPdf=d.filename.toLowerCase().endsWith('.pdf');
+    if(isPdf){
+      return '<div class="sdoc-slide"><div class="sdoc-slide-pdf">'+
+        '<div class="sdoc-pdf-icon">📄</div>'+
+        '<div class="sdoc-pdf-name">'+d.filename+'</div>'+
+        '<a href="'+d.url+'" target="_blank" rel="noopener">Открыть PDF</a>'+
+        '</div></div>';
+    }
+    return '<div class="sdoc-slide"><img src="'+d.url+'" alt="Документ '+(i+1)+'" draggable="false" loading="lazy"></div>';
+  }).join('');
+  var n=docs.length;
+  var dots=n>1?'<div class="sdoc-dots">'+docs.map(function(_,i){return '<span class="sdoc-dot'+(i===0?' active':'')+'"></span>';}).join('')+'</div>':'';
+  var count=n>1?'<div class="sdoc-count"><span class="sdoc-cur">1</span> / '+n+'</div>':'';
+  var btns=n>1?'<button class="sdoc-btn sdoc-btn-prev">&#8249;</button><button class="sdoc-btn sdoc-btn-next">&#8250;</button>':'';
+  wrap.innerHTML='<div class="sdoc-track-outer"><div class="sdoc-track">'+slides+'</div>'+btns+count+dots+'</div>';
+  if(n>1)initDocSlider(wrap.querySelector('.sdoc-track-outer'),n);
+}
+
+function initDocSlider(outer,total){
+  var track=outer.querySelector('.sdoc-track');
+  var dots=Array.from(outer.querySelectorAll('.sdoc-dot'));
+  var curEl=outer.querySelector('.sdoc-cur');
+  var prev=outer.querySelector('.sdoc-btn-prev');
+  var next=outer.querySelector('.sdoc-btn-next');
+  var W=outer.offsetWidth;
+  var cur=0;
+  if(typeof gsap!=='undefined'){
+    gsap.set(track,{width:W*total});
+    track.querySelectorAll('.sdoc-slide').forEach(function(s){gsap.set(s,{width:W,position:'relative',display:'inline-block'});});
+  }
+  function goTo(n){
+    n=((n%total)+total)%total;
+    if(typeof gsap!=='undefined'){
+      gsap.to(track,{x:-n*W,duration:.45,ease:'power3.inOut'});
+    } else {
+      track.style.transform='translateX('+(-n*W)+'px)';
+    }
+    cur=n;
+    dots.forEach(function(d,i){d.classList.toggle('active',i===cur);});
+    if(curEl)curEl.textContent=cur+1;
+  }
+  prev&&prev.addEventListener('click',function(){goTo(cur-1);});
+  next&&next.addEventListener('click',function(){goTo(cur+1);});
+  dots.forEach(function(d,i){d.addEventListener('click',function(){goTo(i);});});
+  var startX=0;
+  outer.addEventListener('pointerdown',function(e){startX=e.clientX;});
+  outer.addEventListener('pointerup',function(e){
+    var dx=e.clientX-startX;
+    if(Math.abs(dx)>40)goTo(cur+(dx<0?1:-1));
+  });
 }
 </script>
 <script nonce="{{ request.state.csp_nonce }}">

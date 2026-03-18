@@ -458,8 +458,9 @@
     }
   
     /* ── TRUST BAR ── */
-    .trust-bar{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2.5rem}
-    @media(max-width:400px){.trust-bar{grid-template-columns:1fr}}
+    .trust-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:.875rem;margin-bottom:2.5rem}
+    @media(max-width:560px){.trust-bar{grid-template-columns:1fr 1fr}.trust-bar>a:nth-child(3){grid-column:span 2}}
+    @media(max-width:340px){.trust-bar{grid-template-columns:1fr}.trust-bar>a:nth-child(3){grid-column:auto}}
     .trust-item{display:flex;flex-direction:column;align-items:center;gap:.625rem;padding:1.75rem 1.25rem;background:rgba(255,255,255,.025);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.07);border-radius:16px;text-decoration:none;transition:border-color .25s,transform .25s,background .25s;text-align:center}
     .trust-item:hover{border-color:rgba(0,212,255,.3);background:rgba(0,212,255,.04);transform:translateY(-3px)}
     .trust-item-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center}
@@ -833,6 +834,16 @@
         <span class="trust-item-num" style="color:#F59E0B;text-shadow:0 0 24px rgba(245,158,11,.35)">5.0 ★</span>
         <span class="trust-item-label" style="color:rgba(255,255,255,.55);font-size:.72rem">300+ отзывов · Яндекс.Карты</span>
       </a>
+      <a href="https://www.avito.ru/brands/11e42f6a54bf637606a2152cee284225?src=sharing" target="_blank" rel="noopener noreferrer" class="trust-item">
+        <div class="trust-item-icon" style="background:rgba(151,207,38,.1)">
+          <svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="48" height="48" rx="10" fill="#97CF26"/>
+            <path d="M14 34L20.5 14h7L34 34h-6.5l-1.2-4h-4.6l-1.2 4H14zm8.8-8.5h2.4l-1.2-4.5-1.2 4.5z" fill="white"/>
+          </svg>
+        </div>
+        <span class="trust-item-num" style="color:#97CF26;text-shadow:0 0 24px rgba(151,207,38,.35);font-size:1.5rem">Отзывы</span>
+        <span class="trust-item-label" style="color:rgba(255,255,255,.55);font-size:.72rem">магазин · Авито</span>
+      </a>
     </div>
     <div class="reviews-grid">
       <div class="rv-card">
@@ -954,11 +965,11 @@
 (function(){
   var c=document.getElementById('starfield'),ctx=c.getContext('2d');
   // Fix СКОРОСТЬ: меньше звёзд, замедлены, ограничены до 24fps
-  var COUNT = window.innerWidth < 768 ? 55 : 90, TRAIL = 12;
+  var COUNT = window.innerWidth < 768 ? 55 : 90, TRAIL = 22;
   var _FPS = 1000/24, _lastT = 0;
   function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
   function make(){
-    var a=Math.random()*Math.PI*2,spd=Math.random()*.28+.08;
+    var a=Math.random()*Math.PI*2,spd=Math.random()*1.0+.5;
     return{x:Math.random()*W,y:Math.random()*H,
       vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
       r:Math.random()*1.1+.35,alpha:Math.random()*.5+.3,
@@ -979,14 +990,15 @@
       if(s.x<-10)s.x=W+10;if(s.x>W+10)s.x=-10;
       if(s.y<-10)s.y=H+10;if(s.y>H+10)s.y=-10;
       for(var t=1;t<s.trail.length;t++){
-        var p=t/s.trail.length,p2=p*p,tp=s.trail[t],tr=s.r*p*.6;
-        if(tr<.05)continue;
+        var p=t/s.trail.length,tp=s.trail[t],tr=s.r*(0.2+p*1.4);
         ctx.beginPath();ctx.arc(tp.x,tp.y,tr,0,Math.PI*2);
-        ctx.fillStyle=isLight?'rgba(180,70,0,'+(p2*s.alpha*.4)+')':'rgba(110,205,255,'+(p2*s.alpha*.5)+')';ctx.fill();
+        ctx.fillStyle=isLight?'rgba(200,80,0,'+(p*s.alpha*.9)+')':'rgba(100,220,255,'+(p*s.alpha*1.0)+')';ctx.fill();
       }
       var pulse=Math.sin(s.tw)*.2+.8,al=s.alpha*pulse;
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r*4.5,0,Math.PI*2);
+      ctx.fillStyle=isLight?'rgba(232,88,10,'+(al*.1)+')':'rgba(0,212,255,'+(al*.13)+')';ctx.fill();
       ctx.beginPath();ctx.arc(s.x,s.y,s.r*2.5,0,Math.PI*2);
-      ctx.fillStyle=isLight?'rgba(232,88,10,'+(al*.12)+')':'rgba(0,212,255,'+(al*.15)+')';ctx.fill();
+      ctx.fillStyle=isLight?'rgba(232,88,10,'+(al*.22)+')':'rgba(0,212,255,'+(al*.28)+')';ctx.fill();
       ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
       ctx.fillStyle=isLight?'rgba(200,80,0,'+al+')':'rgba(215,248,255,'+al+')';ctx.fill();
     }

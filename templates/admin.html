@@ -1422,7 +1422,7 @@
           <div style="font-family:var(--font-d);font-size:1rem;font-weight:700;margin-bottom:1rem">🏭 Партнёрский договор</div>
           <div id="partnerDocStatus" style="font-size:.8125rem;color:var(--text2);margin-bottom:.875rem">Загрузка…</div>
           <input type="file" id="partnerDocFile" accept=".pdf,.jpg,.jpeg,.png" style="display:none">
-          <button class="btn btn-ghost" onclick="document.getElementById('partnerDocFile').click()" style="width:100%;margin-bottom:.5rem">📎 Выбрать файл</button>
+          <button class="btn btn-ghost" id="pickPartnerDocBtn" style="width:100%;margin-bottom:.5rem">📎 Выбрать файл</button>
           <div id="partnerDocSelected" style="font-size:.8125rem;color:var(--text2);margin-bottom:.5rem"></div>
           <button class="btn btn-primary" id="uploadPartnerDocBtn" style="width:100%" disabled>⬆ Загрузить</button>
         </div>
@@ -1432,7 +1432,7 @@
           <div style="font-family:var(--font-d);font-size:1rem;font-weight:700;margin-bottom:1rem">🛡️ Гарантийные условия</div>
           <div id="warrantyDocStatus" style="font-size:.8125rem;color:var(--text2);margin-bottom:.875rem">Загрузка…</div>
           <input type="file" id="warrantyDocFile" accept=".pdf,.jpg,.jpeg,.png" style="display:none">
-          <button class="btn btn-ghost" onclick="document.getElementById('warrantyDocFile').click()" style="width:100%;margin-bottom:.5rem">📎 Выбрать файл</button>
+          <button class="btn btn-ghost" id="pickWarrantyDocBtn" style="width:100%;margin-bottom:.5rem">📎 Выбрать файл</button>
           <div id="warrantyDocSelected" style="font-size:.8125rem;color:var(--text2);margin-bottom:.5rem"></div>
           <button class="btn btn-primary" id="uploadWarrantyDocBtn" style="width:100%" disabled>⬆ Загрузить</button>
         </div>
@@ -3464,11 +3464,15 @@
       } catch(e) {}
     }
 
-    function setupDocUpload(fileInputId, selectedId, uploadBtnId, docType) {
+    function setupDocUpload(fileInputId, selectedId, uploadBtnId, docType, pickBtnId) {
       const fileInput = document.getElementById(fileInputId);
       const selectedEl = document.getElementById(selectedId);
       const uploadBtn = document.getElementById(uploadBtnId);
       if(!fileInput || !uploadBtn) return;
+      if(pickBtnId) {
+        const pickBtn = document.getElementById(pickBtnId);
+        if(pickBtn) pickBtn.addEventListener('click', function(){ fileInput.click(); });
+      }
       fileInput.addEventListener('change', function() {
         if(fileInput.files.length) {
           selectedEl.textContent = '📎 ' + fileInput.files[0].name;
@@ -3503,8 +3507,8 @@
       });
     }
 
-    setupDocUpload('partnerDocFile','partnerDocSelected','uploadPartnerDocBtn','partner');
-    setupDocUpload('warrantyDocFile','warrantyDocSelected','uploadWarrantyDocBtn','warranty');
+    setupDocUpload('partnerDocFile','partnerDocSelected','uploadPartnerDocBtn','partner','pickPartnerDocBtn');
+    setupDocUpload('warrantyDocFile','warrantyDocSelected','uploadWarrantyDocBtn','warranty','pickWarrantyDocBtn');
     document.querySelectorAll('[data-sec="supplier-docs"]').forEach(btn => {
       btn.addEventListener('click', loadSupplierDocsStatus);
     });

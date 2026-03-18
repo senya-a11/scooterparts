@@ -352,6 +352,7 @@
 <script src="/static/csrf-init.js"></script>
 </head>
 <body>
+<canvas id="starfield" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>
 
 <!-- ═══ HEADER ═══ -->
 <header class="header">
@@ -568,7 +569,7 @@
     <div class="section-label reveal">История</div>
     <h2 class="about-heading reveal" style="max-width:600px">Как мы стали<br><em>первыми.</em></h2>
     <div class="timeline">
-      <div class="tl-item reveal"><div class="tl-dot"></div><div class="tl-year">2023</div><div class="tl-title">Запуск</div><div class="tl-text">Илья случайно зашёл в тему запчастей — купил Vsett для себя, потому что за установку брали много, а в наличии в РФ не было ни у кого. Понял, что спрос огромный — и запустил Fm TuN.</div></div>
+      <div class="tl-item reveal"><div class="tl-dot"></div><div class="tl-year">2023</div><div class="tl-title">Запуск</div><div class="tl-text">Илья случайно зашёл в тему запчастей — купил VESC для себя, потому что за установку брали много, а в наличии в РФ не было ни у кого. Понял, что спрос огромный — и запустил Fm TuN.</div></div>
       <div class="tl-item reveal"><div class="tl-dot"></div><div class="tl-year">2024</div><div class="tl-title">Прямые поставки</div><div class="tl-text">Первые прямые договоры с заводами в Китае. Убрали посредников — снизили цены на 20–30%. Переехали на собственный склад.</div></div>
       <div class="tl-item reveal"><div class="tl-dot"></div><div class="tl-year">2025</div><div class="tl-title">Партнёрство с Fast Motion</div><div class="tl-text">Вход в FASTMOTION - самую большую команду в России по тематике электротранспорта. Объединили поставки и ремонт под одной крышей.</div></div>
       <div class="tl-item reveal"><div class="tl-dot"></div><div class="tl-year">2026 — сейчас</div><div class="tl-title">Новая платформа</div><div class="tl-text">Запустили полноценный сайт с предзаказами. Продолжаем расти.</div></div>
@@ -602,7 +603,7 @@
       <div class="team-card reveal">
         <div class="team-card__role">CEO &amp; Основатель</div>
         <div class="team-card__name">Илья Георгиевский</div>
-        <div class="team-card__bio">Самокатчик по призванию. Пришёл в бизнес случайно: купив Vsett для себя, осознал, что сложно приобрести безопасно и быстро хорошие комплектующие — и запустил Fm TuN.</div>
+        <div class="team-card__bio">Самокатчик по призванию. Пришёл в бизнес случайно: купив VESC для себя, осознал, что сложно приобрести безопасно и быстро хорошие комплектующие — и запустил Fm TuN.</div>
         <div class="team-card__accent"></div>
       </div>
       <div class="team-card reveal">
@@ -877,6 +878,54 @@ try {
     </div>
   </div>
 </div>
+<script nonce="{{ request.state.csp_nonce }}">
+/* Lightweight starfield for about page */
+(function(){
+  var c=document.getElementById('starfield');if(!c)return;
+  var ctx=c.getContext('2d'),W,H,stars=[],_sfId=null,_sfStop=false;
+  var COUNT=window.innerWidth<768?30:55,TRAIL=8,_FPS=1000/24,_lastT=0;
+  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
+  function make(){
+    var a=Math.random()*Math.PI*2,spd=Math.random()*.28+.08;
+    return{x:Math.random()*W,y:Math.random()*H,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
+      r:Math.random()*.9+.25,alpha:Math.random()*.4+.2,
+      tw:Math.random()*Math.PI*2,tws:Math.random()*.008+.003,trail:[]};
+  }
+  function init(){resize();stars=Array.from({length:COUNT},make);}
+  function draw(now){
+    if(now-_lastT<_FPS){if(!_sfStop)_sfId=requestAnimationFrame(draw);return;}_lastT=now;
+    var isLight=document.documentElement.getAttribute('data-theme')==='light';
+    ctx.fillStyle=isLight?'rgba(247,244,239,.22)':'rgba(8,10,15,.28)';
+    ctx.fillRect(0,0,W,H);
+    for(var i=0;i<stars.length;i++){
+      var s=stars[i];
+      s.trail.push({x:s.x,y:s.y});
+      if(s.trail.length>TRAIL)s.trail.shift();
+      s.x+=s.vx;s.y+=s.vy;s.tw+=s.tws;
+      if(s.x<-10)s.x=W+10;if(s.x>W+10)s.x=-10;
+      if(s.y<-10)s.y=H+10;if(s.y>H+10)s.y=-10;
+      for(var t=1;t<s.trail.length;t++){
+        var p=t/s.trail.length,p2=p*p,tp=s.trail[t],tr=s.r*p*.6;
+        if(tr<.05)continue;
+        ctx.beginPath();ctx.arc(tp.x,tp.y,tr,0,Math.PI*2);
+        ctx.fillStyle=isLight?'rgba(180,70,0,'+(p2*s.alpha*.4)+')':'rgba(110,205,255,'+(p2*s.alpha*.5)+')';ctx.fill();
+      }
+      var pulse=Math.sin(s.tw)*.2+.8,al=s.alpha*pulse;
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r*2.2,0,Math.PI*2);
+      ctx.fillStyle=isLight?'rgba(232,88,10,'+(al*.1)+')':'rgba(0,212,255,'+(al*.13)+')';ctx.fill();
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle=isLight?'rgba(200,80,0,'+al+')':'rgba(215,248,255,'+al+')';ctx.fill();
+    }
+    if(!_sfStop)_sfId=requestAnimationFrame(draw);
+  }
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden){_sfStop=true;if(_sfId){cancelAnimationFrame(_sfId);_sfId=null;}}
+    else{_sfStop=false;_sfId=requestAnimationFrame(draw);}
+  });
+  window.addEventListener('resize',resize);
+  init();_sfId=requestAnimationFrame(draw);
+})();
+</script>
 <script src="/static/cookie-consent.js" defer></script>
 <!-- Яндекс.Метрика — заглушка. Замените YM_COUNTER_ID на реальный ID из metrika.yandex.ru -->
 <script nonce="{{ request.state.csp_nonce }}">

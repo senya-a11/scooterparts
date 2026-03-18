@@ -107,6 +107,7 @@ PAYMENT_SHOP_ID    = os.getenv("PAYMENT_SHOP_ID", "")
 PAYMENT_SECRET_KEY = os.getenv("PAYMENT_SECRET_KEY", "")
 PAYMENT_CALLBACK_URL = os.getenv("PAYMENT_CALLBACK_URL", "https://your-domain.com/api/payment/callback")
 YM_COUNTER_ID = os.getenv("YM_COUNTER_ID", "")
+VIDEO_URL = os.getenv("VIDEO_URL", "")  # VK Video embed URL для главной страницы
 BASE_URL = os.getenv("BASE_URL", "https://fmtun.ru")
 
 # ── Email-уведомления ──
@@ -1429,7 +1430,7 @@ async def sitemap_xml():
 
 @app.get("/")
 async def root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request, "ym_counter_id": YM_COUNTER_ID})
+    return templates.TemplateResponse("index.html", {"request": request, "ym_counter_id": YM_COUNTER_ID, "video_url": VIDEO_URL})
 
 @app.get("/products")
 async def products_page(request: Request):

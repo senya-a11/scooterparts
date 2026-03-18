@@ -208,12 +208,13 @@
     .lw-corner.br{bottom:0;right:0;border-width:0 1.5px 1.5px 0}
 
     @media(max-width:900px){
-      html,body{overflow:auto}
-      .auth-page{flex-direction:column-reverse}
+      html,body{overflow:hidden;height:100%}
+      .auth-page{flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;height:100%;justify-content:flex-start;padding-top:calc(64px + 1.5rem);padding-bottom:2rem}
+      .auth-page::-webkit-scrollbar{display:none}
       .auth-left{width:100%;}
-      .auth-left{padding:2rem 1.25rem;justify-content:center;overflow:visible}
+      .auth-left{padding:1.5rem 1.25rem;justify-content:center;overflow:visible}
       .auth-right{display:none;}  /* hide animation on mobile */
-      .tab-content-wrap{min-height:44em}
+      .tab-content-wrap{min-height:38em}
       .form-row{grid-template-columns:1fr}
       .visual-words{height:1.8em}
       .visual-word{font-size:clamp(1rem,5vw,1.2rem)}

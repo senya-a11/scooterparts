@@ -150,6 +150,7 @@
     .order-meta{display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;}
     .order-num{font-family:var(--fd);font-size:1.0625rem;font-weight:700;letter-spacing:.02em;}
     .order-date{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text3);}
+    .order-track{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--green);background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.25);border-radius:6px;padding:.15rem .55rem;letter-spacing:.03em;}
     .order-total{font-family:var(--fd);font-size:1.125rem;font-weight:800;color:var(--blue);}
     .order-chevron{color:var(--text3);transition:transform .35s var(--ease);flex-shrink:0;}
     .order-card.expanded .order-chevron{transform:rotate(180deg);}
@@ -1120,6 +1121,7 @@ function renderOrders(orders){
             '<span class="order-num">Заказ #'+o.id+'</span>'+
             badge+
             '<span class="order-date">'+fmtDate(o.created_at)+'</span>'+
+            (o.track_number ? '<span class="order-track" title="Трек-номер для отслеживания">🚚 '+o.track_number+'</span>' : '')+
           '</div>'+
           '<div style="display:flex;align-items:center;gap:.75rem">'+
             cancelBtn+

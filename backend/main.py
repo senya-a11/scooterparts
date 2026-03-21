@@ -1189,6 +1189,10 @@ class Database:
             ''')
             # Миграция: убрать UNIQUE-ограничение на doc_type (поддержка нескольких файлов на тип)
             try:
+                await conn.execute("ALTER TABLE supplier_documents DROP CONSTRAINT IF EXISTS supplier_documents_doc_type_key")
+            except Exception:
+                pass
+            try:
                 await conn.execute("DROP INDEX IF EXISTS supplier_documents_doc_type_key")
             except Exception:
                 pass

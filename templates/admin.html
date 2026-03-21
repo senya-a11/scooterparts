@@ -1646,6 +1646,16 @@
           <option value="false">Нет</option><option value="true">📦 Да</option>
         </select>
       </div>
+      <div style="display:flex;gap:1.25rem;flex-wrap:wrap;padding:.35rem 0;margin-bottom:.75rem">
+        <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;font-size:.875rem">
+          <input type="checkbox" name="no_preorder" id="editNoPreorder" value="true" style="width:16px;height:16px;accent-color:var(--accent)">
+          ⛔ Нет предзаказа
+        </label>
+        <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;font-size:.875rem">
+          <input type="checkbox" name="preorder_unavailable" id="editPreorderUnavailable" value="true" style="width:16px;height:16px;accent-color:var(--accent)">
+          🚫 Предзаказ недоступен
+        </label>
+      </div>
       <div class="form-group" id="editPreorderPricesBlock">
         <label class="form-label" style="color:var(--amber)">🚚 Цены доставки по предзаказу</label>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
@@ -2665,6 +2675,8 @@
     // Warranty fields
     document.getElementById('editProductWarrantyMonths').value = product.warranty_months || '';
     document.getElementById('editProductWarrantyEnabled').checked = product.warranty_enabled !== false;
+    document.getElementById('editNoPreorder').checked = !!product.no_preorder;
+    document.getElementById('editPreorderUnavailable').checked = !!product.preorder_unavailable;
     // Show/hide preorder price block based on current value
     document.getElementById('editPreorderPricesBlock').style.display = product.preorder ? '' : 'none';
     // Populate category select
@@ -2743,6 +2755,8 @@
     // Явно передаём warranty_enabled как строку (checkbox может не попасть в FormData если не checked)
     const warrantyEnabled = document.getElementById('editProductWarrantyEnabled').checked;
     formData.set('warranty_enabled', warrantyEnabled ? 'true' : 'false');
+    formData.set('no_preorder', document.getElementById('editNoPreorder').checked ? 'true' : 'false');
+    formData.set('preorder_unavailable', document.getElementById('editPreorderUnavailable').checked ? 'true' : 'false');
     try {
       const r = await fetch(`/api/admin/products/${productId}`, {credentials:'include',
         method: 'PUT',

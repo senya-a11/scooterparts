@@ -1004,10 +1004,30 @@
                 <option value="">— выберите —</option>
               </select>
             </div>
-            <div class="form-group">
+            <div class="form-group" id="apPriceStaticGroup">
               <label class="form-label">Цена (₽) *</label>
-              <input type="number" name="price" class="form-input" placeholder="1990" min="1" step="0.01" required>
+              <input type="number" name="price" id="apPriceInput" class="form-input" placeholder="1990" min="1" step="0.01" required>
             </div>
+            <div class="form-group" id="apPriceCnyGroup" style="display:none">
+              <label class="form-label">Цена в юанях (¥) *</label>
+              <input type="number" name="price_cny" id="apPriceCnyInput" class="form-input" placeholder="200" min="0.01" step="0.01">
+              <div class="form-hint" id="apPriceCnyPreview" style="color:var(--accent)"></div>
+            </div>
+          </div>
+          <!-- Тип цены -->
+          <div class="form-group">
+            <label class="form-label">Тип цены</label>
+            <div style="display:flex;gap:1rem;padding:.35rem 0;flex-wrap:wrap">
+              <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;font-size:.875rem">
+                <input type="radio" name="price_type" id="apPriceTypeStatic" value="static" checked style="accent-color:var(--accent)">
+                ₽ Статичная (рубли)
+              </label>
+              <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;font-size:.875rem">
+                <input type="radio" name="price_type" id="apPriceTypeDynamic" value="dynamic" style="accent-color:var(--accent)">
+                ¥ Динамическая (юань × курс ЦБ)
+              </label>
+            </div>
+            <div class="form-hint">Динамическая цена автоматически пересчитывается по курсу ЦБ РФ</div>
           </div>
           <div class="form-group">
             <label class="form-label">Описание *</label>
@@ -1041,6 +1061,16 @@
                 <option value="true">📦 Да</option>
               </select>
             </div>
+          </div>
+          <div style="display:flex;gap:1.25rem;flex-wrap:wrap;padding:.35rem 0;margin-bottom:.75rem">
+            <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;font-size:.875rem">
+              <input type="checkbox" name="no_preorder" value="true" id="apNoPreorder" style="width:16px;height:16px;accent-color:var(--accent)">
+              ⛔ Нет предзаказа
+            </label>
+            <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;font-size:.875rem">
+              <input type="checkbox" name="preorder_unavailable" value="true" id="apPreorderUnavailable" style="width:16px;height:16px;accent-color:var(--accent)">
+              🚫 Предзаказ недоступен
+            </label>
           </div>
 
           <!-- Image section -->
@@ -2201,11 +2231,50 @@
     clearPreviewRegular();
   }
 
+  // price_type toggle for add product form
+  let _apCnyRate = 0;
+  (async () => {
+    try {
+      const r = await fetch('/api/admin/cny-rate', {credentials:'include'});
+      if (r.ok) { const d = await r.json(); _apCnyRate = d.rate || 0; }
+    } catch(e) {}
+  })();
+  document.querySelectorAll('#addProductForm input[name="price_type"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+      const isDyn = this.value === 'dynamic';
+      document.getElementById('apPriceStaticGroup').style.display = isDyn ? 'none' : '';
+      document.getElementById('apPriceCnyGroup').style.display = isDyn ? '' : 'none';
+      document.getElementById('apPriceInput').required = !isDyn;
+    });
+  });
+  document.getElementById('apPriceCnyInput')?.addEventListener('input', function() {
+    const preview = document.getElementById('apPriceCnyPreview');
+    if (!preview) return;
+    const val = parseFloat(this.value);
+    if (val > 0 && _apCnyRate > 0) {
+      const rub = Math.ceil(val * _apCnyRate / 10) * 10;
+      preview.textContent = `≈ ${rub.toLocaleString('ru-RU')} ₽ по курсу ${_apCnyRate.toFixed(2)} ₽/¥`;
+    } else {
+      preview.textContent = '';
+    }
+  });
+
   // Add product form
   document.getElementById('addProductForm').addEventListener('submit', async e => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    
+    // if dynamic price, set price=0 (server will recalculate)
+    const priceType = formData.get('price_type') || 'static';
+    if (priceType === 'dynamic') {
+      if (!formData.get('price_cny') || parseFloat(formData.get('price_cny')) <= 0) {
+        showMsg('addProductMsg', 'error', '⚠️ Укажите цену в юанях');
+        return;
+      }
+      formData.set('price', '0');
+    }
+    if (!formData.get('no_preorder')) formData.set('no_preorder', 'false');
+    if (!formData.get('preorder_unavailable')) formData.set('preorder_unavailable', 'false');
+
     // П.4 - DEBUG: Проверяем что отправляется
     console.log('📤 Отправка товара...');
     for (let [key, value] of formData.entries()) {

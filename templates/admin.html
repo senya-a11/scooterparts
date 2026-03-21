@@ -1576,7 +1576,26 @@
           <label class="form-label">Категория</label>
           <select name="category" class="form-select" id="editProductCategory"></select>
         </div>
-        <div class="form-group"><label class="form-label">Цена</label><input type="number" name="price" class="form-input" id="editProductPrice" min="0.01" step="0.01" required></div>
+        <div class="form-group"><label class="form-label">Цена (₽)</label><input type="number" name="price" class="form-input" id="editProductPrice" min="0" step="0.01"></div>
+      </div>
+      <!-- Тип цены -->
+      <div class="form-group">
+        <label class="form-label">Тип цены</label>
+        <div style="display:flex;gap:1rem;padding:.35rem 0">
+          <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;font-size:.875rem">
+            <input type="radio" name="price_type" id="editPriceTypeStatic" value="static" checked style="accent-color:var(--accent)">
+            ₽ Статичная (рубли)
+          </label>
+          <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;font-size:.875rem">
+            <input type="radio" name="price_type" id="editPriceTypeDynamic" value="dynamic" style="accent-color:var(--accent)">
+            ¥ Динамическая (¥ × ЦБ)
+          </label>
+        </div>
+      </div>
+      <div class="form-group" id="editPriceCnyGroup" style="display:none">
+        <label class="form-label">Цена в юанях (¥)</label>
+        <input type="number" name="price_cny" class="form-input" id="editProductPriceCny" placeholder="200" min="0.01" step="0.01">
+        <div class="form-hint" style="color:var(--accent)">Цена в рублях рассчитается автоматически по курсу ЦБ РФ</div>
       </div>
       <div class="form-group"><label class="form-label">Описание</label><textarea name="description" class="form-textarea" id="editProductDesc" rows="3" required></textarea></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
@@ -2560,6 +2579,12 @@
     document.getElementById('editProductId').value = product.id;
     document.getElementById('editProductName').value = product.name;
     document.getElementById('editProductPrice').value = product.price;
+    // price_type
+    const isDyn = product.price_type === 'dynamic';
+    document.getElementById('editPriceTypeStatic').checked = !isDyn;
+    document.getElementById('editPriceTypeDynamic').checked = isDyn;
+    document.getElementById('editPriceCnyGroup').style.display = isDyn ? '' : 'none';
+    document.getElementById('editProductPriceCny').value = product.price_cny || '';
     document.getElementById('editProductDesc').value = product.description;
     document.getElementById('editProductStock').value = product.stock;
     document.getElementById('editProductFeatured').value = product.featured ? 'true' : 'false';
@@ -2631,6 +2656,14 @@
   // Toggle preorder price blocks on select change
   document.getElementById('editProductPreorder').addEventListener('change', function() {
     document.getElementById('editPreorderPricesBlock').style.display = this.value === 'true' ? '' : 'none';
+  });
+  // Toggle CNY price field on price_type change
+  document.querySelectorAll('input[name="price_type"]').forEach(r => {
+    r.addEventListener('change', function() {
+      const isDyn = this.value === 'dynamic';
+      document.getElementById('editPriceCnyGroup').style.display = isDyn ? '' : 'none';
+      document.getElementById('editProductPrice').required = !isDyn;
+    });
   });
 
   document.getElementById('editProductForm').addEventListener('submit', async e => {
@@ -4081,8 +4114,8 @@ async function loadSupplierDocsAdmin() {
     if (!docs.length) { list.innerHTML = '<div style="color:var(--text3);font-size:.825rem">Документы не загружены</div>'; return; }
     list.innerHTML = docs.map(d => `
       <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative">
-        <div style="aspect-ratio:4/3;background:var(--bg3);overflow:hidden;display:flex;align-items:center;justify-content:center">
-          ${d.url ? `<img src="${d.url}" alt="${escH(d.title||d.filename||'')}" style="width:100%;height:100%;object-fit:cover;cursor:zoom-in" data-doc-url="${escH(d.url)}">` : '<span style="font-size:2rem">📄</span>'}
+        <div style="aspect-ratio:3/4;background:var(--bg3);overflow:hidden;display:flex;align-items:center;justify-content:center">
+          ${d.url ? `<img src="${d.url}" alt="${escH(d.title||d.filename||'')}" style="width:100%;height:100%;object-fit:contain;cursor:zoom-in" data-doc-url="${escH(d.url)}">` : '<span style="font-size:2rem">📄</span>'}
         </div>
         <div style="padding:.625rem .75rem">
           <div style="font-size:.8rem;font-weight:700;color:var(--text);margin-bottom:.25rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escH(d.title||d.filename||'Без названия')}</div>

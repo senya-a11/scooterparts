@@ -4169,7 +4169,10 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
             raise HTTPException(status_code=400, detail="Название слишком короткое (мин. 3 символа)")
         if not category:
             raise HTTPException(status_code=400, detail="Категория обязательна")
-        if price <= 0:
+        if price_type == 'dynamic':
+            if not price_cny or price_cny <= 0:
+                raise HTTPException(status_code=400, detail="Цена в юанях должна быть больше 0")
+        elif price <= 0:
             raise HTTPException(status_code=400, detail="Цена должна быть больше 0")
         if not desc or len(desc) < 10:
             raise HTTPException(status_code=400, detail="Описание слишком короткое (мин. 10 символов)")

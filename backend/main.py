@@ -2299,7 +2299,7 @@ async def get_products(
     try:
         async with db.pool.acquire() as conn:
             # Fix #12: исключаем cost_price из публичного ответа
-            query  = "SELECT id,name,category,price,description,image_url,stock,featured,in_stock,preorder,price_preorder_auto,price_preorder_air,has_specifications,discount_percent,weight_kg,created_at,installation_service,price_type,price_cny,no_preorder,description_sections FROM products WHERE 1=1"
+            query  = "SELECT id,name,category,price,description,image_url,stock,featured,in_stock,preorder,price_preorder_auto,price_preorder_air,has_specifications,discount_percent,weight_kg,created_at,installation_service,price_type,price_cny,no_preorder,preorder_unavailable,description_sections FROM products WHERE 1=1"
             params = []
             i = 1
             if category:

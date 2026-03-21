@@ -447,6 +447,11 @@ class ProductCreate(BaseModel):
     preorder: bool = False  # Доступен по предзаказу
     preorder_unavailable: bool = False  # Предзаказ временно недоступен
     cost_price: Optional[float] = None  # Себестоимость (только для админа)
+    installation_service: bool = False
+    price_type: str = 'static'  # 'static' or 'dynamic'
+    price_cny: Optional[float] = None
+    no_preorder: bool = False
+    description_sections: Optional[dict] = None
 
 
 class ProductUpdate(BaseModel):
@@ -460,6 +465,11 @@ class ProductUpdate(BaseModel):
     preorder: Optional[bool] = None  # Доступен по предзаказу
     preorder_unavailable: Optional[bool] = None  # Предзаказ временно недоступен
     cost_price: Optional[float] = None  # Себестоимость
+    installation_service: Optional[bool] = None
+    price_type: Optional[str] = None
+    price_cny: Optional[float] = None
+    no_preorder: Optional[bool] = None
+    description_sections: Optional[dict] = None
 
 
 class CategoryCreate(BaseModel):
@@ -482,6 +492,7 @@ class OrderCreate(BaseModel):
     items_overrides: Optional[list] = None
     # Промокод (опционально)
     promo_code: Optional[str] = None
+    installation_data: Optional[dict] = None
 
 
 class PaymentCreate(BaseModel):
@@ -1218,6 +1229,65 @@ class Database:
             except Exception as e:
                 print(f"⚠️ Миграция v29 (supplier_documents): {e}")
 
+            # Migration: add installation_service to products
+            try:
+                await conn.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS installation_service BOOLEAN DEFAULT FALSE")
+                print("✅ Миграция: поле installation_service добавлено")
+            except Exception as e:
+                print(f"Миграция installation_service: {e}")
+
+            # Migration: add installation_data to orders
+            try:
+                await conn.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS installation_data JSONB DEFAULT NULL")
+                print("✅ Миграция: поле installation_data добавлено")
+            except Exception as e:
+                print(f"Миграция installation_data: {e}")
+
+            # Migration: add price_type and price_cny to products
+            try:
+                await conn.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS price_type VARCHAR(10) DEFAULT 'static'")
+                await conn.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS price_cny DECIMAL(10,2) DEFAULT NULL")
+                print("✅ Миграция: поля price_type, price_cny добавлены")
+            except Exception as e:
+                print(f"Миграция price_type/price_cny: {e}")
+
+            # Migration: add no_preorder to products
+            try:
+                await conn.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS no_preorder BOOLEAN DEFAULT FALSE")
+                print("✅ Миграция: поле no_preorder добавлено")
+            except Exception as e:
+                print(f"Миграция no_preorder: {e}")
+
+            # Migration: add description_sections to products
+            try:
+                await conn.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS description_sections JSONB DEFAULT NULL")
+                print("✅ Миграция: поле description_sections добавлено")
+            except Exception as e:
+                print(f"Миграция description_sections: {e}")
+
+            # Migration: add title to supplier_documents
+            try:
+                await conn.execute("ALTER TABLE supplier_documents ADD COLUMN IF NOT EXISTS title VARCHAR(255) DEFAULT NULL")
+                print("✅ Миграция: поле title добавлено в supplier_documents")
+            except Exception as e:
+                print(f"Миграция supplier_documents.title: {e}")
+
+            # Migration: add cny_rate to delivery_settings
+            try:
+                await conn.execute("""
+                    INSERT INTO delivery_settings (key, value, label)
+                    VALUES ('cny_rate', NULL, 'Курс ¥ → ₽ (ЦБ РФ)')
+                    ON CONFLICT (key) DO NOTHING
+                """)
+                await conn.execute("""
+                    INSERT INTO delivery_settings (key, value, label)
+                    VALUES ('cny_rate_updated_at', NULL, 'Дата обновления курса ¥')
+                    ON CONFLICT (key) DO NOTHING
+                """)
+                print("✅ Миграция: cny_rate добавлен в delivery_settings")
+            except Exception as e:
+                print(f"Миграция cny_rate: {e}")
+
             # --- Начальные категории ---
             for slug, name, emoji, desc in DEFAULT_CATEGORIES:
                 exists = await conn.fetchval(
@@ -1270,6 +1340,41 @@ class Database:
 db = Database()
 
 
+async def refresh_cny_rate_background():
+    """Фоновое обновление курса юаня каждые 6 часов"""
+    import httpx
+    import xml.etree.ElementTree as ET
+    while True:
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                resp = await client.get("https://www.cbr.ru/scripts/XML_daily.asp")
+                resp.raise_for_status()
+            root = ET.fromstring(resp.text)
+            for valute in root.findall('Valute'):
+                char_code = valute.find('CharCode')
+                if char_code is not None and char_code.text == 'CNY':
+                    value_el = valute.find('Value')
+                    nominal_el = valute.find('Nominal')
+                    if value_el is not None and nominal_el is not None:
+                        value = float(value_el.text.replace(',', '.'))
+                        nominal = int(nominal_el.text)
+                        cny_rate = value / nominal
+                        async with db.pool.acquire() as conn:
+                            await conn.execute(
+                                "UPDATE delivery_settings SET value = $1, updated_at = NOW() WHERE key = 'cny_rate'",
+                                str(round(cny_rate, 4))
+                            )
+                            await conn.execute(
+                                "UPDATE delivery_settings SET value = $1, updated_at = NOW() WHERE key = 'cny_rate_updated_at'",
+                                datetime.now().isoformat()
+                            )
+                        print(f"✅ CNY rate updated: {round(cny_rate, 4)}")
+                    break
+        except Exception as e:
+            print(f"⚠️ CNY rate refresh failed: {e}")
+        await asyncio.sleep(6 * 3600)  # every 6 hours
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await db.connect()
@@ -1287,6 +1392,8 @@ async def lifespan(app: FastAPI):
                 logger.info("Cookie consent cleanup: removed %d stale records", count)
     except Exception as e:
         logger.warning("Cookie consent cleanup failed (non-critical): %s", e)
+
+    asyncio.create_task(refresh_cny_rate_background())
 
     yield
     await db.disconnect()
@@ -1935,6 +2042,103 @@ async def update_delivery_settings(request: Request, admin=Depends(verify_admin)
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
+@app.get("/api/admin/cny-rate/refresh")
+async def refresh_cny_rate(admin=Depends(verify_admin)):
+    """Обновить курс юаня с сайта ЦБ РФ"""
+    try:
+        import httpx
+        import xml.etree.ElementTree as ET
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get("https://www.cbr.ru/scripts/XML_daily.asp")
+            resp.raise_for_status()
+        root = ET.fromstring(resp.text)
+        cny_rate = None
+        for valute in root.findall('Valute'):
+            char_code = valute.find('CharCode')
+            if char_code is not None and char_code.text == 'CNY':
+                value_el = valute.find('Value')
+                nominal_el = valute.find('Nominal')
+                if value_el is not None and nominal_el is not None:
+                    value = float(value_el.text.replace(',', '.'))
+                    nominal = int(nominal_el.text)
+                    cny_rate = value / nominal
+                break
+        if cny_rate is None:
+            raise HTTPException(status_code=502, detail="Не удалось получить курс юаня")
+        now_str = datetime.now().isoformat()
+        async with db.pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE delivery_settings SET value = $1, updated_at = NOW() WHERE key = 'cny_rate'",
+                str(round(cny_rate, 4))
+            )
+            await conn.execute(
+                "UPDATE delivery_settings SET value = $1, updated_at = NOW() WHERE key = 'cny_rate_updated_at'",
+                now_str
+            )
+        return {"ok": True, "cny_rate": round(cny_rate, 4), "updated_at": now_str}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("refresh_cny_rate error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Ошибка: {str(e)}")
+
+
+@app.post("/api/admin/cny-rate")
+async def set_cny_rate(data: dict, admin=Depends(verify_admin)):
+    """Вручную установить курс юаня"""
+    rate = data.get("cny_rate")
+    if not rate or float(rate) <= 0:
+        raise HTTPException(status_code=400, detail="Некорректный курс")
+    now_str = datetime.now().isoformat()
+    async with db.pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE delivery_settings SET value = $1, updated_at = NOW() WHERE key = 'cny_rate'",
+            str(float(rate))
+        )
+        await conn.execute(
+            "UPDATE delivery_settings SET value = $1, updated_at = NOW() WHERE key = 'cny_rate_updated_at'",
+            now_str
+        )
+    return {"ok": True, "cny_rate": float(rate), "updated_at": now_str}
+
+
+@app.get("/api/admin/cny-rate")
+async def get_cny_rate(admin=Depends(verify_admin)):
+    """Получить текущий курс юаня"""
+    async with db.pool.acquire() as conn:
+        rows = await conn.fetch("SELECT key, value, updated_at FROM delivery_settings WHERE key IN ('cny_rate', 'cny_rate_updated_at')")
+    result = {r['key']: r['value'] for r in rows}
+    return {
+        "cny_rate": float(result.get('cny_rate') or 0) if result.get('cny_rate') else None,
+        "updated_at": result.get('cny_rate_updated_at'),
+    }
+
+
+@app.get("/api/delivery-cost")
+async def calculate_delivery_cost(weight: float, type: str = "auto"):
+    """Рассчитать стоимость доставки"""
+    import math
+    async with db.pool.acquire() as conn:
+        rows = await conn.fetch("SELECT key, value FROM delivery_settings")
+    settings = {r['key']: r['value'] for r in rows}
+    weight_ceil = math.ceil(weight)
+    if type == "auto":
+        rate = float(settings.get('auto_rate_per_kg') or 0)
+        min_price = float(settings.get('auto_min_price') or 0)
+        if rate <= 0:
+            return {"cost": None, "message": "Ставка не установлена"}
+        cost = max(weight_ceil * rate, min_price)
+        return {"cost": cost, "weight_ceil": weight_ceil, "rate": rate, "type": "auto"}
+    elif type == "air":
+        rate_cny = float(settings.get('air_rate_per_kg') or 0)
+        cny_rate = float(settings.get('cny_rate') or settings.get('air_cny_to_rub') or 0)
+        if rate_cny <= 0 or cny_rate <= 0:
+            return {"cost": None, "message": "Ставка не установлена"}
+        cost = max(weight_ceil, 1) * rate_cny * cny_rate
+        return {"cost": round(cost, 2), "weight_ceil": weight_ceil, "rate_cny": rate_cny, "cny_rate": cny_rate, "type": "air"}
+    raise HTTPException(status_code=400, detail="Неверный тип доставки")
+
+
 # ==========================================
 # ========== CATEGORIES API ==========
 # ==========================================
@@ -2091,7 +2295,7 @@ async def get_products(
     try:
         async with db.pool.acquire() as conn:
             # Fix #12: исключаем cost_price из публичного ответа
-            query  = "SELECT id,name,category,price,description,image_url,stock,featured,in_stock,preorder,price_preorder_auto,price_preorder_air,has_specifications,discount_percent,weight_kg,created_at FROM products WHERE 1=1"
+            query  = "SELECT id,name,category,price,description,image_url,stock,featured,in_stock,preorder,price_preorder_auto,price_preorder_air,has_specifications,discount_percent,weight_kg,created_at,installation_service,price_type,price_cny,no_preorder,description_sections FROM products WHERE 1=1"
             params = []
             i = 1
             if category:
@@ -2105,13 +2309,23 @@ async def get_products(
                 query += f" LIMIT ${i}"; params.append(limit)
 
             rows = await conn.fetch(query, *params)
+
+            # Get CNY rate for dynamic pricing
+            cny_rate_row = await conn.fetchval("SELECT value FROM delivery_settings WHERE key = 'cny_rate'")
+            cny_rate = float(cny_rate_row) if cny_rate_row else 0
+
             result = []
             for r in rows:
+                import math
                 d = dict(r)
                 d['price'] = float(d['price'])
                 d['in_stock'] = bool(d.get('stock', 0) > 0)
                 if isinstance(d.get('created_at'), datetime):
                     d['created_at'] = d['created_at'].isoformat()
+                # Compute dynamic price from CNY if applicable
+                if d.get('price_type') == 'dynamic' and d.get('price_cny') and cny_rate > 0:
+                    raw_price = float(d['price_cny']) * cny_rate
+                    d['price'] = math.ceil(raw_price / 10) * 10
                 # Применяем личную скидку: берём максимум из product discount и personal
                 prod_disc = int(d.get('discount_percent') or 0)
                 eff_disc = max(prod_disc, personal_discount)
@@ -2141,6 +2355,13 @@ async def get_product(product_id: int):
             d['price'] = float(d['price'])
             # КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: гарантируем правильное значение in_stock
             d['in_stock'] = bool(d.get('stock', 0) > 0)
+            # Compute dynamic price from CNY if applicable
+            cny_rate_row = await conn.fetchval("SELECT value FROM delivery_settings WHERE key = 'cny_rate'")
+            cny_rate = float(cny_rate_row) if cny_rate_row else 0
+            if d.get('price_type') == 'dynamic' and d.get('price_cny') and cny_rate > 0:
+                import math
+                raw_price = float(d['price_cny']) * cny_rate
+                d['price'] = math.ceil(raw_price / 10) * 10
             
             # Если товар имеет спецификации, загружаем их
             if d.get('has_specifications'):
@@ -2643,12 +2864,22 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(get_curre
                         )
             total_final = max(0.0, total - promo_discount)
 
+            # Generate unique track number
+            year = datetime.now().year
+            while True:
+                hex_part = secrets.token_hex(8).upper()
+                track_number = f"SP-{year}-{hex_part}"
+                existing_track = await conn.fetchval("SELECT id FROM orders WHERE track_number = $1", track_number)
+                if not existing_track:
+                    break
+
             order_id = await conn.fetchval('''
-                INSERT INTO orders (user_id, total_amount, delivery_address, comment, status, payment_status, promo_code, promo_discount)
-                VALUES ($1, $2, $3, $4, 'created', 'pending', $5, $6)
+                INSERT INTO orders (user_id, total_amount, delivery_address, comment, status, payment_status, promo_code, promo_discount, track_number, installation_data)
+                VALUES ($1, $2, $3, $4, 'created', 'pending', $5, $6, $7, $8)
                 RETURNING id
             ''', user_id, total_final, order_data.delivery_address, order_data.comment,
-                applied_promo, promo_discount)
+                applied_promo, promo_discount, track_number,
+                json.dumps(order_data.installation_data) if order_data.installation_data else None)
 
             for item in cart_items:
                 # Определяем название и цену товара
@@ -2718,7 +2949,8 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(get_curre
                 "total": total_final,
                 "promo_discount": promo_discount,
                 "promo_code": applied_promo,
-                "status": "created"
+                "status": "created",
+                "track_number": track_number,
             }
     except HTTPException:
         raise
@@ -3212,32 +3444,49 @@ async def get_top_customers(admin=Depends(verify_admin), limit: int = 20):
 
 
 @app.get("/api/admin/customers")
-async def get_all_customers(admin=Depends(verify_admin)):
+async def get_all_customers(q: Optional[str] = None, admin=Depends(verify_admin)):
     """Получить всех покупателей с количеством заметок для CRM"""
     try:
         async with db.pool.acquire() as conn:
-            rows = await conn.fetch('''
-                SELECT 
-                    u.id,
-                    u.username,
-                    u.email,
-                    u.full_name,
-                    u.phone,
-                    u.personal_discount,
-                    u.is_manager,
-                    COUNT(DISTINCT o.id) as order_count,
-                    COALESCE(SUM(o.total_amount), 0) as total_spent,
-                    MAX(o.created_at) as last_order_date,
-                    COUNT(DISTINCT n.id) as notes_count
-                FROM users u
-                LEFT JOIN orders o ON u.id = o.user_id
-                LEFT JOIN customer_notes n ON u.id = n.user_id
-                WHERE u.is_admin = FALSE
-                GROUP BY u.id, u.username, u.email, u.full_name, u.phone, u.personal_discount, u.is_manager
-                HAVING COUNT(DISTINCT o.id) > 0
-                ORDER BY total_spent DESC
-            ''')
-            
+            if q:
+                rows = await conn.fetch('''
+                    SELECT u.id, u.username, u.email, u.full_name, u.phone, u.personal_discount,
+                           u.is_manager, COUNT(DISTINCT o.id) as order_count,
+                           COALESCE(SUM(o.total_amount), 0) as total_spent,
+                           MAX(o.created_at) as last_order_date, COUNT(DISTINCT n.id) as notes_count
+                    FROM users u
+                    LEFT JOIN orders o ON u.id = o.user_id
+                    LEFT JOIN customer_notes n ON u.id = n.user_id
+                    WHERE u.is_admin = FALSE AND (
+                        u.username ILIKE $1 OR u.email ILIKE $1 OR
+                        u.full_name ILIKE $1 OR u.phone ILIKE $1
+                    )
+                    GROUP BY u.id, u.username, u.email, u.full_name, u.phone, u.personal_discount, u.is_manager
+                    ORDER BY total_spent DESC
+                ''', f'%{q}%')
+            else:
+                rows = await conn.fetch('''
+                    SELECT
+                        u.id,
+                        u.username,
+                        u.email,
+                        u.full_name,
+                        u.phone,
+                        u.personal_discount,
+                        u.is_manager,
+                        COUNT(DISTINCT o.id) as order_count,
+                        COALESCE(SUM(o.total_amount), 0) as total_spent,
+                        MAX(o.created_at) as last_order_date,
+                        COUNT(DISTINCT n.id) as notes_count
+                    FROM users u
+                    LEFT JOIN orders o ON u.id = o.user_id
+                    LEFT JOIN customer_notes n ON u.id = n.user_id
+                    WHERE u.is_admin = FALSE
+                    GROUP BY u.id, u.username, u.email, u.full_name, u.phone, u.personal_discount, u.is_manager
+                    HAVING COUNT(DISTINCT o.id) > 0
+                    ORDER BY total_spent DESC
+                ''')
+
             result = []
             for r in rows:
                 d = dict(r)
@@ -3252,6 +3501,47 @@ async def get_all_customers(admin=Depends(verify_admin)):
     except Exception as e:
         logger.error("Internal error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+class CustomerUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    personal_discount: Optional[int] = None
+    is_manager: Optional[bool] = None
+
+
+@app.put("/api/admin/customers/{user_id}")
+async def update_customer(user_id: str, data: CustomerUpdate, admin=Depends(verify_admin)):
+    """Обновить данные клиента"""
+    try:
+        async with db.pool.acquire() as conn:
+            updates = []
+            values = []
+            i = 1
+            if data.username is not None:
+                updates.append(f"username = ${i}"); values.append(data.username); i += 1
+            if data.email is not None:
+                updates.append(f"email = ${i}"); values.append(data.email); i += 1
+            if data.full_name is not None:
+                updates.append(f"full_name = ${i}"); values.append(data.full_name); i += 1
+            if data.phone is not None:
+                updates.append(f"phone = ${i}"); values.append(data.phone); i += 1
+            if data.personal_discount is not None:
+                updates.append(f"personal_discount = ${i}"); values.append(data.personal_discount); i += 1
+            if data.is_manager is not None:
+                updates.append(f"is_manager = ${i}"); values.append(data.is_manager); i += 1
+            if not updates:
+                raise HTTPException(status_code=400, detail="Нет данных для обновления")
+            values.append(user_id)
+            await conn.execute(f"UPDATE users SET {', '.join(updates)} WHERE id = ${i}", *values)
+            return {"ok": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("update_customer error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка")
 
 
 @app.get("/api/admin/customers/{user_id}/notes")
@@ -3843,6 +4133,13 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
         warranty_months = int(warranty_months_str) if warranty_months_str else None
         warranty_enabled = str(form.get("warranty_enabled","true")).lower() != "false"
         image_url = str(form.get("image_url","")).strip()
+        installation_service = str(form.get("installation_service", "false")).lower() == "true"
+        price_type = str(form.get("price_type", "static"))
+        price_cny_str = form.get("price_cny")
+        price_cny = float(price_cny_str) if price_cny_str else None
+        no_preorder = str(form.get("no_preorder", "false")).lower() == "true"
+        description_sections_str = form.get("description_sections")
+        description_sections = json.loads(description_sections_str) if description_sections_str else None
 
         # Получаем все файлы изображений (до 5 штук)
         image_files = []
@@ -3936,9 +4233,9 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
             
             # Создаем товар
             row = await conn.fetchrow('''
-                INSERT INTO products (name,category,price,description,image_url,stock,featured,in_stock,preorder,cost_price,price_preorder_auto,price_preorder_air,discount_percent,weight_kg,preorder_unavailable,warranty_months,warranty_enabled)
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING *
-            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, discount_percent, weight_kg, preorder_unavailable, warranty_months, warranty_enabled)
+                INSERT INTO products (name,category,price,description,image_url,stock,featured,in_stock,preorder,cost_price,price_preorder_auto,price_preorder_air,discount_percent,weight_kg,preorder_unavailable,warranty_months,warranty_enabled,installation_service,price_type,price_cny,no_preorder,description_sections)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22) RETURNING *
+            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, discount_percent, weight_kg, preorder_unavailable, warranty_months, warranty_enabled, installation_service, price_type, price_cny, no_preorder, json.dumps(description_sections) if description_sections else None)
             
             product_id = row['id']
             
@@ -3998,6 +4295,19 @@ async def update_product(product_id: int, request: Request, admin=Depends(verify
             warranty_enabled = str(warranty_enabled_str).lower() != "false" if warranty_enabled_str is not None else bool(existing.get('warranty_enabled', True))
             image_url = str(form.get("image_url","")).strip()
             image_file = form.get("image_file")
+            installation_service_str = form.get("installation_service")
+            installation_service = str(installation_service_str).lower() == "true" if installation_service_str is not None else bool(existing.get('installation_service', False))
+            price_type_str = form.get("price_type")
+            price_type = str(price_type_str) if price_type_str is not None else (existing.get('price_type') or 'static')
+            price_cny_str = str(form.get("price_cny","")).strip()
+            price_cny = float(price_cny_str) if price_cny_str else existing.get('price_cny')
+            no_preorder_str = form.get("no_preorder")
+            no_preorder = str(no_preorder_str).lower() == "true" if no_preorder_str is not None else bool(existing.get('no_preorder', False))
+            description_sections_str = form.get("description_sections")
+            if description_sections_str is not None:
+                description_sections = json.loads(description_sections_str) if description_sections_str else None
+            else:
+                description_sections = existing.get('description_sections')
 
             final_image = existing['image_url']
             if image_file and hasattr(image_file, 'filename') and image_file.filename:
@@ -4042,8 +4352,10 @@ async def update_product(product_id: int, request: Request, admin=Depends(verify
                 UPDATE products SET name=$1,category=$2,price=$3,description=$4,
                 image_url=$5,stock=$6,featured=$7,in_stock=$8,preorder=$9,cost_price=$10,
                 price_preorder_auto=$11,price_preorder_air=$12,discount_percent=$13,weight_kg=$14,
-                preorder_unavailable=$15,warranty_months=$16,warranty_enabled=$17 WHERE id=$18
-            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, discount_percent, weight_kg, preorder_unavailable, warranty_months, warranty_enabled, product_id)
+                preorder_unavailable=$15,warranty_months=$16,warranty_enabled=$17,
+                installation_service=$18,price_type=$19,price_cny=$20,no_preorder=$21,description_sections=$22
+                WHERE id=$23
+            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, discount_percent, weight_kg, preorder_unavailable, warranty_months, warranty_enabled, installation_service, price_type, price_cny, no_preorder, json.dumps(description_sections) if description_sections else None, product_id)
 
             return {"success": True, "message": "Товар обновлён"}
     except HTTPException:
@@ -4740,9 +5052,9 @@ async def get_supplier_docs():
     try:
         async with db.pool.acquire() as conn:
             rows = await conn.fetch(
-                "SELECT id, doc_type, filename, uploaded_at FROM supplier_documents ORDER BY doc_type, uploaded_at"
+                "SELECT id, doc_type, filename, title, uploaded_at FROM supplier_documents ORDER BY doc_type, uploaded_at"
             )
-            return [{"id": r["id"], "doc_type": r["doc_type"], "filename": r["filename"], "url": f"/api/supplier-docs/{r['id']}/file", "uploaded_at": r["uploaded_at"].isoformat() if r["uploaded_at"] else None} for r in rows]
+            return [{"id": r["id"], "doc_type": r["doc_type"], "filename": r["filename"], "title": r["title"], "url": f"/api/supplier-docs/{r['id']}/file", "uploaded_at": r["uploaded_at"].isoformat() if r["uploaded_at"] else None} for r in rows]
     except Exception as e:
         logger.error("get_supplier_docs error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
@@ -4843,6 +5155,71 @@ async def delete_supplier_doc(doc_id: int, admin: dict = Depends(verify_admin)):
     except Exception as e:
         logger.error("delete_supplier_doc error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@app.delete("/api/admin/supplier-docs/{doc_id}")
+async def admin_delete_supplier_doc(doc_id: int, admin=Depends(verify_admin)):
+    """Удалить документ поставщика"""
+    async with db.pool.acquire() as conn:
+        await conn.execute("DELETE FROM supplier_documents WHERE id = $1", doc_id)
+    return {"ok": True}
+
+
+@app.put("/api/admin/supplier-docs/{doc_id}")
+async def admin_update_supplier_doc(doc_id: int, data: dict, admin=Depends(verify_admin)):
+    """Обновить данные документа (заголовок, тип)"""
+    title = data.get("title")
+    doc_type = data.get("doc_type")
+    async with db.pool.acquire() as conn:
+        if title is not None:
+            await conn.execute("UPDATE supplier_documents SET title = $1 WHERE id = $2", title, doc_id)
+        if doc_type is not None:
+            await conn.execute("UPDATE supplier_documents SET doc_type = $1 WHERE id = $2", doc_type, doc_id)
+    return {"ok": True}
+
+
+@app.post("/api/admin/supplier-docs")
+async def admin_upload_supplier_doc(
+    file: UploadFile = File(...),
+    doc_type: str = Form("partner"),
+    title: str = Form(None),
+    admin: dict = Depends(verify_admin)
+):
+    """Загрузить документ поставщика через админку (с поддержкой title)"""
+    allowed_exts = {".pdf", ".jpg", ".jpeg", ".png", ".webp"}
+    suffix = Path(file.filename).suffix.lower() if file.filename else ""
+    if suffix not in allowed_exts:
+        raise HTTPException(status_code=400, detail="Разрешены только PDF и изображения (jpg, png, webp)")
+    from datetime import datetime as _dt
+    ts = _dt.utcnow().strftime("%Y%m%d_%H%M%S")
+    uid = uuid4().hex[:8]
+    safe_name = f"{doc_type}_{ts}_{uid}{suffix}"
+    dest = DOCS_UPLOAD_DIR / safe_name
+    try:
+        content = await file.read()
+        if len(content) > 15 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Файл слишком большой (макс 15 МБ)")
+        async with aiofiles.open(dest, "wb") as f:
+            await f.write(content)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("admin_upload_supplier_doc file write error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Ошибка сохранения файла")
+    _ct_map = {".pdf": "application/pdf", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
+    file_ct = _ct_map.get(suffix, "application/octet-stream")
+    try:
+        async with db.pool.acquire() as conn:
+            row = await conn.fetchrow('''
+                INSERT INTO supplier_documents (doc_type, filename, file_content, content_type, title, uploaded_at)
+                VALUES ($1, $2, $3, $4, $5, NOW())
+                RETURNING id
+            ''', doc_type, safe_name, content, file_ct, title or safe_name)
+        doc_id = row["id"]
+        return {"ok": True, "id": doc_id, "filename": safe_name, "url": f"/api/supplier-docs/{doc_id}/file"}
+    except Exception as e:
+        logger.error("admin_upload_supplier_doc db error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Ошибка базы данных")
 
 
 # ============================================================

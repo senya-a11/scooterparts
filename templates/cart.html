@@ -620,6 +620,26 @@
             <input type="text" id="checkoutAddress" placeholder="Адрес доставки (необязательно)" maxlength="200">
             <textarea id="checkoutComment" placeholder="Комментарий к заказу" rows="2" maxlength="500"></textarea>
           </div>
+          <!-- Блок установки — показывается только если в корзине есть товары с услугой установки -->
+          <div id="installationBlock" style="display:none;margin-top:1rem;padding:1rem;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.18);border-radius:10px">
+            <div style="font-family:var(--font-raj,sans-serif);font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent,#00D4FF);margin-bottom:.75rem">🔧 Услуга установки</div>
+            <div id="installationItems"></div>
+          </div>
+          <!-- Согласия -->
+          <div style="margin-top:1.25rem;display:flex;flex-direction:column;gap:.625rem">
+            <label style="display:flex;align-items:flex-start;gap:.625rem;cursor:pointer;font-size:.8375rem;color:var(--text2,#7B8599);line-height:1.5">
+              <input type="checkbox" id="consentOffer" style="width:16px;height:16px;min-width:16px;margin-top:2px;accent-color:var(--accent,#00D4FF);flex-shrink:0">
+              <span>Согласен(а) с <a href="/offer" target="_blank" style="color:var(--accent,#00D4FF);text-decoration:none">публичной офертой</a></span>
+            </label>
+            <label style="display:flex;align-items:flex-start;gap:.625rem;cursor:pointer;font-size:.8375rem;color:var(--text2,#7B8599);line-height:1.5">
+              <input type="checkbox" id="consentPrivacy" style="width:16px;height:16px;min-width:16px;margin-top:2px;accent-color:var(--accent,#00D4FF);flex-shrink:0">
+              <span>Согласен(а) на <a href="/privacy-policy" target="_blank" style="color:var(--accent,#00D4FF);text-decoration:none">обработку персональных данных</a></span>
+            </label>
+            <label id="consentInstallLabel" style="display:none;align-items:flex-start;gap:.625rem;cursor:pointer;font-size:.8375rem;color:var(--text2,#7B8599);line-height:1.5">
+              <input type="checkbox" id="consentInstall" style="width:16px;height:16px;min-width:16px;margin-top:2px;accent-color:var(--accent,#00D4FF);flex-shrink:0">
+              <span>Подтверждаю информацию по установке и согласен(а) с условиями услуги</span>
+            </label>
+          </div>
         </div>
         <button class="btn btn-primary checkout-btn" id="checkoutBtn" disabled>
           Оформить заказ →
@@ -1253,12 +1273,43 @@ function updateSummary() {
     if (summaryDeliveryRow) summaryDeliveryRow.style.display = 'none';
   }
 
+  // Проверяем чекбоксы согласий
+  const consentOffer = document.getElementById('consentOffer');
+  const consentPrivacy = document.getElementById('consentPrivacy');
+  const consentsOk = consentOffer?.checked && consentPrivacy?.checked;
+
+  // Услуга установки — показываем блок если есть такие товары
+  const installItems = cart.filter(i => i.product && i.product.installation_service);
+  const installBlock = document.getElementById('installationBlock');
+  const consentInstallLabel = document.getElementById('consentInstallLabel');
+  if (installBlock) installBlock.style.display = installItems.length ? 'block' : 'none';
+  if (consentInstallLabel) consentInstallLabel.style.display = installItems.length ? 'flex' : 'none';
+  // Рендерим поля для моделей транспорта
+  const installItemsDiv = document.getElementById('installationItems');
+  if (installItemsDiv && installItems.length) {
+    installItemsDiv.innerHTML = installItems.map(i => `
+      <div style="margin-bottom:.75rem">
+        <div style="font-size:.8rem;color:var(--text2,#7B8599);margin-bottom:.3rem">${i.product.name}${i.specification_name ? ` — ${i.specification_name}` : ''}</div>
+        <input type="text" class="install-model-input" data-cart-id="${i.id}" placeholder="Модель транспорта (напр. Xiaomi Mi Pro 2)" style="width:100%;padding:.5rem .75rem;background:var(--bg3,#111520);border:1px solid var(--border,rgba(255,255,255,.06));border-radius:8px;color:var(--text,#F0F4F8);font-size:.8625rem;outline:none">
+      </div>
+    `).join('');
+  }
+
   if (checkoutBtn) {
-    checkoutBtn.disabled = missingDelivery || !cart.length;
+    const consentInstall = document.getElementById('consentInstall');
+    const installOk = !installItems.length || consentInstall?.checked;
+    checkoutBtn.disabled = missingDelivery || !cart.length || !consentsOk || !installOk;
     checkoutBtn.textContent = missingDelivery ? '⚠ Выберите тип доставки' : 'Оформить заказ →';
   }
   if (deliveryWarning) deliveryWarning.style.display = missingDelivery ? 'block' : 'none';
 }
+
+// Обновляем состояние кнопки при изменении чекбоксов
+document.addEventListener('change', function(e) {
+  if (e.target.id === 'consentOffer' || e.target.id === 'consentPrivacy' || e.target.id === 'consentInstall') {
+    updateSummary();
+  }
+});
 
 /* ════════════════════════════════════════
    CHECKOUT
@@ -1267,12 +1318,23 @@ document.getElementById('checkoutBtn').addEventListener('click', async function(
   if (!currentUser) { window.location.href = '/auth?next=/cart'; return; }
   const address = (document.getElementById('checkoutAddress').value || '').trim();
   const comment = (document.getElementById('checkoutComment').value || '').trim();
+
+  // Собираем данные по установке
+  const installData = {};
+  document.querySelectorAll('.install-model-input').forEach(inp => {
+    const cartId = inp.dataset.cartId;
+    const model = inp.value.trim();
+    if (cartId && model) installData[cartId] = model;
+  });
+
   this.disabled = true; this.textContent = 'Оформляем...';
   try {
+    const body = { delivery_address: address, comment: comment };
+    if (Object.keys(installData).length) body.installation_data = installData;
     const r = await fetch('/api/orders', {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ delivery_address: address, comment: comment })
+      body: JSON.stringify(body)
     });
     if (r.status === 401) { window.location.href = '/auth?next=/cart'; return; }
     const data = await r.json();

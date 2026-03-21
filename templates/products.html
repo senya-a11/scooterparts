@@ -313,15 +313,15 @@
     .product-card:hover::before{opacity:1}
 
     /* ── CARD IMAGE ── */
-    .product-img{width:100%;height:210px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:3.5rem;overflow:hidden;border-bottom:1px solid var(--border);position:relative;z-index:1}
-    .product-img>img{width:100%;height:100%;object-fit:cover;transition:transform .4s var(--ease)}
+    .product-img{width:100%;aspect-ratio:4/3;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:3.5rem;overflow:hidden;border-bottom:1px solid var(--border);position:relative;z-index:1}
+    .product-img>img{width:100%;height:100%;object-fit:contain;object-position:center;transition:transform .4s var(--ease);background:var(--bg3);padding:4px}
     .product-card:hover .product-img>img{transform:scale(1.04)}
 
     .card-slider-wrap{position:absolute;inset:0;overflow:hidden;cursor:grab}
     .card-slider-wrap:active{cursor:grabbing}
     .card-slides{display:flex;height:100%;transition:transform .42s var(--ease);will-change:transform}
     .card-slide{flex:none;width:100%;height:100%;overflow:hidden}
-    .card-slide img{width:100%;height:100%;object-fit:cover;transition:transform .4s var(--ease);display:block;opacity:0}
+    .card-slide img{width:100%;height:100%;object-fit:contain;object-position:center;background:var(--bg3);transition:transform .4s var(--ease);display:block;opacity:0;padding:4px}
     .card-slide img.loaded{opacity:1}
     .product-card:hover .card-slide img{transform:scale(1.04)}
 
@@ -363,6 +363,7 @@
     .badge-stock{background:linear-gradient(135deg,rgba(0,229,160,.15),rgba(0,229,160,.05));color:var(--green);border:1px solid rgba(0,229,160,.3);box-shadow:0 2px 8px rgba(0,229,160,.1)}
     .badge-preorder{background:linear-gradient(135deg,rgba(255,176,32,.15),rgba(255,176,32,.05));color:var(--amber);border:1px solid rgba(255,176,32,.3);box-shadow:0 2px 8px rgba(255,176,32,.1)}
     .badge-out{background:linear-gradient(135deg,rgba(255,71,87,.12),rgba(255,71,87,.04));color:var(--red);border:1px solid rgba(255,71,87,.22);box-shadow:0 2px 6px rgba(255,71,87,.08)}
+    .badge-no-preorder{background:linear-gradient(135deg,rgba(180,30,50,.18),rgba(140,10,30,.06));color:#FF6B7A;border:1px solid rgba(180,30,50,.3);box-shadow:0 2px 6px rgba(180,30,50,.12)}
     .badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.8}
 
     /* ── DISCOUNT BADGE ── */
@@ -1144,6 +1145,7 @@ function renderProducts() {
     else if(!p.preorder) badges.push('<span class="product-badge badge-out"><span class="badge-dot"></span>Нет в наличии</span>');
     if(p.preorder) badges.push('<span class="product-badge badge-preorder"><span class="badge-dot"></span>Предзаказ</span>');
     if(p.preorder_unavailable) badges.push('<span class="product-badge badge-out"><span class="badge-dot"></span>Предзаказ недоступен</span>');
+    if(p.no_preorder) badges.push('<span class="product-badge badge-no-preorder"><span class="badge-dot"></span>Нет предзаказа</span>');
     const badgesHtml = badges.length?`<div class="product-badges">${badges.join('')}</div>`:'';
 
     // ── Discount badge (personal or product discount, whichever higher) ──
@@ -1815,7 +1817,19 @@ function renderProductDetail(p) {
         <div class="product-detail-price">${fmt(currentPrice)} ₽</div>
       </div>
       ${specsHtml}
-      <div class="product-detail-desc"><strong>Описание:</strong><br>${(selectedSpec?selectedSpec.description||p.description:p.description||'').replace(/\n/g,'<br>')}</div>
+      ${(()=>{
+        const baseDesc = (selectedSpec?selectedSpec.description||p.description:p.description||'');
+        const secs = p.description_sections;
+        if (secs && (secs.main||secs.specs||secs.delivery||secs.warranty)) {
+          let html = '';
+          if(secs.main) html += `<div class="product-detail-desc"><strong>Описание:</strong><br>${secs.main.replace(/\n/g,'<br>')}</div>`;
+          if(secs.specs) html += `<div class="product-detail-desc" style="margin-top:.75rem"><strong>⚙️ Характеристики:</strong><br>${secs.specs.replace(/\n/g,'<br>')}</div>`;
+          if(secs.delivery) html += `<div class="product-detail-desc" style="margin-top:.75rem"><strong>🚚 Доставка:</strong><br>${secs.delivery.replace(/\n/g,'<br>')}</div>`;
+          if(secs.warranty) html += `<div class="product-detail-desc" style="margin-top:.75rem"><strong>🛡 Гарантия:</strong><br>${secs.warranty.replace(/\n/g,'<br>')}</div>`;
+          return html;
+        }
+        return `<div class="product-detail-desc"><strong>Описание:</strong><br>${baseDesc.replace(/\n/g,'<br>')}</div>`;
+      })()}
       ${charsHtml}
       ${(()=>{
         let extras='';

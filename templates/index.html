@@ -396,16 +396,38 @@
     /* ── SUPPLIER SECTION ── */
     .supplier-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;max-width:900px;margin:0 auto}
     .supplier-docs-grid{display:grid;grid-template-columns:1fr 1fr;gap:.875rem}
-    /* Карточки документов — галерея */
-    .sdoc-card{background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
-    .sdoc-header{display:flex;align-items:center;gap:.5rem;padding:.75rem 1rem;font-size:.78rem;font-weight:700;color:var(--text);border-bottom:1px solid rgba(255,255,255,.06)}
-    .sdoc-gallery-wrap{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;background:rgba(0,0,0,.25)}
+    /* Карточки документов — диплом-стиль */
+    .sdoc-card{
+      background:linear-gradient(145deg,#0e1218 0%,#161c26 50%,#0a0e15 100%);
+      border:2px solid transparent;
+      border-radius:16px;
+      overflow:hidden;
+      display:flex;flex-direction:column;
+      position:relative;
+      box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 0 1px rgba(190,155,60,.15),inset 0 1px 0 rgba(255,220,100,.08);
+    }
+    .sdoc-card::before{
+      content:'';position:absolute;inset:0;border-radius:14px;
+      background:linear-gradient(135deg,rgba(190,155,60,.25) 0%,rgba(130,100,30,.1) 25%,transparent 50%,rgba(130,100,30,.1) 75%,rgba(190,155,60,.2) 100%);
+      pointer-events:none;z-index:0;
+    }
+    /* Угловые орнаменты */
+    .sdoc-corner{position:absolute;width:20px;height:20px;z-index:5;pointer-events:none}
+    .sdoc-corner::before,.sdoc-corner::after{content:'';position:absolute;background:rgba(200,165,50,.7)}
+    .sdoc-corner::before{width:100%;height:2px;top:0;left:0}
+    .sdoc-corner::after{width:2px;height:100%;top:0;left:0}
+    .sdoc-corner.tl{top:8px;left:8px}
+    .sdoc-corner.tr{top:8px;right:8px;transform:scaleX(-1)}
+    .sdoc-corner.bl{bottom:8px;left:8px;transform:scaleY(-1)}
+    .sdoc-corner.br{bottom:8px;right:8px;transform:scale(-1)}
+    .sdoc-header{display:flex;align-items:center;gap:.5rem;padding:.625rem 1rem;font-size:.75rem;font-weight:700;color:rgba(210,175,60,.9);border-bottom:1px solid rgba(190,155,60,.2);position:relative;z-index:1;letter-spacing:.05em;font-family:var(--font-raj,sans-serif);text-transform:uppercase}
+    .sdoc-gallery-wrap{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;background:rgba(5,8,12,.6)}
     .sdoc-empty{display:flex;align-items:center;justify-content:center;height:100%;font-size:.72rem;color:var(--text3);text-align:center;padding:1rem}
     .sdoc-track-outer{position:absolute;inset:0;overflow:hidden;cursor:grab;user-select:none}
     .sdoc-track-outer:active{cursor:grabbing}
     .sdoc-track{display:flex;height:100%;will-change:transform}
     .sdoc-slide{flex:none;width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}
-    .sdoc-slide img{width:100%;height:100%;object-fit:contain;pointer-events:none;background:#000}
+    .sdoc-slide img{width:100%;height:100%;object-fit:contain;pointer-events:none;background:rgba(5,8,12,.6);padding:4px}
     .sdoc-slide-pdf{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;color:var(--text2);padding:1rem;text-align:center}
     .sdoc-slide-pdf .sdoc-pdf-icon{font-size:2.75rem;line-height:1}
     .sdoc-slide-pdf .sdoc-pdf-name{font-size:.65rem;color:var(--text3);word-break:break-all;max-width:100%}
@@ -774,11 +796,15 @@
           </div>
         </div>
       </div>
-      <div class="supplier-docs-grid" id="supplierDocs" style="grid-template-columns:1fr">
-        <div class="sdoc-card">
-          <div class="sdoc-header">🏭 <span>Партнёрский договор</span></div>
-          <div class="sdoc-gallery-wrap" id="sdocGalleryPartner">
-            <div class="sdoc-empty">Документ будет добавлен</div>
+      <div id="supplierDocsContainer" style="display:flex;align-items:center;justify-content:center;min-height:260px">
+        <div id="supplierDocs" style="width:100%;max-width:440px">
+          <!-- Документы загружаются динамически -->
+          <div id="sdocPlaceholder" class="sdoc-card" style="min-height:240px">
+            <div class="sdoc-corner tl"></div><div class="sdoc-corner tr"></div><div class="sdoc-corner bl"></div><div class="sdoc-corner br"></div>
+            <div class="sdoc-header">📜 <span>Документы поставщика</span></div>
+            <div class="sdoc-gallery-wrap">
+              <div class="sdoc-empty">Документы будут добавлены</div>
+            </div>
           </div>
         </div>
       </div>
@@ -1497,10 +1523,31 @@ async function loadSupplierDocs(){
     var r=await fetch('/api/supplier-docs');
     if(!r.ok)return;
     var docs=await r.json();
-    var byType={partner:[],warranty:[]};
-    docs.forEach(function(d){if(byType[d.doc_type])byType[d.doc_type].push(d);});
-    renderDocGallery('sdocGalleryPartner',byType.partner);
-  }catch(e){}
+    if(!docs||!docs.length){return;}
+    // Показываем все документы в одном carousel-карточке дипломного стиля
+    var container=document.getElementById('supplierDocs');
+    if(!container)return;
+    var n=docs.length;
+    var slides=docs.map(function(d,i){
+      var src=d.url||d.data_url||'';
+      var title=d.title||d.filename||('Документ '+(i+1));
+      return '<div class="sdoc-slide" style="flex-direction:column;position:relative">' +
+        '<img src="'+src+'" alt="'+title+'" draggable="false" loading="lazy" style="cursor:zoom-in" onclick="window.open(\''+src+'\',\'_blank\')">' +
+        '<div style="position:absolute;bottom:0;left:0;right:0;padding:.5rem .75rem;background:linear-gradient(0deg,rgba(0,0,0,.85) 0%,transparent 100%);font-size:.72rem;color:rgba(210,175,60,.9);font-family:var(--fr);letter-spacing:.05em;text-align:center;font-weight:700">'+title+'</div>' +
+      '</div>';
+    }).join('');
+    var dots=n>1?'<div class="sdoc-dots">'+docs.map(function(_,i){return '<span class="sdoc-dot'+(i===0?' active':'')+'"></span>';}).join('')+'</div>':'';
+    var count=n>1?'<div class="sdoc-count"><span class="sdoc-cur">1</span> / '+n+'</div>':'';
+    var btns=n>1?'<button class="sdoc-btn sdoc-btn-prev">&#8249;</button><button class="sdoc-btn sdoc-btn-next">&#8250;</button>':'';
+    var title=docs[0]&&docs[0].doc_type?docs[0].doc_type:'Документы';
+    container.innerHTML=
+      '<div class="sdoc-card">' +
+        '<div class="sdoc-corner tl"></div><div class="sdoc-corner tr"></div><div class="sdoc-corner bl"></div><div class="sdoc-corner br"></div>' +
+        '<div class="sdoc-header">📜 <span>Сертификаты и документы</span></div>' +
+        '<div class="sdoc-gallery-wrap"><div class="sdoc-track-outer"><div class="sdoc-track">'+slides+'</div>'+btns+count+dots+'</div></div>' +
+      '</div>';
+    if(n>1)initDocSlider(container.querySelector('.sdoc-track-outer'),n);
+  }catch(e){console.warn('loadSupplierDocs error',e);}
 }
 
 function renderDocGallery(containerId,docs){

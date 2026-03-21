@@ -380,6 +380,7 @@
         <button class="admin-nav-btn" data-sec="auto-discount">🏷️ Скидки</button>
         <button class="admin-nav-btn" data-sec="promo-codes">🎁 Промокоды</button>
         <button class="admin-nav-btn" data-sec="installation">🔧 Установка</button>
+        <button class="admin-nav-btn" data-sec="cny-rate">💱 Курс ¥</button>
       </nav>
       <div class="admin-actions">
         <a href="/" class="btn btn-ghost btn-sm">На сайт ↗</a>
@@ -408,6 +409,7 @@
         <button class="mobile-nav-item" data-sec="auto-discount">🏷️ Скидки</button>
         <button class="mobile-nav-item" data-sec="promo-codes">🎁 Промокоды</button>
         <button class="mobile-nav-item" data-sec="installation">🔧 Установка</button>
+        <button class="mobile-nav-item" data-sec="cny-rate">💱 Курс ¥</button>
       </div>
     </div>
   </div>
@@ -880,7 +882,13 @@
         </div>
       </div>
       <p style="color:var(--text2);margin-bottom:1.5rem;font-size:.825rem">Добавляйте заметки, устанавливайте скидки, управляйте клиентами</p>
-      
+
+      <div id="crmMsg"></div>
+      <div style="margin-bottom:1rem;display:flex;gap:.625rem;align-items:center">
+        <input type="text" class="form-input" id="crmSearch" placeholder="🔍 Поиск по имени, email, телефону..." style="flex:1;max-width:380px" oninput="debounceCrmSearch(this.value)">
+        <button class="btn btn-ghost btn-sm" onclick="loadCRM()">🔄 Обновить</button>
+      </div>
+
       <div class="table-wrap">
         <table id="crmTable">
           <thead>
@@ -1453,30 +1461,71 @@
 
     <!-- ─── ДОКУМЕНТЫ ПОСТАВЩИКА ─── -->
     <div class="admin-section" id="sec-supplier-docs">
-      <h2 class="section-title">📄 Документы поставщика</h2>
-      <div id="supplierDocsMsg"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:900px">
+      <h2 class="section-title">📜 Документы поставщика</h2>
+      <p style="color:var(--text2);font-size:.825rem;margin-bottom:1.5rem">Загрузите фотографии сертификатов и документов. Они отображаются на главной странице в разделе «Официальный поставщик».</p>
+      <div id="supplierDocsAdminMsg"></div>
 
-        <!-- Партнёрский договор -->
-        <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem">
-          <div style="font-family:var(--font-d);font-size:1rem;font-weight:700;margin-bottom:1rem">🏭 Партнёрский договор</div>
-          <div id="partnerDocStatus" style="font-size:.8125rem;color:var(--text2);margin-bottom:.875rem">Загрузка…</div>
-          <input type="file" id="partnerDocFile" accept=".pdf,.jpg,.jpeg,.png" style="display:none">
-          <button class="btn btn-ghost" id="pickPartnerDocBtn" style="width:100%;margin-bottom:.5rem">📎 Выбрать файл</button>
-          <div id="partnerDocSelected" style="font-size:.8125rem;color:var(--text2);margin-bottom:.5rem"></div>
-          <button class="btn btn-primary" id="uploadPartnerDocBtn" style="width:100%" disabled>⬆ Загрузить</button>
+      <div style="margin-bottom:1.5rem">
+        <div style="font-weight:700;font-size:.875rem;margin-bottom:.75rem">Загрузить новый документ</div>
+        <div style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap">
+          <div class="form-group" style="flex:1;min-width:200px;margin:0">
+            <label class="form-label">Название документа</label>
+            <input type="text" class="form-input" id="newDocTitle" placeholder="Сертификат соответствия CE" maxlength="100">
+          </div>
+          <div class="form-group" style="flex:1;min-width:200px;margin:0">
+            <label class="form-label">Тип</label>
+            <select class="form-select" id="newDocType">
+              <option value="partner">Партнёрский документ</option>
+              <option value="certificate">Сертификат</option>
+              <option value="other">Другой</option>
+            </select>
+          </div>
+          <div>
+            <input type="file" id="newDocFile" accept=".jpg,.jpeg,.png,.webp,.pdf" style="display:none">
+            <button class="btn btn-ghost" id="pickNewDocBtn">📎 Выбрать файл</button>
+          </div>
+          <button class="btn btn-primary" id="uploadDocBtn">⬆️ Загрузить</button>
         </div>
-
-        <!-- Гарантийные условия -->
-        <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem">
-          <div style="font-family:var(--font-d);font-size:1rem;font-weight:700;margin-bottom:1rem">🛡️ Гарантийные условия</div>
-          <div id="warrantyDocStatus" style="font-size:.8125rem;color:var(--text2);margin-bottom:.875rem">Загрузка…</div>
-          <input type="file" id="warrantyDocFile" accept=".pdf,.jpg,.jpeg,.png" style="display:none">
-          <button class="btn btn-ghost" id="pickWarrantyDocBtn" style="width:100%;margin-bottom:.5rem">📎 Выбрать файл</button>
-          <div id="warrantyDocSelected" style="font-size:.8125rem;color:var(--text2);margin-bottom:.5rem"></div>
-          <button class="btn btn-primary" id="uploadWarrantyDocBtn" style="width:100%" disabled>⬆ Загрузить</button>
+        <div id="newDocPreview" style="margin-top:.75rem;display:none">
+          <img id="newDocImg" style="max-height:120px;border-radius:8px;border:1px solid var(--border)">
         </div>
+      </div>
 
+      <div id="supplierDocsList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem">
+        <div style="color:var(--text3);font-size:.825rem">Загрузка...</div>
+      </div>
+    </div>
+
+    <!-- ─── CNY RATE ─── -->
+    <div class="admin-section" id="sec-cny-rate">
+      <h2 class="section-title">💱 Курс юаня (¥ → ₽)</h2>
+      <div id="cnyRateMsg"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:700px">
+        <!-- Текущий курс -->
+        <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:1.5rem">
+          <div style="font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);margin-bottom:.5rem">Текущий курс</div>
+          <div style="font-size:2rem;font-weight:800;font-family:var(--font-d);color:var(--accent)" id="cnyRateDisplay">—</div>
+          <div style="font-size:.75rem;color:var(--text3);margin-top:.25rem" id="cnyRateUpdated">Не обновлялся</div>
+          <button class="btn btn-primary btn-sm" style="margin-top:1rem;width:100%" id="refreshCnyBtn">🔄 Обновить с ЦБ РФ</button>
+        </div>
+        <!-- Ручная установка -->
+        <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:1.5rem">
+          <div style="font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);margin-bottom:.75rem">Установить вручную</div>
+          <div class="form-group">
+            <label class="form-label">Курс ¥ → ₽</label>
+            <input type="number" class="form-input" id="cnyRateInput" placeholder="12.50" min="0.01" step="0.01">
+          </div>
+          <button class="btn btn-primary" id="saveCnyRateBtn" style="width:100%">💾 Сохранить</button>
+        </div>
+      </div>
+
+      <div style="margin-top:1.5rem;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:1rem;max-width:700px">
+        <div style="font-size:.8125rem;color:var(--text2);line-height:1.7">
+          <strong>Как работают динамические цены:</strong><br>
+          Товары с типом цены «Динамическая» отображают цену = <code>цена_¥ × курс_¥</code>, округлённую до 10 ₽ вверх.<br>
+          Курс обновляется автоматически каждые 6 часов с сайта ЦБ РФ (cbr.ru).
+        </div>
       </div>
     </div>
 
@@ -1720,6 +1769,8 @@
     if (name === 'crm') loadCRM();
     if (name === 'add-product') loadCategoriesForSelect();
     if (name === 'installation') loadInstallationRequests();
+    if (name === 'cny-rate') loadCnyRate();
+    if (name === 'supplier-docs') loadSupplierDocsAdmin();
   }
 
   // ── Wire status modal buttons ──
@@ -3108,12 +3159,13 @@
   // ── CRM: Load Customers with Notes ──
   let currentCustomerId = null;
 
-  async function loadCRM() {
+  async function loadCRM(q = '') {
     console.log('🔄 Загрузка CRM данных...');
     const tbody = document.getElementById('crmTableBody');
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text3)">Загрузка...</td></tr>';
     try {
-      const r = await fetch('/api/admin/customers', {credentials:'include', 
+      const url = '/api/admin/customers' + (q ? `?q=${encodeURIComponent(q)}` : '');
+      const r = await fetch(url, {credentials:'include',
         headers: { 'Content-Type': 'application/json' }
       });
       
@@ -3149,15 +3201,16 @@
         return `
           <tr>
             <td>
-              <strong>${c.full_name || c.username}</strong>${vipBadge}${discountBadge}${roleBadge}
+              <div style="display:flex;align-items:center;gap:.375rem">
+                <strong>${c.full_name || c.username}</strong>${vipBadge}${discountBadge}${roleBadge}
+                <button onclick="copyId('${safeId}')" title="Скопировать ID" style="background:none;border:1px solid var(--border);border-radius:4px;color:var(--text3);cursor:pointer;font-size:.7rem;padding:.1rem .3rem;line-height:1">⎘</button>
+              </div>
               <div style="font-size:.75rem;color:var(--text3)">${c.email}</div>
             </td>
-            <td style="font-size:.8rem;color:var(--text2)">
-              ${c.phone ? c.phone : '<span style="color:var(--text3)">—</span>'}
-            </td>
+            ${makeEditCell(safeId, 'phone', c.phone||'', c.phone || '<span style="color:var(--text3)">—</span>')}
             <td><span class="badge badge-accent">${c.order_count}</span></td>
             <td><strong style="font-family:'JetBrains Mono',monospace;color:var(--green)">${profit} ₽</strong></td>
-            <td>${discount > 0 ? `<span style="font-family:var(--font-mono);font-size:.8rem;color:var(--red)">−${discount}%</span>` : '<span style="color:var(--text3);font-size:.8rem">0%</span>'}</td>
+            ${makeEditCell(safeId, 'personal_discount', discount, discount > 0 ? `<span style="font-family:var(--font-mono);font-size:.8rem;color:var(--red)">−${discount}%</span>` : '<span style="color:var(--text3);font-size:.8rem">0%</span>')}
             <td style="color:var(--text2);font-size:.8125rem">${lastOrder}</td>
             <td style="white-space:nowrap">
               <button class="btn btn-xs btn-secondary" data-open-notes-id="${safeId}" data-open-notes-name="${safeName}" data-open-notes-email="${safeEmail}" data-open-notes-phone="${safePhone}" data-open-notes-fullname="${safeFull}" data-open-notes-discount="${discount}" data-open-notes-role="${role}">📝 Карточка</button>
@@ -3170,6 +3223,52 @@
       console.error('❌ Критическая ошибка при загрузке CRM:', err);
       tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--red)">Критическая ошибка загрузки. Проверьте консоль.</td></tr>';
     }
+  }
+
+  function makeEditCell(customerId, field, currentVal, display) {
+    return `<td class="editable-cell" data-customer-id="${customerId}" data-field="${field}" data-value="${currentVal||''}" onclick="startEdit(this)">${display||currentVal||'—'}</td>`;
+  }
+
+  function startEdit(td) {
+    if (td.querySelector('input')) return;
+    const val = td.dataset.value || '';
+    const prev = td.innerHTML;
+    td.innerHTML = `<input type="text" value="${val}" style="width:100%;padding:.25rem .4rem;background:var(--bg3);border:1px solid var(--accent);border-radius:6px;color:var(--text);font-size:.825rem" onblur="finishEdit(this,'${td.dataset.customerId}','${td.dataset.field}')" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.parentElement.innerHTML='${prev.replace(/'/g,"\\'")}';this.parentElement.onclick=function(){startEdit(this)};}">`;
+    td.querySelector('input').focus();
+    td.onclick = null;
+  }
+
+  async function finishEdit(input, customerId, field) {
+    const val = input.value.trim();
+    const td = input.parentElement;
+    td.innerHTML = val || '—';
+    td.onclick = function() { startEdit(this); };
+    if (val === (td.dataset.value || '')) return;
+    td.dataset.value = val;
+    try {
+      const body = {};
+      body[field] = field === 'personal_discount' ? parseInt(val) || 0 : val;
+      const r = await fetch(`/api/admin/customers/${customerId}`, {
+        method: 'PUT', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!r.ok) { showMsg('crmMsg', 'error', 'Ошибка сохранения'); }
+    } catch(e) { showMsg('crmMsg', 'error', 'Ошибка соединения'); }
+  }
+
+  async function copyId(id) {
+    try {
+      await navigator.clipboard.writeText(id);
+      showToast('success', '✓ ID скопирован');
+    } catch(e) {
+      prompt('Скопируйте ID:', id);
+    }
+  }
+
+  function debounceCrmSearch(q) {
+    clearTimeout(window._crmSearchTimer);
+    window._crmSearchTimer = setTimeout(() => loadCRM(q), 400);
   }
 
   async function openNotes(userId, userName, email, phone, fullName, discount, roleStr) {
@@ -3881,6 +3980,133 @@ async function deletePromoCode(id) {
     if (r.ok) { showToast('success','Промокод удалён'); loadPromoCodes(); }
     else showToast('error','Ошибка удаления');
   } catch { showToast('error','Ошибка соединения'); }
+}
+
+// ── CNY RATE ──────────────────────────────────────────────────
+async function loadCnyRate() {
+  try {
+    const r = await fetch('/api/admin/cny-rate', { credentials: 'include' });
+    if (!r.ok) return;
+    const data = await r.json();
+    const display = document.getElementById('cnyRateDisplay');
+    const updated = document.getElementById('cnyRateUpdated');
+    if (display) display.textContent = data.cny_rate ? data.cny_rate + ' ₽/¥' : '— не установлен';
+    if (updated && data.updated_at) {
+      const d = new Date(data.updated_at);
+      updated.textContent = 'Обновлён: ' + d.toLocaleString('ru-RU');
+    }
+  } catch(e) {}
+}
+
+document.getElementById('refreshCnyBtn')?.addEventListener('click', async function() {
+  this.disabled = true; this.textContent = '⏳ Загружаем с ЦБ РФ...';
+  try {
+    const r = await fetch('/api/admin/cny-rate/refresh', { method: 'GET', credentials: 'include' });
+    const data = await r.json();
+    if (r.ok) {
+      showMsg('cnyRateMsg', 'success', `✅ Курс обновлён: ${data.cny_rate} ₽/¥`);
+      loadCnyRate();
+    } else {
+      showMsg('cnyRateMsg', 'error', data.detail || 'Ошибка обновления курса');
+    }
+  } catch(e) { showMsg('cnyRateMsg', 'error', 'Ошибка соединения'); }
+  this.disabled = false; this.textContent = '🔄 Обновить с ЦБ РФ';
+});
+
+document.getElementById('saveCnyRateBtn')?.addEventListener('click', async function() {
+  const val = parseFloat(document.getElementById('cnyRateInput')?.value);
+  if (!val || val <= 0) { showMsg('cnyRateMsg', 'error', 'Введите корректный курс'); return; }
+  try {
+    const r = await fetch('/api/admin/cny-rate', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cny_rate: val })
+    });
+    const data = await r.json();
+    if (r.ok) { showMsg('cnyRateMsg', 'success', `✅ Курс сохранён: ${val} ₽/¥`); loadCnyRate(); }
+    else showMsg('cnyRateMsg', 'error', data.detail || 'Ошибка');
+  } catch(e) { showMsg('cnyRateMsg', 'error', 'Ошибка соединения'); }
+});
+
+// ── SUPPLIER DOCS ADMIN ───────────────────────────────────────
+document.getElementById('pickNewDocBtn')?.addEventListener('click', function() {
+  document.getElementById('newDocFile')?.click();
+});
+
+document.getElementById('newDocFile')?.addEventListener('change', function() {
+  const file = this.files[0];
+  if (!file) return;
+  const preview = document.getElementById('newDocPreview');
+  const img = document.getElementById('newDocImg');
+  if (file.type.startsWith('image/')) {
+    img.src = URL.createObjectURL(file);
+    preview.style.display = 'block';
+  }
+  const titleInput = document.getElementById('newDocTitle');
+  if (!titleInput.value) titleInput.value = file.name.replace(/\.[^.]+$/, '');
+});
+
+document.getElementById('uploadDocBtn')?.addEventListener('click', async function() {
+  const file = document.getElementById('newDocFile')?.files[0];
+  if (!file) { showMsg('supplierDocsAdminMsg', 'error', 'Выберите файл'); return; }
+  const title = document.getElementById('newDocTitle')?.value.trim() || file.name;
+  const docType = document.getElementById('newDocType')?.value || 'partner';
+
+  this.disabled = true; this.textContent = '⏳ Загрузка...';
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('doc_type', docType);
+  fd.append('title', title);
+  try {
+    const r = await fetch('/api/admin/supplier-docs', { method: 'POST', credentials: 'include', body: fd });
+    const data = await r.json();
+    if (r.ok) {
+      showMsg('supplierDocsAdminMsg', 'success', '✅ Документ загружен');
+      document.getElementById('newDocFile').value = '';
+      document.getElementById('newDocTitle').value = '';
+      document.getElementById('newDocPreview').style.display = 'none';
+      loadSupplierDocsAdmin();
+    } else { showMsg('supplierDocsAdminMsg', 'error', data.detail || 'Ошибка загрузки'); }
+  } catch(e) { showMsg('supplierDocsAdminMsg', 'error', 'Ошибка соединения'); }
+  this.disabled = false; this.textContent = '⬆️ Загрузить';
+});
+
+async function loadSupplierDocsAdmin() {
+  try {
+    const r = await fetch('/api/supplier-docs', { credentials: 'include' });
+    if (!r.ok) return;
+    const docs = await r.json();
+    const list = document.getElementById('supplierDocsList');
+    if (!list) return;
+    if (!docs.length) { list.innerHTML = '<div style="color:var(--text3);font-size:.825rem">Документы не загружены</div>'; return; }
+    list.innerHTML = docs.map(d => `
+      <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative">
+        <div style="aspect-ratio:4/3;background:var(--bg3);overflow:hidden;display:flex;align-items:center;justify-content:center">
+          ${d.url ? `<img src="${d.url}" alt="${escH(d.title||d.filename||'')}" style="width:100%;height:100%;object-fit:contain;cursor:zoom-in" data-doc-url="${escH(d.url)}">` : '<span style="font-size:2rem">📄</span>'}
+        </div>
+        <div style="padding:.625rem .75rem">
+          <div style="font-size:.8rem;font-weight:700;color:var(--text);margin-bottom:.25rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escH(d.title||d.filename||'Без названия')}</div>
+          <div style="font-size:.72rem;color:var(--text3)">${escH(d.doc_type||'')}</div>
+        </div>
+        <button data-delete-doc="${d.id}" style="position:absolute;top:.4rem;right:.4rem;background:rgba(255,71,87,.15);border:1px solid rgba(255,71,87,.3);color:var(--red);border-radius:6px;padding:.2rem .5rem;cursor:pointer;font-size:.75rem">✕</button>
+      </div>
+    `).join('');
+    list.addEventListener('click', function(e) {
+      const delBtn = e.target.closest('[data-delete-doc]');
+      if (delBtn) { deleteSupplierDoc(parseInt(delBtn.dataset.deleteDoc)); return; }
+      const img = e.target.closest('img[data-doc-url]');
+      if (img) window.open(img.dataset.docUrl, '_blank');
+    }, { once: true });
+  } catch(e) { console.error('loadSupplierDocsAdmin error', e); }
+}
+
+async function deleteSupplierDoc(id) {
+  if (!confirm('Удалить документ?')) return;
+  try {
+    const r = await fetch(`/api/admin/supplier-docs/${id}`, { method: 'DELETE', credentials: 'include' });
+    if (r.ok) { showMsg('supplierDocsAdminMsg', 'success', 'Удалено'); loadSupplierDocsAdmin(); }
+    else showMsg('supplierDocsAdminMsg', 'error', 'Ошибка удаления');
+  } catch(e) { showMsg('supplierDocsAdminMsg', 'error', 'Ошибка соединения'); }
 }
 
 // Загружаем промокоды при переходе в секцию

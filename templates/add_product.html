@@ -84,14 +84,49 @@
           <input type="number" name="stock" class="form-input" value="0" min="0" placeholder="10">
         </div>
       </div>
+      <!-- Описание по секциям -->
       <div class="form-group">
-        <label class="form-label">Описание *</label>
-        <textarea name="description" class="form-textarea" placeholder="Подробное описание…" required></textarea>
+        <label class="form-label">Описание товара *</label>
+        <div style="display:flex;gap:.375rem;margin-bottom:.625rem;border-bottom:1px solid var(--border);padding-bottom:.375rem">
+          <button type="button" class="desc-tab-btn active" data-section="main" style="padding:.35rem .75rem;font-size:.75rem;font-weight:700;border:none;border-radius:6px;cursor:pointer;background:var(--accent-dim);color:var(--accent);letter-spacing:.04em">Основное</button>
+          <button type="button" class="desc-tab-btn" data-section="specs" style="padding:.35rem .75rem;font-size:.75rem;font-weight:700;border:none;border-radius:6px;cursor:pointer;background:transparent;color:var(--text2);letter-spacing:.04em">Характеристики</button>
+          <button type="button" class="desc-tab-btn" data-section="delivery" style="padding:.35rem .75rem;font-size:.75rem;font-weight:700;border:none;border-radius:6px;cursor:pointer;background:transparent;color:var(--text2);letter-spacing:.04em">Доставка</button>
+          <button type="button" class="desc-tab-btn" data-section="warranty" style="padding:.35rem .75rem;font-size:.75rem;font-weight:700;border:none;border-radius:6px;cursor:pointer;background:transparent;color:var(--text2);letter-spacing:.04em">Гарантия</button>
+        </div>
+        <textarea id="desc_main" class="form-textarea desc-section" data-section="main" placeholder="Основное описание товара…" style="min-height:100px"></textarea>
+        <textarea id="desc_specs" class="form-textarea desc-section" data-section="specs" placeholder="Технические характеристики (мощность, ёмкость, вольтаж…)" style="min-height:100px;display:none"></textarea>
+        <textarea id="desc_delivery" class="form-textarea desc-section" data-section="delivery" placeholder="Условия доставки и упаковки…" style="min-height:80px;display:none"></textarea>
+        <textarea id="desc_warranty" class="form-textarea desc-section" data-section="warranty" placeholder="Условия гарантии…" style="min-height:80px;display:none"></textarea>
+        <input type="hidden" name="description" id="descriptionHidden">
+        <input type="hidden" name="description_sections" id="descriptionSectionsHidden">
+        <div class="form-hint">Заполните хотя бы раздел «Основное». Остальные разделы — необязательны.</div>
+      </div>
+      <!-- Тип цены: статичная / динамическая -->
+      <div class="form-group">
+        <label class="form-label">Тип цены *</label>
+        <div style="display:flex;gap:.75rem;padding:.5rem 0">
+          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
+            <input type="radio" name="price_type" value="static" id="priceTypeStatic" checked style="width:16px;height:16px;accent-color:var(--accent)">
+            <span style="font-size:.9375rem">₽ Статичная (рубли)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
+            <input type="radio" name="price_type" value="dynamic" id="priceTypeDynamic" style="width:16px;height:16px;accent-color:var(--accent)">
+            <span style="font-size:.9375rem">¥ Динамическая (юань × курс ЦБ)</span>
+          </label>
+        </div>
+        <div class="form-hint">Динамическая цена автоматически пересчитывается по курсу ЦБ РФ</div>
       </div>
       <div class="row-2">
-        <div class="form-group">
+        <!-- Статичная цена (₽) -->
+        <div class="form-group" id="priceStaticGroup">
           <label class="form-label">Цена продажи (₽) *</label>
-          <input type="number" name="price" class="form-input" placeholder="1990" min="1" step="0.01" required>
+          <input type="number" name="price" id="priceInput" class="form-input" placeholder="1990" min="1" step="0.01">
+        </div>
+        <!-- Динамическая цена (¥) -->
+        <div class="form-group" id="priceDynamicGroup" style="display:none">
+          <label class="form-label">Цена в юанях (¥) *</label>
+          <input type="number" name="price_cny" id="priceCnyInput" class="form-input" placeholder="200" min="0.01" step="0.01">
+          <div class="form-hint" id="priceCnyPreview" style="color:var(--accent)"></div>
         </div>
         <div class="form-group">
           <label class="form-label">Себестоимость (₽)</label>
@@ -139,8 +174,16 @@
             <input type="checkbox" name="preorder_unavailable" id="preorderUnavailableCheck" value="true" style="width:18px;height:18px;cursor:pointer">
             <span style="font-size:.9375rem">🚫 Предзаказ недоступен</span>
           </label>
+          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
+            <input type="checkbox" name="no_preorder" id="noPreorderCheck" value="true" style="width:18px;height:18px;cursor:pointer">
+            <span style="font-size:.9375rem">⛔ Нет предзаказа</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
+            <input type="checkbox" name="installation_service" id="installationCheck" value="true" style="width:18px;height:18px;cursor:pointer">
+            <span style="font-size:.9375rem">🔧 Услуга установки</span>
+          </label>
         </div>
-        <div class="form-hint">Можно выбрать оба статуса одновременно</div>
+        <div class="form-hint">Можно выбрать несколько статусов одновременно</div>
       </div>
       <!-- Цены предзаказа - показываем только при включённом предзаказе -->
       <div id="preorderPrices" style="display:none">
@@ -195,6 +238,57 @@
   </div>
 </div>
 <script nonce="{{ request.state.csp_nonce }}">
+  // ── Секции описания ──────────────────────────────────────────────────────
+  document.querySelectorAll('.desc-tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const sec = this.dataset.section;
+      document.querySelectorAll('.desc-tab-btn').forEach(b => {
+        b.style.background = 'transparent'; b.style.color = 'var(--text2)';
+      });
+      this.style.background = 'var(--accent-dim)'; this.style.color = 'var(--accent)';
+      document.querySelectorAll('.desc-section').forEach(t => t.style.display = 'none');
+      document.getElementById('desc_' + sec).style.display = '';
+    });
+  });
+
+  // ── Тип цены: static/dynamic ─────────────────────────────────────────────
+  let cnyRate = 0;
+  async function loadCnyRate() {
+    try {
+      const r = await fetch('/api/delivery-settings', {credentials:'include'});
+      if (!r.ok) return;
+      const s = await r.json();
+      cnyRate = parseFloat(s.cny_rate || s.air_cny_to_rub || 0);
+      updateCnyPreview();
+    } catch {}
+  }
+  function updateCnyPreview() {
+    const cnyInput = document.getElementById('priceCnyInput');
+    const preview = document.getElementById('priceCnyPreview');
+    if (!cnyInput || !preview) return;
+    const val = parseFloat(cnyInput.value);
+    if (val > 0 && cnyRate > 0) {
+      const rub = Math.ceil(val * cnyRate / 10) * 10;
+      preview.textContent = `≈ ${rub.toLocaleString('ru-RU')} ₽ (курс ${cnyRate} ₽/¥, округлено до 10)`;
+    } else if (cnyRate <= 0) {
+      preview.textContent = 'Курс ¥ не установлен. Добавьте в вкладке «Курс» в админке.';
+    } else {
+      preview.textContent = '';
+    }
+  }
+  document.querySelectorAll('input[name="price_type"]').forEach(r => {
+    r.addEventListener('change', function() {
+      const isDynamic = this.value === 'dynamic';
+      document.getElementById('priceStaticGroup').style.display = isDynamic ? 'none' : '';
+      document.getElementById('priceDynamicGroup').style.display = isDynamic ? '' : 'none';
+      document.getElementById('priceInput').required = !isDynamic;
+      document.getElementById('priceCnyInput').required = isDynamic;
+      if (isDynamic) updateCnyPreview();
+    });
+  });
+  document.getElementById('priceCnyInput')?.addEventListener('input', updateCnyPreview);
+  loadCnyRate();
+
   // Показываем/скрываем поля цен предзаказа
   const preorderCheck = document.getElementById('preorderCheck');
   const preorderPrices = document.getElementById('preorderPrices');
@@ -382,11 +476,40 @@ function addImageUpload() {
       return;
     }
     
+    // ── Собираем секции описания в JSON ──────────────────────────────────
+    const sections = {
+      main: document.getElementById('desc_main').value.trim(),
+      specs: document.getElementById('desc_specs').value.trim(),
+      delivery: document.getElementById('desc_delivery').value.trim(),
+      warranty: document.getElementById('desc_warranty').value.trim()
+    };
+    if (!sections.main) {
+      msgEl.innerHTML = '<div class="msg msg-error">⚠️ Заполните основное описание товара</div>';
+      document.getElementById('desc_main').focus();
+      return;
+    }
+    formData.set('description', sections.main);
+    formData.set('description_sections', JSON.stringify(sections));
+
     // Обрабатываем чекбоксы правильно
     if (!formData.get('in_stock')) formData.set('in_stock', 'false');
     if (!formData.get('preorder')) formData.set('preorder', 'false');
     if (!formData.get('preorder_unavailable')) formData.set('preorder_unavailable', 'false');
-    
+    if (!formData.get('no_preorder')) formData.set('no_preorder', 'false');
+    if (!formData.get('installation_service')) formData.set('installation_service', 'false');
+
+    // Для динамической цены: price_cny уже в formData; price ставим 0 (сервер пересчитает)
+    const priceType = formData.get('price_type') || 'static';
+    if (priceType === 'dynamic') {
+      const priceCny = parseFloat(formData.get('price_cny') || 0);
+      if (!priceCny || priceCny <= 0) {
+        msgEl.innerHTML = '<div class="msg msg-error">⚠️ Укажите цену в юанях для динамической цены</div>';
+        return;
+      }
+      // price будет рассчитан сервером; ставим временное значение
+      if (!formData.get('price')) formData.set('price', '1');
+    }
+
     try {
       const r = await fetch('/api/admin/products', { method:'POST', credentials:'include', body:formData });
       const d = await r.json();

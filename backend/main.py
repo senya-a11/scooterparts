@@ -5455,7 +5455,7 @@ async def chat_get_messages(request: Request, since: Optional[str] = None):
     """Получить историю переписки текущего пользователя с поддержкой.
     Опциональный параметр since=<ISO-timestamp> для инкрементального опроса.
     Помечает входящие сообщения от admin как прочитанные."""
-    user_id = await get_current_user(request)
+    user_id = get_current_user(request)
     async with db.pool.acquire() as conn:
         if since:
             try:
@@ -5495,7 +5495,7 @@ async def chat_get_messages(request: Request, since: Optional[str] = None):
 @app.post("/api/chat/messages")
 async def chat_send_message(request: Request, data: ChatMessageCreate):
     """Отправить сообщение в поддержку от имени текущего пользователя."""
-    user_id = await get_current_user(request)
+    user_id = get_current_user(request)
     async with db.pool.acquire() as conn:
         row = await conn.fetchrow(
             "INSERT INTO chat_messages (user_id, sender, body) VALUES ($1, 'user', $2) "
@@ -5515,7 +5515,7 @@ async def chat_send_message(request: Request, data: ChatMessageCreate):
 @app.get("/api/chat/unread-count")
 async def chat_unread_count(request: Request):
     """Количество непрочитанных ответов от admin для текущего пользователя."""
-    user_id = await get_current_user(request)
+    user_id = get_current_user(request)
     async with db.pool.acquire() as conn:
         count = await conn.fetchval(
             "SELECT COUNT(*) FROM chat_messages "
@@ -5528,7 +5528,7 @@ async def chat_unread_count(request: Request):
 @app.get("/api/admin/chat/conversations")
 async def admin_chat_conversations(request: Request):
     """Список всех диалогов: одна строка на пользователя с последним сообщением и кол-вом непрочитанных."""
-    await verify_admin(request)
+    verify_admin(request)
     async with db.pool.acquire() as conn:
         rows = await conn.fetch("""
             SELECT
@@ -5558,7 +5558,7 @@ async def admin_chat_conversations(request: Request):
 @app.get("/api/admin/chat/conversations/{user_id}")
 async def admin_chat_get_thread(request: Request, user_id: str):
     """Получить полную переписку с конкретным пользователем. Помечает его сообщения как прочитанные."""
-    await verify_admin(request)
+    verify_admin(request)
     try:
         uid = uuid.UUID(user_id)
     except ValueError:
@@ -5598,7 +5598,7 @@ async def admin_chat_get_thread(request: Request, user_id: str):
 @app.post("/api/admin/chat/conversations/{user_id}")
 async def admin_chat_reply(request: Request, user_id: str, data: ChatMessageCreate):
     """Ответить пользователю от имени admin."""
-    await verify_admin(request)
+    verify_admin(request)
     try:
         uid = uuid.UUID(user_id)
     except ValueError:
@@ -5625,7 +5625,7 @@ async def admin_chat_reply(request: Request, user_id: str, data: ChatMessageCrea
 @app.get("/api/admin/chat/unread-count")
 async def admin_chat_unread_count(request: Request):
     """Общее количество непрочитанных сообщений от пользователей (для бэджа в навбаре)."""
-    await verify_admin(request)
+    verify_admin(request)
     async with db.pool.acquire() as conn:
         count = await conn.fetchval(
             "SELECT COUNT(*) FROM chat_messages WHERE sender='user' AND is_read=FALSE"

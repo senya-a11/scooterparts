@@ -319,6 +319,30 @@
   .btn-cd{background:transparent;color:#7B8599;border:1px solid rgba(255,255,255,.12);padding:.45rem 1rem;border-radius:6px;font-size:.8125rem;cursor:pointer;}
   .btn-cdet{background:transparent;color:#3E4560;border:none;padding:.4rem .75rem;font-size:.75rem;cursor:pointer;text-decoration:underline;}
   @media(max-width:640px){.cookie-inner{flex-direction:column;align-items:flex-start;gap:1rem;}.cookie-actions{width:100%;}}
+  /* ── Admin Chat ── */
+  .admin-chat-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:#e55;color:#fff;font-size:.65rem;font-weight:700;padding:0 4px;margin-left:.25rem;vertical-align:middle}
+  .chat-admin-layout{display:flex;gap:1rem;height:calc(100vh - 240px);min-height:360px}
+  .chat-admin-list{width:260px;flex-shrink:0;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--card-bg)}
+  .chat-admin-convo{padding:.75rem 1rem;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s}
+  .chat-admin-convo:last-child{border-bottom:none}
+  .chat-admin-convo:hover{background:rgba(255,255,255,.04)}
+  .chat-admin-convo.active{background:var(--accent-dim);border-left:3px solid var(--accent)}
+  .chat-admin-convo-name{font-weight:600;font-size:.8375rem;display:flex;align-items:center;gap:.4rem}
+  .chat-admin-convo-preview{font-size:.75rem;color:var(--text2);margin-top:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+  .chat-admin-convo-unread{display:inline-flex;min-width:18px;height:18px;border-radius:9px;background:var(--accent);color:#080A0F;font-size:.65rem;font-weight:700;align-items:center;justify-content:center;padding:0 4px}
+  .chat-admin-thread{flex:1;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--card-bg)}
+  .chat-admin-thread-header{padding:.875rem 1rem;border-bottom:1px solid var(--border);font-weight:600;font-size:.9rem;flex-shrink:0}
+  .chat-admin-messages{flex:1;overflow-y:auto;padding:.875rem;display:flex;flex-direction:column;gap:.5rem;min-height:0}
+  .chat-admin-msg{max-width:75%;padding:.5rem .875rem;border-radius:14px;font-size:.8375rem;line-height:1.55;word-break:break-word}
+  .chat-admin-msg.user{align-self:flex-start;background:var(--surface-2,rgba(255,255,255,.06));border:1px solid var(--border)}
+  .chat-admin-msg.admin{align-self:flex-end;background:var(--accent-dim);border:1px solid var(--accent-border,var(--border))}
+  .chat-admin-msg-meta{font-size:.65rem;color:var(--text3);margin-top:.25rem}
+  .chat-admin-reply{display:flex;gap:.625rem;padding:.875rem;border-top:1px solid var(--border);flex-shrink:0}
+  #chatAdminInput{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.5rem .875rem;color:var(--text);font-family:var(--font-b);font-size:.875rem;resize:none;outline:none;max-height:100px;overflow-y:auto;min-height:38px}
+  #chatAdminInput:focus{border-color:var(--accent)}
+  #chatAdminSendBtn{flex-shrink:0;padding:.5rem 1.125rem;border-radius:var(--radius);background:var(--accent);border:none;cursor:pointer;font-weight:700;font-size:.875rem;color:#080A0F;transition:opacity .15s}
+  #chatAdminSendBtn:disabled{opacity:.4;cursor:not-allowed}
+  .chat-admin-empty{display:flex;align-items:center;justify-content:center;flex:1;color:var(--text3);font-size:.875rem}
   </style>
 <script src="/static/csrf-init.js"></script>
 </head>
@@ -381,6 +405,7 @@
         <button class="admin-nav-btn" data-sec="promo-codes">🎁 Промокоды</button>
         <button class="admin-nav-btn" data-sec="installation">🔧 Установка</button>
         <button class="admin-nav-btn" data-sec="cny-rate">💱 Курс ¥</button>
+        <button class="admin-nav-btn" data-sec="chat" id="chatNavBtnDesktop">💬 Чат <span class="admin-chat-badge" id="adminChatBadge" style="display:none">0</span></button>
       </nav>
       <div class="admin-actions">
         <a href="/" class="btn btn-ghost btn-sm">На сайт ↗</a>
@@ -410,6 +435,7 @@
         <button class="mobile-nav-item" data-sec="promo-codes">🎁 Промокоды</button>
         <button class="mobile-nav-item" data-sec="installation">🔧 Установка</button>
         <button class="mobile-nav-item" data-sec="cny-rate">💱 Курс ¥</button>
+        <button class="mobile-nav-item" data-sec="chat">💬 Чат <span class="admin-chat-badge" id="adminChatBadgeMob" style="display:none">0</span></button>
       </div>
     </div>
   </div>
@@ -1559,6 +1585,29 @@
       </div>
     </div>
 
+    <!-- ── Чат поддержки ── -->
+    <div class="admin-section" id="sec-chat">
+      <h2 class="section-title">💬 Чат поддержки</h2>
+      <div id="chatAdminMsg"></div>
+      <div class="chat-admin-layout">
+        <!-- Список диалогов -->
+        <div class="chat-admin-list" id="chatConvoList">
+          <div style="padding:1rem;color:var(--text3);font-size:.8rem;text-align:center">Загрузка...</div>
+        </div>
+        <!-- Активная переписка -->
+        <div class="chat-admin-thread" id="chatThread">
+          <div class="chat-admin-thread-header" id="chatThreadHeader" style="color:var(--text3)">Выберите диалог</div>
+          <div class="chat-admin-messages" id="chatAdminMessages">
+            <div class="chat-admin-empty">Выберите диалог слева</div>
+          </div>
+          <div class="chat-admin-reply" id="chatAdminReply" style="display:none">
+            <textarea id="chatAdminInput" placeholder="Ответить..." rows="1" maxlength="1000"></textarea>
+            <button id="chatAdminSendBtn">Отправить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /admin-body -->
 </div><!-- /admin-panel -->
 
@@ -1830,6 +1879,7 @@
     if (name === 'installation') loadInstallationRequests();
     if (name === 'cny-rate') loadCnyRate();
     if (name === 'supplier-docs') loadSupplierDocsAdmin();
+    if (name === 'chat') loadAdminChatSection();
   }
 
   // ── Wire status modal buttons ──
@@ -4261,6 +4311,154 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+</script>
+
+<script nonce="{{ request.state.csp_nonce }}">
+// ========== ADMIN CHAT ==========
+(function() {
+  var _chatCurrentUserId = null;
+  var _chatPollTimer = null;
+  var _chatBadgePollTimer = null;
+
+  function setChatBadge(n) {
+    ['adminChatBadge','adminChatBadgeMob'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      if (n > 0) { el.textContent = n > 99 ? '99+' : n; el.style.display = ''; }
+      else { el.style.display = 'none'; }
+    });
+  }
+
+  async function pollAdminChatBadge() {
+    try {
+      var r = await fetch('/api/admin/chat/unread-count', {credentials:'include'});
+      if (r.ok) { var d = await r.json(); setChatBadge(d.unread || 0); }
+    } catch(e) {}
+  }
+
+  // Запускаем бэдж-опрос сразу при загрузке
+  pollAdminChatBadge();
+  _chatBadgePollTimer = setInterval(pollAdminChatBadge, 30000);
+
+  function fmtTime(iso) {
+    var d = new Date(iso);
+    return d.toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'}) + ' · ' +
+           d.toLocaleDateString('ru-RU', {day:'2-digit',month:'2-digit'});
+  }
+
+  function renderConvoList(convos) {
+    var list = document.getElementById('chatConvoList');
+    if (!convos.length) {
+      list.innerHTML = '<div style="padding:1rem;color:var(--text3);font-size:.8rem;text-align:center">Нет сообщений</div>';
+      return;
+    }
+    list.innerHTML = convos.map(function(c) {
+      var unreadHtml = c.unread > 0 ? '<span class="chat-admin-convo-unread">'+c.unread+'</span>' : '';
+      var name = c.full_name || c.username;
+      var preview = c.last_body ? c.last_body.slice(0,60) + (c.last_body.length>60?'…':'') : '';
+      return '<div class="chat-admin-convo'+(c.user_id===_chatCurrentUserId?' active':'')+'" data-uid="'+c.user_id+'">' +
+        '<div class="chat-admin-convo-name">'+escHtml(name)+unreadHtml+'</div>' +
+        '<div class="chat-admin-convo-preview">'+escHtml(preview)+'</div>' +
+        '</div>';
+    }).join('');
+    list.querySelectorAll('.chat-admin-convo').forEach(function(el) {
+      el.addEventListener('click', function() { openThread(el.dataset.uid); });
+    });
+  }
+
+  function renderMessages(messages) {
+    var box = document.getElementById('chatAdminMessages');
+    if (!messages.length) {
+      box.innerHTML = '<div class="chat-admin-empty">Нет сообщений</div>';
+      return;
+    }
+    box.innerHTML = messages.map(function(m) {
+      return '<div class="chat-admin-msg '+m.sender+'">' +
+        escHtml(m.body) +
+        '<div class="chat-admin-msg-meta">'+fmtTime(m.created_at)+'</div>' +
+        '</div>';
+    }).join('');
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function openThread(userId) {
+    _chatCurrentUserId = userId;
+    clearInterval(_chatPollTimer);
+    document.getElementById('chatAdminReply').style.display = '';
+    document.getElementById('chatAdminMessages').innerHTML = '<div class="chat-admin-empty">Загрузка...</div>';
+    // Highlight active convo
+    document.querySelectorAll('.chat-admin-convo').forEach(function(el) {
+      el.classList.toggle('active', el.dataset.uid === userId);
+    });
+    try {
+      var r = await fetch('/api/admin/chat/conversations/'+userId, {credentials:'include'});
+      var d = await r.json();
+      document.getElementById('chatThreadHeader').textContent = (d.full_name || d.username) + ' (@' + d.username + ')';
+      renderMessages(d.messages);
+      // обновляем бэдж
+      pollAdminChatBadge();
+      // обновляем список (unread сбросился)
+      loadConvoList();
+    } catch(e) {
+      document.getElementById('chatAdminMessages').innerHTML = '<div class="chat-admin-empty">Ошибка загрузки</div>';
+    }
+    _chatPollTimer = setInterval(function() { pollThread(userId); }, 5000);
+  }
+
+  async function pollThread(userId) {
+    if (_chatCurrentUserId !== userId) return;
+    try {
+      var r = await fetch('/api/admin/chat/conversations/'+userId, {credentials:'include'});
+      var d = await r.json();
+      renderMessages(d.messages);
+      loadConvoList();
+      pollAdminChatBadge();
+    } catch(e) {}
+  }
+
+  async function loadConvoList() {
+    try {
+      var r = await fetch('/api/admin/chat/conversations', {credentials:'include'});
+      var d = await r.json();
+      renderConvoList(d.conversations);
+    } catch(e) {}
+  }
+
+  window.loadAdminChatSection = function() {
+    loadConvoList();
+  };
+
+  document.getElementById('chatAdminSendBtn').addEventListener('click', sendAdminReply);
+  document.getElementById('chatAdminInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAdminReply(); }
+  });
+
+  async function sendAdminReply() {
+    var inp = document.getElementById('chatAdminInput');
+    var body = inp.value.trim();
+    if (!body || !_chatCurrentUserId) return;
+    var btn = document.getElementById('chatAdminSendBtn');
+    btn.disabled = true;
+    try {
+      var r = await fetch('/api/admin/chat/conversations/'+_chatCurrentUserId, {
+        method:'POST', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({body: body})
+      });
+      if (r.ok) {
+        inp.value = '';
+        openThread(_chatCurrentUserId);
+      } else {
+        showToast('error','Ошибка отправки');
+      }
+    } catch(e) { showToast('error','Ошибка сети'); }
+    btn.disabled = false;
+  }
+})();
 </script>
 
 <div class="cookie-banner" id="cookieBanner" role="dialog" aria-label="Уведомление об использовании Cookie" aria-live="polite">

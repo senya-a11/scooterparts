@@ -501,6 +501,10 @@ class PaymentCreate(BaseModel):
     currency: str = "RUB"
 
 
+class ChatMessageCreate(BaseModel):
+    body: str = Field(min_length=1, max_length=1000)
+
+
 # ========== АУТЕНТИФИКАЦИЯ ==========
 # Fix #3: SECRET_KEY обязан быть задан и длиннее 32 символов.
 # Генерация надёжного ключа: python -c "import secrets; print(secrets.token_hex(32))"
@@ -1276,6 +1280,25 @@ class Database:
             except Exception as e:
                 print(f"Миграция supplier_documents.title: {e}")
 
+            # ── vChat: таблица чата поддержки ──
+            try:
+                await conn.execute("""
+                    CREATE TABLE IF NOT EXISTS chat_messages (
+                        id         SERIAL PRIMARY KEY,
+                        user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                        sender     VARCHAR(10) NOT NULL CHECK (sender IN ('user', 'admin')),
+                        body       TEXT NOT NULL,
+                        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+                        is_read    BOOLEAN NOT NULL DEFAULT FALSE
+                    )
+                """)
+                await conn.execute("CREATE INDEX IF NOT EXISTS idx_chat_user   ON chat_messages (user_id)")
+                await conn.execute("CREATE INDEX IF NOT EXISTS idx_chat_time   ON chat_messages (created_at)")
+                await conn.execute("CREATE INDEX IF NOT EXISTS idx_chat_unread ON chat_messages (user_id, is_read) WHERE is_read = FALSE")
+                print("✅ Таблица chat_messages готова")
+            except Exception as e:
+                print(f"⚠️ vChat (chat_messages): {e}")
+
             # Migration: add cny_rate to delivery_settings
             try:
                 await conn.execute("""
@@ -1379,6 +1402,22 @@ async def refresh_cny_rate_background():
         await asyncio.sleep(6 * 3600)  # every 6 hours
 
 
+async def cleanup_chat_messages_background():
+    """Удаляем сообщения чата старше 48 часов — раз в час"""
+    while True:
+        await asyncio.sleep(3600)
+        try:
+            async with db.pool.acquire() as conn:
+                r = await conn.execute(
+                    "DELETE FROM chat_messages WHERE created_at < NOW() - INTERVAL '48 hours'"
+                )
+                n = int(r.split()[-1]) if r else 0
+                if n:
+                    logger.info("Chat cleanup: удалено %d сообщений старше 48ч", n)
+        except Exception as e:
+            logger.warning("Chat cleanup error: %s", e)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await db.connect()
@@ -1398,6 +1437,7 @@ async def lifespan(app: FastAPI):
         logger.warning("Cookie consent cleanup failed (non-critical): %s", e)
 
     asyncio.create_task(refresh_cny_rate_background())
+    asyncio.create_task(cleanup_chat_messages_background())
 
     yield
     await db.disconnect()
@@ -5407,6 +5447,191 @@ async def get_similar_products(product_id: int):
 # ============================================================
 # 404 HANDLER
 # ============================================================
+
+# ========== ЧАТ ПОДДЕРЖКИ ==========
+
+@app.get("/api/chat/messages")
+async def chat_get_messages(request: Request, since: Optional[str] = None):
+    """Получить историю переписки текущего пользователя с поддержкой.
+    Опциональный параметр since=<ISO-timestamp> для инкрементального опроса.
+    Помечает входящие сообщения от admin как прочитанные."""
+    user_id = await get_current_user(request)
+    async with db.pool.acquire() as conn:
+        if since:
+            try:
+                since_dt = datetime.fromisoformat(since)
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Неверный формат since")
+            rows = await conn.fetch(
+                "SELECT id, user_id::text, sender, body, created_at, is_read "
+                "FROM chat_messages WHERE user_id=$1 AND created_at > $2 ORDER BY created_at ASC",
+                uuid.UUID(user_id), since_dt
+            )
+        else:
+            rows = await conn.fetch(
+                "SELECT id, user_id::text, sender, body, created_at, is_read "
+                "FROM chat_messages WHERE user_id=$1 ORDER BY created_at ASC",
+                uuid.UUID(user_id)
+            )
+        # Помечаем admin→user сообщения как прочитанные
+        await conn.execute(
+            "UPDATE chat_messages SET is_read=TRUE "
+            "WHERE user_id=$1 AND sender='admin' AND is_read=FALSE",
+            uuid.UUID(user_id)
+        )
+    messages = []
+    for r in rows:
+        messages.append({
+            "id": r["id"],
+            "user_id": r["user_id"],
+            "sender": r["sender"],
+            "body": r["body"],
+            "created_at": r["created_at"].isoformat(),
+            "is_read": r["is_read"],
+        })
+    return {"messages": messages}
+
+
+@app.post("/api/chat/messages")
+async def chat_send_message(request: Request, data: ChatMessageCreate):
+    """Отправить сообщение в поддержку от имени текущего пользователя."""
+    user_id = await get_current_user(request)
+    async with db.pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "INSERT INTO chat_messages (user_id, sender, body) VALUES ($1, 'user', $2) "
+            "RETURNING id, user_id::text, sender, body, created_at, is_read",
+            uuid.UUID(user_id), data.body
+        )
+    return {
+        "id": row["id"],
+        "user_id": row["user_id"],
+        "sender": row["sender"],
+        "body": row["body"],
+        "created_at": row["created_at"].isoformat(),
+        "is_read": row["is_read"],
+    }
+
+
+@app.get("/api/chat/unread-count")
+async def chat_unread_count(request: Request):
+    """Количество непрочитанных ответов от admin для текущего пользователя."""
+    user_id = await get_current_user(request)
+    async with db.pool.acquire() as conn:
+        count = await conn.fetchval(
+            "SELECT COUNT(*) FROM chat_messages "
+            "WHERE user_id=$1 AND sender='admin' AND is_read=FALSE",
+            uuid.UUID(user_id)
+        )
+    return {"unread": count or 0}
+
+
+@app.get("/api/admin/chat/conversations")
+async def admin_chat_conversations(request: Request):
+    """Список всех диалогов: одна строка на пользователя с последним сообщением и кол-вом непрочитанных."""
+    await verify_admin(request)
+    async with db.pool.acquire() as conn:
+        rows = await conn.fetch("""
+            SELECT
+                u.id::text AS user_id,
+                u.username,
+                u.full_name,
+                (SELECT body FROM chat_messages m2 WHERE m2.user_id=u.id ORDER BY m2.created_at DESC LIMIT 1) AS last_body,
+                (SELECT created_at FROM chat_messages m3 WHERE m3.user_id=u.id ORDER BY m3.created_at DESC LIMIT 1) AS last_at,
+                (SELECT COUNT(*) FROM chat_messages m4 WHERE m4.user_id=u.id AND m4.sender='user' AND m4.is_read=FALSE) AS unread
+            FROM users u
+            WHERE EXISTS (SELECT 1 FROM chat_messages cm WHERE cm.user_id=u.id)
+            ORDER BY last_at DESC NULLS LAST
+        """)
+    result = []
+    for r in rows:
+        result.append({
+            "user_id": r["user_id"],
+            "username": r["username"],
+            "full_name": r["full_name"] or "",
+            "last_body": r["last_body"] or "",
+            "last_at": r["last_at"].isoformat() if r["last_at"] else None,
+            "unread": r["unread"] or 0,
+        })
+    return {"conversations": result}
+
+
+@app.get("/api/admin/chat/conversations/{user_id}")
+async def admin_chat_get_thread(request: Request, user_id: str):
+    """Получить полную переписку с конкретным пользователем. Помечает его сообщения как прочитанные."""
+    await verify_admin(request)
+    try:
+        uid = uuid.UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Неверный user_id")
+    async with db.pool.acquire() as conn:
+        rows = await conn.fetch(
+            "SELECT id, user_id::text, sender, body, created_at, is_read "
+            "FROM chat_messages WHERE user_id=$1 ORDER BY created_at ASC",
+            uid
+        )
+        await conn.execute(
+            "UPDATE chat_messages SET is_read=TRUE "
+            "WHERE user_id=$1 AND sender='user' AND is_read=FALSE",
+            uid
+        )
+        user_info = await conn.fetchrow(
+            "SELECT username, full_name FROM users WHERE id=$1", uid
+        )
+    messages = []
+    for r in rows:
+        messages.append({
+            "id": r["id"],
+            "user_id": r["user_id"],
+            "sender": r["sender"],
+            "body": r["body"],
+            "created_at": r["created_at"].isoformat(),
+            "is_read": r["is_read"],
+        })
+    return {
+        "user_id": user_id,
+        "username": user_info["username"] if user_info else "",
+        "full_name": user_info["full_name"] if user_info else "",
+        "messages": messages,
+    }
+
+
+@app.post("/api/admin/chat/conversations/{user_id}")
+async def admin_chat_reply(request: Request, user_id: str, data: ChatMessageCreate):
+    """Ответить пользователю от имени admin."""
+    await verify_admin(request)
+    try:
+        uid = uuid.UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Неверный user_id")
+    async with db.pool.acquire() as conn:
+        exists = await conn.fetchval("SELECT EXISTS(SELECT 1 FROM users WHERE id=$1)", uid)
+        if not exists:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+        row = await conn.fetchrow(
+            "INSERT INTO chat_messages (user_id, sender, body) VALUES ($1, 'admin', $2) "
+            "RETURNING id, user_id::text, sender, body, created_at, is_read",
+            uid, data.body
+        )
+    return {
+        "id": row["id"],
+        "user_id": row["user_id"],
+        "sender": row["sender"],
+        "body": row["body"],
+        "created_at": row["created_at"].isoformat(),
+        "is_read": row["is_read"],
+    }
+
+
+@app.get("/api/admin/chat/unread-count")
+async def admin_chat_unread_count(request: Request):
+    """Общее количество непрочитанных сообщений от пользователей (для бэджа в навбаре)."""
+    await verify_admin(request)
+    async with db.pool.acquire() as conn:
+        count = await conn.fetchval(
+            "SELECT COUNT(*) FROM chat_messages WHERE sender='user' AND is_read=FALSE"
+        )
+    return {"unread": count or 0}
+
 
 from fastapi.exceptions import HTTPException as FastAPIHTTPException
 from starlette.exceptions import HTTPException as StarletteHTTPException

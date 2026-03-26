@@ -701,5 +701,162 @@
   try{ var c=JSON.parse(localStorage.getItem('fmtun_consent')||'{}'); if(c.analytics) loadYM(); }catch(e){}
 })();
 </script>
+
+<!-- ── CHAT WIDGET ── -->
+<style nonce="{{ request.state.csp_nonce }}">
+#chatWidget{position:fixed;bottom:1.5rem;left:1.5rem;z-index:800}
+#chatToggleBtn{width:52px;height:52px;border-radius:50%;background:var(--blue,#3b82f6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(59,130,246,.4);transition:transform .2s,box-shadow .2s;position:relative;color:#fff}
+#chatToggleBtn:hover{transform:scale(1.08);box-shadow:0 6px 22px rgba(59,130,246,.55)}
+.chat-widget-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:#e55;color:#fff;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--bg,#080A0F)}
+.chat-widget-panel{position:absolute;bottom:64px;left:0;width:320px;max-height:460px;background:var(--bg2,#111318);border:1px solid var(--border-h,rgba(255,255,255,.12));border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.5);display:flex;flex-direction:column;animation:cwFadeUp .2s ease}
+@keyframes cwFadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.chat-widget-panel[hidden]{display:none}
+.chat-widget-header{display:flex;align-items:center;gap:.5rem;padding:.75rem 1rem;border-bottom:1px solid var(--border,rgba(255,255,255,.08));font-weight:600;font-size:.875rem;flex-shrink:0}
+.chat-widget-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}
+.chat-widget-header button{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text2,rgba(255,255,255,.5));font-size:1rem;line-height:1;padding:0}
+.chat-widget-messages{flex:1;overflow-y:auto;padding:.75rem;display:flex;flex-direction:column;gap:.5rem;min-height:0}
+.chat-widget-msg{max-width:80%;padding:.5rem .75rem;border-radius:12px;font-size:.8375rem;line-height:1.55;word-break:break-word}
+.chat-widget-msg.user{align-self:flex-end;background:var(--accent-dim,rgba(232,88,10,.18));border:1px solid var(--border-h,rgba(255,255,255,.12))}
+.chat-widget-msg.admin{align-self:flex-start;background:rgba(255,255,255,.06);border:1px solid var(--border,rgba(255,255,255,.08))}
+.chat-widget-msg-time{font-size:.65rem;color:var(--text3,rgba(255,255,255,.3));margin-top:.2rem}
+.chat-widget-input-row{display:flex;gap:.5rem;padding:.75rem;border-top:1px solid var(--border,rgba(255,255,255,.08));flex-shrink:0}
+#chatWidgetInput{flex:1;background:var(--surface,rgba(255,255,255,.05));border:1px solid var(--border,rgba(255,255,255,.08));border-radius:8px;padding:.45rem .75rem;color:var(--text,#e8e8e8);font-family:inherit;font-size:.875rem;resize:none;outline:none;max-height:80px;overflow-y:auto}
+#chatWidgetInput:focus{border-color:var(--blue,#3b82f6)}
+#chatWidgetSendBtn{width:36px;height:36px;border-radius:50%;background:var(--blue,#3b82f6);border:none;cursor:pointer;color:#fff;font-size:1.1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;align-self:flex-end;transition:opacity .15s}
+#chatWidgetSendBtn:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:480px){.chat-widget-panel{width:calc(100vw - 3rem)}}
+</style>
+<div id="chatWidget">
+  <button id="chatToggleBtn" aria-label="Открыть чат поддержки">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <span class="chat-widget-badge" id="chatWidgetBadge" style="display:none">0</span>
+  </button>
+  <div class="chat-widget-panel" id="chatWidgetPanel" hidden>
+    <div class="chat-widget-header">
+      <span class="chat-widget-dot"></span>
+      <span>Поддержка</span>
+      <button id="chatWidgetClose" aria-label="Закрыть">&#x2715;</button>
+    </div>
+    <div class="chat-widget-messages" id="chatWidgetMessages"></div>
+    <div class="chat-widget-input-row">
+      <textarea id="chatWidgetInput" placeholder="Напишите сообщение..." rows="1" maxlength="1000"></textarea>
+      <button id="chatWidgetSendBtn" aria-label="Отправить">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+<script nonce="{{ request.state.csp_nonce }}">
+(function() {
+  var panel = document.getElementById('chatWidgetPanel');
+  var badge = document.getElementById('chatWidgetBadge');
+  var msgBox = document.getElementById('chatWidgetMessages');
+  var inp = document.getElementById('chatWidgetInput');
+  var sendBtn = document.getElementById('chatWidgetSendBtn');
+  var _open = false, _pollTimer = null, _badgeTimer = null, _lastTs = null, _authed = null;
+
+  function escH(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function fmtT(iso){ var d=new Date(iso); return d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}); }
+  function cwToast(msg){ if(window.toast) toast('error',msg); else if(window.showToast) showToast('error',msg); }
+
+  function updateBadge(n){
+    if(n>0){ badge.textContent=n>99?'99+':n; badge.style.display=''; }
+    else badge.style.display='none';
+  }
+
+  async function fetchBadge(){
+    if(_authed===false) return;
+    try{ var r=await fetch('/api/chat/unread-count',{credentials:'include'}); if(r.ok){var d=await r.json();updateBadge(d.unread||0);} }catch(e){}
+  }
+
+  function renderMessages(msgs){
+    if(!msgs.length){ msgBox.innerHTML='<div style="padding:1rem;text-align:center;color:var(--text3,rgba(255,255,255,.3));font-size:.8rem">Задайте вопрос &#8212; мы ответим!</div>'; return; }
+    msgBox.innerHTML=msgs.map(function(m){
+      return '<div class="chat-widget-msg '+m.sender+'">'+escH(m.body)+'<div class="chat-widget-msg-time">'+fmtT(m.created_at)+'</div></div>';
+    }).join('');
+    msgBox.scrollTop=msgBox.scrollHeight;
+    if(msgs.length) _lastTs=msgs[msgs.length-1].created_at;
+  }
+
+  async function loadHistory(){
+    msgBox.innerHTML='<div style="padding:1rem;text-align:center;color:var(--text3,rgba(255,255,255,.3));font-size:.8rem">Загрузка...</div>';
+    try{
+      var r=await fetch('/api/chat/messages',{credentials:'include'});
+      if(r.ok){ var d=await r.json(); renderMessages(d.messages); updateBadge(0); }
+    }catch(e){ msgBox.innerHTML='<div style="padding:1rem;text-align:center;color:var(--text3,rgba(255,255,255,.3));font-size:.8rem">Ошибка загрузки</div>'; }
+  }
+
+  async function pollMessages(){
+    if(!_open) return;
+    try{
+      var url='/api/chat/messages'+(_lastTs?'?since='+encodeURIComponent(_lastTs):'');
+      var r=await fetch(url,{credentials:'include'});
+      if(r.ok){
+        var d=await r.json();
+        if(d.messages.length){
+          if(_lastTs){ d.messages.forEach(function(m){ appendMessage(m); }); msgBox.scrollTop=msgBox.scrollHeight; }
+          else renderMessages(d.messages);
+          updateBadge(0);
+        }
+      }
+    }catch(e){}
+  }
+
+  function appendMessage(m){
+    if(!_lastTs || m.created_at > _lastTs){ _lastTs=m.created_at; }
+    var div=document.createElement('div');
+    div.className='chat-widget-msg '+m.sender;
+    div.innerHTML=escH(m.body)+'<div class="chat-widget-msg-time">'+fmtT(m.created_at)+'</div>';
+    msgBox.appendChild(div);
+  }
+
+  async function checkAuth(){
+    try{ var r=await fetch('/api/me',{credentials:'include'}); _authed=r.ok; }
+    catch(e){ _authed=false; }
+    return _authed;
+  }
+
+  async function openPanel(){
+    _open=true;
+    panel.hidden=false;
+    panel.removeAttribute('hidden');
+    var ok=await checkAuth();
+    if(!ok){
+      msgBox.innerHTML='<div style="padding:1.5rem;text-align:center"><p style="color:var(--text2,rgba(255,255,255,.5));margin-bottom:1rem">Войдите в аккаунт, чтобы написать в поддержку</p><a href="/auth" style="display:inline-block;padding:.5rem 1.25rem;background:var(--blue,#3b82f6);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:.875rem">Войти</a></div>';
+      return;
+    }
+    await loadHistory();
+    clearInterval(_pollTimer);
+    _pollTimer=setInterval(pollMessages,5000);
+  }
+
+  function closePanel(){
+    _open=false;
+    panel.hidden=true;
+    panel.setAttribute('hidden','');
+    clearInterval(_pollTimer);
+  }
+
+  document.getElementById('chatToggleBtn').addEventListener('click',function(){ _open?closePanel():openPanel(); });
+  document.getElementById('chatWidgetClose').addEventListener('click',closePanel);
+  sendBtn.addEventListener('click', sendMsg);
+  inp.addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();} });
+
+  async function sendMsg(){
+    var body=inp.value.trim();
+    if(!body) return;
+    sendBtn.disabled=true;
+    try{
+      var r=await fetch('/api/chat/messages',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({body:body})});
+      if(r.ok){ var d=await r.json(); inp.value=''; appendMessage(d); msgBox.scrollTop=msgBox.scrollHeight; }
+      else cwToast('Ошибка отправки');
+    }catch(e){ cwToast('Ошибка сети'); }
+    sendBtn.disabled=false;
+  }
+
+  fetchBadge();
+  _badgeTimer=setInterval(fetchBadge,30000);
+})();
+</script>
 </body>
 </html>

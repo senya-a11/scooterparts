@@ -35,6 +35,8 @@ import urllib.parse
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+import html as _html
+
 load_dotenv()
 
 # Fix #2: logger определён на уровне модуля — доступен везде
@@ -82,17 +84,19 @@ except Exception as e:
     print(f"⚠️ Не удалось установить права на {UPLOAD_DIR}: {e}")
 
 
-# Fix #3: Секреты обязательны. Слабые значения по умолчанию недопустимы в продакшне.
-# При отсутствии переменных окружения приложение не запустится — это намеренное поведение.
+# Fix #3: Секреты обязательны. При отсутствии ADMIN_PASSWORD приложение не запустится.
 _admin_password_raw = os.getenv("ADMIN_PASSWORD", "")
 if not _admin_password_raw:
-    import warnings
-    warnings.warn(
-        "⚠️  ADMIN_PASSWORD не задан. Используется небезопасный пароль 'admin123'. "
-        "Установите ADMIN_PASSWORD в .env перед деплоем!",
-        stacklevel=2
+    raise RuntimeError(
+        "❌ ADMIN_PASSWORD не задан. "
+        "Установите переменную окружения ADMIN_PASSWORD перед запуском. "
+        "Генерация: python -c \"import secrets; print(secrets.token_urlsafe(24))\""
     )
-    _admin_password_raw = "admin123"
+if len(_admin_password_raw) < 12:
+    raise RuntimeError(
+        "❌ ADMIN_PASSWORD слишком короткий (минимум 12 символов). "
+        "Установите надёжный пароль."
+    )
 
 ADMIN_PASSWORD = _admin_password_raw
 ADMIN_USERNAME = "admin"
@@ -184,19 +188,19 @@ def _send_email_sync(to_email: str, order_id: int, status: str, delay_note: str 
     """Отправить email-уведомление клиенту об изменении статуса заказа."""
     if not SMTP_HOST or not SMTP_USER or not SMTP_PASS:
         return
-    base_url = os.getenv("BASE_URL", "https://scooterparts.onrender.com")
+    base_url = BASE_URL
     label = ORDER_STATUS_LABELS.get(status, status)
     icon = STATUS_ICONS.get(status, "📦")
     note_html = (f'<div style="margin:1rem 0;padding:.75rem 1rem;background:rgba(255,176,32,.08);'
                  f'border:1px solid rgba(255,176,32,.25);border-radius:8px;color:#FFB020">'
-                 f'<strong>Примечание:</strong> {delay_note}</div>') if delay_note else ''
+                 f'<strong>Примечание:</strong> {_html.escape(str(delay_note))}</div>') if delay_note else ''
     # Items table
     items_html = ''
     if items:
         DELIVERY_LABELS = {'in_stock': '📦 В наличии', 'auto': '🚗 Авто', 'air': '✈️ Авиа'}
         rows_html = ''.join(
-            f'<tr><td style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.05)">{it.get("product_name","")}</td>'
-            f'<td style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.05);text-align:center">{it.get("quantity",1)}</td>'
+            f'<tr><td style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.05)">{_html.escape(str(it.get("product_name","") or ""))}</td>'
+            f'<td style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.05);text-align:center">{int(it.get("quantity",1))}</td>'
             f'<td style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.05);text-align:right">{float(it.get("price",0))*int(it.get("quantity",1)):,.0f} ₽</td>'
             f'<td style="padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.05);color:#7B8599;font-size:.8rem">'
             f'{DELIVERY_LABELS.get(it.get("delivery_type") or it.get("order_type",""), "")}</td></tr>'
@@ -215,7 +219,7 @@ def _send_email_sync(to_email: str, order_id: int, status: str, delay_note: str 
         total_html = f'<div style="text-align:right;font-weight:700;color:#F0F4F8;margin:.5rem 0">Итого: {float(order_info["total_amount"]):,.0f} ₽</div>'
     track_html = ''
     if order_info and order_info.get('track_number'):
-        track_html = f'<p style="font-size:.875rem">Трек-номер: <strong style="color:#00D4FF">{order_info["track_number"]}</strong></p>'
+        track_html = f'<p style="font-size:.875rem">Трек-номер: <strong style="color:#00D4FF">{_html.escape(str(order_info["track_number"]))}</strong></p>'
     timeline = _build_status_timeline(status)
     body = f"""<html><body style="background:#080A0F;padding:2rem;margin:0">
 <div style="max-width:580px;margin:0 auto;background:#0D1018;border-radius:12px;padding:2rem;border:1px solid rgba(255,255,255,.06);font-family:sans-serif;color:#F0F4F8">
@@ -273,9 +277,9 @@ async def send_order_email(to_email: str, order_id: int, status: str, delay_note
 def _send_verification_email_sync(to_email: str, token: str):
     """Отправить письмо для подтверждения email."""
     if not SMTP_HOST or not SMTP_USER or not SMTP_PASS:
-        logger.warning("SMTP not configured — verification email not sent to %s", to_email)
+        logger.warning("SMTP not configured — verification email not sent")
         return
-    base_url = os.getenv("BASE_URL", "https://scooterparts.onrender.com")
+    base_url = BASE_URL
     verify_url = f"{base_url}/api/verify-email?token={token}"
     body = f"""<html><body style="background:#080A0F;padding:2rem;margin:0">
 <div style="max-width:540px;margin:0 auto;background:#0D1018;border-radius:12px;padding:2rem;border:1px solid rgba(255,255,255,.06);font-family:sans-serif;color:#F0F4F8">
@@ -330,8 +334,8 @@ async def send_order_telegram(order_id: int, status: str, username: str, email: 
     note = f"\n⚠️ <i>{delay_note}</i>" if delay_note else ""
     text = (f"📦 <b>Заказ #{order_id}</b>\n"
             f"Статус: <b>{label}</b>{note}\n"
-            f"Клиент: {username} ({email})\n"
-            f"🔗 <a href='https://scooterparts.onrender.com/admin'>Открыть в админке</a>")
+            f"Клиент: {username}\n"
+            f"🔗 <a href='{BASE_URL}/admin'>Открыть в админке</a>")
     await asyncio.to_thread(_send_telegram_sync, text)
 
 
@@ -536,10 +540,15 @@ ALGORITHM  = "HS256"
 
 # Fix #5: валидация image_url против SSRF и XSS
 _ALLOWED_IMAGE_URL = re.compile(
-    r'^https?://.+\.(jpg|jpeg|png|gif|webp)$', re.IGNORECASE
+    r'^https?://.+\.(jpg|jpeg|png|gif|webp)(\?[^\s]*)?$', re.IGNORECASE
 )
-_INTERNAL_HOSTS = re.compile(
+# IPv4 internal ranges
+_INTERNAL_HOSTS_V4 = re.compile(
     r'^(localhost|127\.\d+\.\d+\.\d+|0\.0\.0\.0|169\.254\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)'
+)
+# IPv6 localhost / loopback / link-local
+_INTERNAL_HOSTS_V6 = re.compile(
+    r'^(\[?::1\]?|::ffff:127\.|fe80:|fc00:|fd[0-9a-f]{2}:)', re.IGNORECASE
 )
 
 def validate_image_url(url: str) -> str:
@@ -551,9 +560,15 @@ def validate_image_url(url: str) -> str:
     if not _ALLOWED_IMAGE_URL.match(url):
         raise HTTPException(status_code=400, detail="Недопустимый URL изображения. Разрешены только http(s) ссылки на jpg/png/gif/webp.")
     from urllib.parse import urlparse
-    host = urlparse(url).hostname or ""
-    if _INTERNAL_HOSTS.match(host):
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower().strip("[]")
+    if _INTERNAL_HOSTS_V4.match(host):
         raise HTTPException(status_code=400, detail="Недопустимый URL: внутренние адреса запрещены.")
+    if _INTERNAL_HOSTS_V6.match(host):
+        raise HTTPException(status_code=400, detail="Недопустимый URL: внутренние адреса запрещены.")
+    # Блокируем bare IP-адреса (только цифры и точки/двоеточия) — не CDN
+    if re.match(r'^\d{1,3}(\.\d{1,3}){3}$', host) or re.match(r'^[0-9a-f:]+$', host):
+        raise HTTPException(status_code=400, detail="Недопустимый URL: IP-адреса запрещены, используйте доменное имя.")
     return url
 
 
@@ -1475,7 +1490,7 @@ class AppMiddleware(BaseHTTPMiddleware):
     """
     JSON_LIMIT    = 512 * 1024
     CSRF_EXEMPT   = {"/api/payment/callback"}
-    AUTH_PATHS    = {"/api/login", "/api/register", "/api/admin/login"}
+    AUTH_PATHS    = {"/api/login", "/api/register", "/api/admin/login", "/api/resend-verification"}
     MAX_TRACKED   = 10_000
 
     def __init__(self, app):
@@ -1574,6 +1589,12 @@ class AppMiddleware(BaseHTTPMiddleware):
         if request.url.scheme == "https":
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
 
+        # Cache-Control: запрещаем кэширование для API и страниц с персональными данными
+        path = request.url.path
+        if path.startswith("/api/") or path in ("/admin", "/cart", "/auth", "/tracking"):
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+
         return response
 
 app.add_middleware(AppMiddleware)
@@ -1611,7 +1632,7 @@ async def sitemap_xml():
     from fastapi.responses import Response as _Response
     from datetime import date
     today = date.today().isoformat()
-    base = "https://scooterparts.onrender.com"
+    base = BASE_URL
     urls = ["/", "/products", "/about", "/legal"]
     xml_parts = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -2887,25 +2908,30 @@ async def create_order(order_data: OrderCreate, user_id: str = Depends(get_curre
             promo_discount = 0.0
             applied_promo = None
             if order_data.promo_code:
-                promo_code_upper = order_data.promo_code.strip().upper()
-                promo_row = await conn.fetchrow(
-                    "SELECT * FROM promo_codes WHERE code=$1 AND is_active=TRUE", promo_code_upper
-                )
-                if promo_row:
-                    from datetime import datetime as _dt
-                    promo_expired = promo_row['expires_at'] and promo_row['expires_at'] < _dt.now(timezone.utc).replace(tzinfo=None)
-                    promo_exhausted = promo_row['max_uses'] and promo_row['used_count'] >= promo_row['max_uses']
-                    if not promo_expired and not promo_exhausted:
-                        if promo_row['discount_type'] == 'percent':
-                            promo_discount = round(total * float(promo_row['discount_value']) / 100, 2)
-                        else:
-                            promo_discount = min(float(promo_row['discount_value']), total)
-                        applied_promo = promo_code_upper
-                        # Инкрементируем счётчик использований
-                        await conn.execute(
-                            "UPDATE promo_codes SET used_count = used_count + 1 WHERE id = $1",
-                            promo_row['id']
-                        )
+                # Валидация формата промокода
+                promo_code_upper = re.sub(r'[^A-Z0-9_-]', '', order_data.promo_code.strip().upper())[:50]
+                if promo_code_upper:
+                    # SELECT FOR UPDATE — блокируем строку, чтобы исключить race condition
+                    # при одновременных заказах с одним промокодом
+                    promo_row = await conn.fetchrow(
+                        "SELECT * FROM promo_codes WHERE code=$1 AND is_active=TRUE FOR UPDATE",
+                        promo_code_upper
+                    )
+                    if promo_row:
+                        from datetime import datetime as _dt
+                        promo_expired = promo_row['expires_at'] and promo_row['expires_at'] < _dt.now(timezone.utc).replace(tzinfo=None)
+                        promo_exhausted = promo_row['max_uses'] and promo_row['used_count'] >= promo_row['max_uses']
+                        if not promo_expired and not promo_exhausted:
+                            if promo_row['discount_type'] == 'percent':
+                                promo_discount = round(total * float(promo_row['discount_value']) / 100, 2)
+                            else:
+                                promo_discount = min(float(promo_row['discount_value']), total)
+                            applied_promo = promo_code_upper
+                            # Атомарный инкремент после блокировки строки
+                            await conn.execute(
+                                "UPDATE promo_codes SET used_count = used_count + 1 WHERE id = $1",
+                                promo_row['id']
+                            )
             total_final = max(0.0, total - promo_discount)
 
             # Generate unique track number
@@ -3052,12 +3078,13 @@ async def get_user_orders(user_id: str = Depends(get_current_user)):
 
 
 @app.get("/api/orders/active-count")
-async def get_active_orders_count():
-    """Публичный счётчик активных заказов для плашки в каталоге"""
+async def get_active_orders_count(user_id: str = Depends(get_current_user)):
+    """Счётчик активных заказов текущего пользователя для плашки в каталоге"""
     try:
         async with db.pool.acquire() as conn:
             count = await conn.fetchval(
-                "SELECT COUNT(*) FROM orders WHERE status NOT IN ('completed','cancelled')"
+                "SELECT COUNT(*) FROM orders WHERE user_id=$1 AND status NOT IN ('completed','cancelled')",
+                user_id
             )
             return {"count": count or 0}
     except Exception as e:
@@ -3213,54 +3240,75 @@ async def create_payment(payment: PaymentCreate, user_id: str = Depends(get_curr
 @app.post("/api/payment/callback")
 async def payment_callback(request: Request):
     """
-    Fix #5: Webhook от платёжной системы с обязательной верификацией подписи.
+    Webhook от ЮKassa с верификацией подписи.
 
-    ВАЖНО: Этот эндпоинт принимает внешние HTTP-запросы. Без проверки подписи
-    любой злоумышленник может отправить фейковый callback и «оплатить» заказ.
+    ЮKassa отправляет уведомления с заголовком Webhook-Signature: sha1=<hex>
+    HMAC-SHA1 от тела запроса с ключом PAYMENT_SECRET_KEY.
 
-    Схема верификации зависит от платёжной системы:
-    - ЮKassa:    SHA-1 HMAC заголовок Webhook-Signature
-    - Тинькофф:  SHA-256 HMAC, токен = PAYMENT_SECRET_KEY
-    - Stripe:    stripe.Webhook.construct_event(payload, sig, secret)
+    Схема:
+      1. Проверяем HMAC-подпись (если PAYMENT_SECRET_KEY задан).
+      2. Парсим тело: event + payment object.
+      3. По event=payment.succeeded → обновляем orders.payment_status = 'paid'.
+      4. По event=payment.canceled   → обновляем orders.payment_status = 'failed'.
+
+    Metadata заказа: payment.metadata.order_id (int).
     """
     try:
         raw_body = await request.body()
+        client_ip = request.headers.get("X-Forwarded-For", "").split(",")[0].strip() or getattr(request.client, "host", "unknown")
 
-        # ── Fix #5: Верификация подписи ──────────────────────────────────────
-        # Раскомментируйте и адаптируйте блок для вашей платёжной системы.
-        #
-        # Пример для ЮKassa (Webhook-Signature: sha1=<hex>):
-        # received_sig = request.headers.get("Webhook-Signature", "")
-        # expected_sig = "sha1=" + hmac.new(
-        #     PAYMENT_SECRET_KEY.encode(), raw_body, hashlib.sha1
-        # ).hexdigest()
-        # if not hmac.compare_digest(received_sig, expected_sig):
-        #     logger.warning("Payment callback: invalid signature from %s", request.client.host)
-        #     raise HTTPException(status_code=403, detail="Неверная подпись webhook")
-        #
-        # Пример для Тинькофф (поле Token в JSON):
-        # import json as _json
-        # body_dict = _json.loads(raw_body)
-        # received_token = body_dict.pop("Token", "")
-        # sorted_vals = "".join(str(v) for _, v in sorted(body_dict.items()))
-        # expected = hashlib.sha256((sorted_vals + PAYMENT_SECRET_KEY).encode()).hexdigest()
-        # if not hmac.compare_digest(received_token, expected):
-        #     logger.warning("Payment callback: invalid Tinkoff signature")
-        #     raise HTTPException(status_code=403, detail="Неверная подпись webhook")
-        # ─────────────────────────────────────────────────────────────────────
+        # ── Верификация HMAC-SHA1 (ЮKassa Webhook-Signature) ─────────────────
+        if PAYMENT_SECRET_KEY:
+            received_sig = request.headers.get("Webhook-Signature", "")
+            expected_sig = "sha1=" + hmac.new(
+                PAYMENT_SECRET_KEY.encode("utf-8"), raw_body, hashlib.sha1
+            ).hexdigest()
+            if not received_sig:
+                logger.warning("Payment callback: missing Webhook-Signature header from %s", client_ip)
+                raise HTTPException(status_code=403, detail="Отсутствует подпись webhook")
+            if not hmac.compare_digest(received_sig, expected_sig):
+                logger.warning("Payment callback: invalid signature from %s", client_ip)
+                raise HTTPException(status_code=403, detail="Неверная подпись webhook")
+        else:
+            # PAYMENT_SECRET_KEY не задан — режим разработки, принимаем без проверки
+            logger.warning("Payment callback received without signature verification (PAYMENT_SECRET_KEY not set)")
 
-        # Пока интеграция — заглушка: логируем и возвращаем ok
-        body = json.loads(raw_body) if raw_body else {}
-        logger.info("Payment callback received (stub mode): %s", body)
+        if not raw_body:
+            return {"status": "ok"}
 
-        # TODO: после подключения реального эквайринга — обновить orders.payment_status
-        # order_id = body.get("order_id")
-        # new_status = body.get("status")
-        # async with db.pool.acquire() as conn:
-        #     await conn.execute(
-        #         "UPDATE orders SET payment_status=$1 WHERE id=$2",
-        #         new_status, order_id
-        #     )
+        body = json.loads(raw_body)
+        event = body.get("event", "")
+        payment_obj = body.get("object", {})
+        payment_id = payment_obj.get("id", "")
+        metadata = payment_obj.get("metadata", {})
+        order_id_raw = metadata.get("order_id")
+
+        logger.info("Payment callback: event=%s payment_id=%s order_id=%s", event, payment_id, order_id_raw)
+
+        # ── Обновляем статус оплаты заказа ───────────────────────────────────
+        if order_id_raw:
+            try:
+                order_id_int = int(order_id_raw)
+            except (ValueError, TypeError):
+                logger.warning("Payment callback: invalid order_id in metadata: %s", order_id_raw)
+                return {"status": "ok"}
+
+            new_payment_status: str | None = None
+            if event == "payment.succeeded":
+                new_payment_status = "paid"
+            elif event in ("payment.canceled", "refund.succeeded"):
+                new_payment_status = "failed"
+
+            if new_payment_status:
+                async with db.pool.acquire() as conn:
+                    updated = await conn.execute(
+                        "UPDATE orders SET payment_status=$1 WHERE id=$2",
+                        new_payment_status, order_id_int
+                    )
+                    logger.info(
+                        "Payment callback: order %s payment_status → %s (yookassa payment %s, result=%s)",
+                        order_id_int, new_payment_status, payment_id, updated
+                    )
 
         return {"status": "ok"}
 
@@ -3268,7 +3316,7 @@ async def payment_callback(request: Request):
         raise
     except Exception as e:
         logger.error("Payment callback error: %s", e, exc_info=True)
-        # Fix #6: не раскрываем детали внешнему миру
+        # Не раскрываем детали внешнему миру, но возвращаем 200 чтобы ЮKassa не повторяла
         return JSONResponse(status_code=200, content={"status": "error"})
 
 
@@ -4082,13 +4130,21 @@ async def export_crm_csv(admin=Depends(verify_admin)):
             cell.fill = header_fill
             cell.alignment = Alignment(horizontal='center')
 
+        def _safe_cell(v: str) -> str:
+            """Защита от formula injection в Excel/LibreOffice."""
+            s = str(v or '')
+            if s and s[0] in ('=', '+', '-', '@', '\t', '\r'):
+                s = "'" + s
+            return s
+
         for r in rows:
             last = r['last_order_date']
             if isinstance(last, datetime): last = last.strftime('%Y-%m-%d')
             ws.append([
-                r['username'], r['email'], r['full_name'] or '', r['phone'] or '',
+                _safe_cell(r['username']), _safe_cell(r['email']),
+                _safe_cell(r['full_name'] or ''), _safe_cell(r['phone'] or ''),
                 float(r['personal_discount'] or 0), int(r['order_count']),
-                float(r['total_spent']), last or ''
+                float(r['total_spent']), _safe_cell(last or '')
             ])
 
         # Авто-ширина колонок

@@ -660,11 +660,6 @@
   <div class="container"><div class="header-inner">
     <a href="/" class="logo"><div class="logo-bolt">&#9889;</div><span class="logo-text">Fm <span>TuN</span></span></a>
     <div class="header-actions">
-      <!-- Быстрый поиск (ведёт в каталог) -->
-      <form action="/products" method="get" style="display:flex;align-items:center;position:relative;margin-right:.25rem" onsubmit="var v=this.querySelector('input').value.trim();if(!v){window.location.href='/products';return false;}">
-        <input type="search" name="search" placeholder="Поиск…" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.4rem .75rem .4rem 2rem;color:var(--text);font-size:.8125rem;font-family:var(--fb);outline:none;width:160px;transition:all .2s;caret-color:var(--blue);" onfocus="this.style.borderColor='var(--blue)';this.style.width='200px';" onblur="this.style.borderColor='var(--border)';this.style.width='160px';">
-        <span style="position:absolute;left:.625rem;color:var(--text3);font-size:.875rem;pointer-events:none">🔍</span>
-      </form>
       <!-- Корзина: ведёт на страницу /cart -->
       <a href="/cart" class="btn btn-ghost btn-sm cart-btn-header" id="cartBtn" style="position:relative">&#128722; Корзина<span class="cart-count" id="cartCount">0</span></a>
       <!-- Войти / профиль: только на десктопе, слева от кнопки меню -->

@@ -734,7 +734,6 @@
       <div class="nav-menu-details">
         <p data-menu-fade class="nav-p-small">Соцсети</p>
         <div class="nav-socials-row">
-          <a data-menu-fade href="#" class="nav-text-link">Instagram</a>
           <a data-menu-fade href="#" class="nav-text-link">Telegram</a>
           <a data-menu-fade href="#" class="nav-text-link">VK</a>
         </div>
@@ -797,11 +796,11 @@
         </div>
       </div>
       <div id="supplierDocsContainer" style="display:flex;align-items:center;justify-content:center;min-height:260px">
-        <div id="supplierDocs" style="width:100%;max-width:440px">
+        <div id="supplierDocs" style="width:100%;max-width:620px">
           <!-- Документы загружаются динамически -->
+          <div class="sdoc-header" style="margin-bottom:.75rem">📜 <span>Документы поставщика</span></div>
           <div id="sdocPlaceholder" class="sdoc-card" style="min-height:240px">
             <div class="sdoc-corner tl"></div><div class="sdoc-corner tr"></div><div class="sdoc-corner bl"></div><div class="sdoc-corner br"></div>
-            <div class="sdoc-header">📜 <span>Документы поставщика</span></div>
             <div class="sdoc-gallery-wrap">
               <div class="sdoc-empty">Документы будут добавлены</div>
             </div>
@@ -1353,7 +1352,7 @@ function renderProducts(list){
       '<div class="product-body">'+(b.length?'<div class="product-badges">'+b.join('')+'</div>':'')+
       '<div class="product-cat">'+cName(p.category)+'</div>'+
       '<div class="product-name">'+p.name+'</div>'+
-      '<div class="product-desc">'+p.description+'</div>'+
+      '<div class="product-desc"'+(p.description_font?' style="font-family:\''+p.description_font+'\',sans-serif"':'')+'>'+p.description+'</div>'+
       '<div class="product-footer"><span class="product-price">'+fmt(p.price)+' &#8381;</span>'+
       '<button class="add-btn" data-pid="'+p.id+'" data-stock="'+p.stock+'"'+
       ((!p.in_stock&&!p.preorder)?' disabled':'')+'>'+(p.in_stock||p.preorder?'В корзину':'Нет в наличии')+'</button>'+
@@ -1542,9 +1541,9 @@ async function loadSupplierDocs(){
     var btns=n>1?'<button class="sdoc-btn sdoc-btn-prev">&#8249;</button><button class="sdoc-btn sdoc-btn-next">&#8250;</button>':'';
     var title=docs[0]&&docs[0].doc_type?docs[0].doc_type:'Документы';
     container.innerHTML=
+      '<div class="sdoc-header" style="margin-bottom:.75rem">📜 <span>Сертификаты и документы</span></div>' +
       '<div class="sdoc-card">' +
         '<div class="sdoc-corner tl"></div><div class="sdoc-corner tr"></div><div class="sdoc-corner bl"></div><div class="sdoc-corner br"></div>' +
-        '<div class="sdoc-header">📜 <span>Сертификаты и документы</span></div>' +
         '<div class="sdoc-gallery-wrap"><div class="sdoc-track-outer"><div class="sdoc-track">'+slides+'</div>'+btns+count+dots+'</div></div>' +
       '</div>';
     if(n>1)initDocSlider(container.querySelector('.sdoc-track-outer'),n);

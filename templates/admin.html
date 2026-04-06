@@ -1060,6 +1060,17 @@
             <label class="form-label">Описание *</label>
             <textarea name="description" class="form-textarea" placeholder="Подробное описание товара…" required rows="4"></textarea>
           </div>
+          <div class="form-group">
+            <label class="form-label">Шрифт описания</label>
+            <select name="description_font" class="form-input">
+              <option value="">По умолчанию</option>
+              <option value="Roboto">Roboto</option>
+              <option value="Open Sans">Open Sans</option>
+              <option value="Montserrat">Montserrat</option>
+              <option value="JetBrains Mono">JetBrains Mono</option>
+              <option value="Rajdhani">Rajdhani</option>
+            </select>
+          </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
             <div class="form-group">
               <label class="form-label">Количество на складе</label>
@@ -1678,6 +1689,7 @@
         <div class="form-hint" style="color:var(--accent)">Цена в рублях рассчитается автоматически по курсу ЦБ РФ</div>
       </div>
       <div class="form-group"><label class="form-label">Описание</label><textarea name="description" class="form-textarea" id="editProductDesc" rows="3" required></textarea></div>
+      <div class="form-group"><label class="form-label">Шрифт описания</label><select name="description_font" class="form-input" id="editProductDescFont"><option value="">По умолчанию</option><option value="Roboto">Roboto</option><option value="Open Sans">Open Sans</option><option value="Montserrat">Montserrat</option><option value="JetBrains Mono">JetBrains Mono</option><option value="Rajdhani">Rajdhani</option></select></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
         <div class="form-group"><label class="form-label">Склад</label><input type="number" name="stock" class="form-input" id="editProductStock" min="0"></div>
         <div class="form-group"><label class="form-label">Хит</label>
@@ -2716,6 +2728,7 @@
     document.getElementById('editPriceCnyGroup').style.display = isDyn ? '' : 'none';
     document.getElementById('editProductPriceCny').value = product.price_cny || '';
     document.getElementById('editProductDesc').value = product.description;
+    document.getElementById('editProductDescFont').value = product.description_font || '';
     document.getElementById('editProductStock').value = product.stock;
     document.getElementById('editProductFeatured').value = product.featured ? 'true' : 'false';
     document.getElementById('editProductPreorder').value = product.preorder ? 'true' : 'false';

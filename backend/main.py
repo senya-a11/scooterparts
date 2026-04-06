@@ -456,6 +456,7 @@ class ProductCreate(BaseModel):
     price_cny: Optional[float] = None
     no_preorder: bool = False
     description_sections: Optional[dict] = None
+    description_font: Optional[str] = None
 
 
 class ProductUpdate(BaseModel):
@@ -474,6 +475,7 @@ class ProductUpdate(BaseModel):
     price_cny: Optional[float] = None
     no_preorder: Optional[bool] = None
     description_sections: Optional[dict] = None
+    description_font: Optional[str] = None
 
 
 class CategoryCreate(BaseModel):
@@ -941,6 +943,13 @@ class Database:
                 print("✅ Миграция v18.2: personal_discount, is_manager в users")
             except Exception as e:
                 print(f"⚠️ Миграция v18.2 (users): {e}")
+
+            # Миграция v21: шрифт описания товара
+            try:
+                await conn.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS description_font VARCHAR(50) DEFAULT NULL")
+                print("✅ Миграция v21: поле description_font добавлено в products")
+            except Exception as e:
+                print(f"⚠️ Миграция v21 (description_font): {e}")
 
             # Таблица заявок на установку (ТЗ 15)
             await conn.execute('''
@@ -4240,6 +4249,8 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
         no_preorder = str(form.get("no_preorder", "false")).lower() == "true"
         description_sections_str = form.get("description_sections")
         description_sections = json.loads(description_sections_str) if description_sections_str else None
+        description_font_val = str(form.get("description_font", "")).strip()
+        description_font = description_font_val if description_font_val else None
 
         # Получаем все файлы изображений (до 5 штук)
         image_files = []
@@ -4336,9 +4347,9 @@ async def create_product(request: Request, admin=Depends(verify_admin)):
             
             # Создаем товар
             row = await conn.fetchrow('''
-                INSERT INTO products (name,category,price,description,image_url,stock,featured,in_stock,preorder,cost_price,price_preorder_auto,price_preorder_air,discount_percent,weight_kg,preorder_unavailable,warranty_months,warranty_enabled,installation_service,price_type,price_cny,no_preorder,description_sections)
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22) RETURNING *
-            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, discount_percent, weight_kg, preorder_unavailable, warranty_months, warranty_enabled, installation_service, price_type, price_cny, no_preorder, json.dumps(description_sections) if description_sections else None)
+                INSERT INTO products (name,category,price,description,image_url,stock,featured,in_stock,preorder,cost_price,price_preorder_auto,price_preorder_air,discount_percent,weight_kg,preorder_unavailable,warranty_months,warranty_enabled,installation_service,price_type,price_cny,no_preorder,description_sections,description_font)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23) RETURNING *
+            ''', name, category, price, desc, final_image, stock, featured, in_stock, preorder, cost_price, price_preorder_auto, price_preorder_air, discount_percent, weight_kg, preorder_unavailable, warranty_months, warranty_enabled, installation_service, price_type, price_cny, no_preorder, json.dumps(description_sections) if description_sections else None, description_font)
             
             product_id = row['id']
             

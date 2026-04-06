@@ -1195,7 +1195,7 @@ function renderProducts() {
         ${badgesHtml}
         <div class="product-cat">${getName(p.category)}</div>
         <div class="product-name">${p.name}</div>
-        <div class="product-desc">${p.description}</div>
+        <div class="product-desc"${p.description_font ? ` style="font-family:'${p.description_font}',sans-serif"` : ''}>${p.description}</div>
         ${weightBadge}
         <div class="product-footer">
           ${priceHtml}
